@@ -4,7 +4,7 @@ import { DailyXpChart } from '../components/charts/DailyXpChart';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { BoltIcon, FlameIcon, SnowflakeIcon, StarIcon } from '../components/icons';
 import { unit1 } from '../content/unit1';
-import { completedLessonIds } from '../game/progress';
+import { completedLessonIds, markLessonCompleted } from '../game/progress';
 import { dailyStatus, recentDays } from '../game/streak';
 import { devDayOffset, setDevDayOffset, useToday } from '../storage/clock';
 import { useProgress, useProgressStore } from '../storage/progressContext';
@@ -147,9 +147,29 @@ function DevTools({ today }: { today: string }) {
         </div>
       </div>
 
-      <button type="button" className={buttonStyles.secondary} onClick={() => setConfirming(true)}>
-        Reset progress
-      </button>
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          className={buttonStyles.secondary}
+          onClick={() =>
+            store.update((state) =>
+              unit1.lessons.reduce(
+                (next, lesson) => markLessonCompleted(next, lesson.id, new Date()),
+                state,
+              ),
+            )
+          }
+        >
+          Complete all lessons
+        </button>
+        <button
+          type="button"
+          className={buttonStyles.secondary}
+          onClick={() => setConfirming(true)}
+        >
+          Reset progress
+        </button>
+      </div>
       <ConfirmDialog
         open={confirming}
         title="Reset all progress?"

@@ -1,4 +1,5 @@
 /** The learner's saved progress. Pure data and pure updates; persistence lives in src/storage. */
+import type { MissionProgress } from './missionProgress';
 import { createActivity, DEFAULT_DAILY_GOAL, type ActivityState, type DateKey } from './streak';
 
 export interface LessonProgress {
@@ -12,6 +13,7 @@ export interface ProgressState {
   /** Practice XP awards per lesson, counted for a single day. */
   practiceAwards: { day: DateKey | null; counts: Record<string, number> };
   dailyGoal: number;
+  missions: Record<string, MissionProgress>;
 }
 
 export function createInitialProgress(): ProgressState {
@@ -20,6 +22,7 @@ export function createInitialProgress(): ProgressState {
     activity: createActivity(),
     practiceAwards: { day: null, counts: {} },
     dailyGoal: DEFAULT_DAILY_GOAL,
+    missions: {},
   };
 }
 

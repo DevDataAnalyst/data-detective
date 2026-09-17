@@ -16,6 +16,7 @@ import type {
   Checkpoint,
   DataTable,
   Lesson,
+  Mission,
   MultipleChoiceQuestion,
   NumberDataset,
   NumericEstimateQuestion,
@@ -39,6 +40,7 @@ export const CONTENT_LIMITS = {
   questionTypesPerLesson: 3,
   checkpointQuestions: 10,
   optionsPerQuestion: { min: 2, max: 5 },
+  missionBriefWords: 120,
 } as const;
 
 /** Stored answers may be rounded to two decimal places. */
@@ -610,5 +612,62 @@ export function validateUnit(unit: Unit): ValidationIssue[] {
     issues.push(...validateLesson(lesson, `${path}.lessons[${index}](${lesson.id})`)),
   );
   issues.push(...validateCheckpoint(unit.checkpoint, unit.lessons, `${path}.checkpoint`));
+  return issues;
+}
+
+export function validateMission(mission: Mission): ValidationIssue[] {
+  const path = `mission(${mission.id})`;
+  const issues: ValidationIssue[] = [];
+  if (!mission.id.trim()) issues.push(issue(path, 'id is empty'));
+  if (!mission.title.trim()) issues.push(issue(path, 'title is empty'));
+  const briefWords = countWords(mission.brief);
+  if (briefWords > CONTENT_LIMITS.missionBriefWords) {
+    issues.push(
+      issue(
+        `${path}.brief`,
+        `has ${briefWords} words; the limit is ${CONTENT_LIMITS.missionBriefWords}`,
+      ),
+    );
+  }
+  if (!mission.dataset.fileName.trim() || !mission.dataset.url.trim()) {
+    issues.push(issue(`${path}.dataset`, 'needs a file name and a url'));
+  }
+  if (mission.tasks.length === 0) issues.push(issue(path, 'has no tasks'));
+
+  const ids = mission.tasks.map((task) => task.id);
+  const duplicates = ids.filter((id, index) => ids.indexOf(id) !== index);
+  if (duplicates.length > 0)
+    issues.push(issue(path, `duplicate task ids: ${duplicates.join(', ')}`));
+
+  const firstStretch = mission.tasks.findIndex((task) => task.stretch);
+  if (firstStretch !== -1 && mission.tasks.slice(firstStretch).some((task) => !task.stretch)) {
+    issues.push(issue(`${path}.tasks`, 'stretch tasks must come after every required task'));
+  }
+  if (!mission.tasks.some((task) => task.kind === 'written' && !task.stretch)) {
+    issues.push(issue(`${path}.tasks`, 'needs a required written task for the recommendation'));
+  }
+
+  mission.tasks.forEach((task, index) => {
+    const taskPath = `${path}.tasks[${index}](${task.id})`;
+    if (!task.title.trim()) issues.push(issue(taskPath, 'title is empty'));
+    if (/^stretch\b/i.test(task.title)) {
+      issues.push(
+        issue(taskPath, 'the UI marks stretch tasks; do not start the title with "Stretch"'),
+      );
+    }
+    if (!task.instructions.trim()) issues.push(issue(taskPath, 'instructions are empty'));
+    if (task.kind === 'code') {
+      if (!task.starterCode.trim()) issues.push(issue(taskPath, 'starter code is empty'));
+      for (const name of task.creates) {
+        if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(name)) {
+          issues.push(issue(taskPath, `"${name}" is not a valid Python variable name`));
+        }
+      }
+    } else {
+      const { min, max } = task.suggestedSentences;
+      if (!(min >= 1 && max >= min))
+        issues.push(issue(taskPath, 'suggested sentences are invalid'));
+    }
+  });
   return issues;
 }

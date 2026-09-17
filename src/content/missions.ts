@@ -1,10 +1,7 @@
+import { lateDeliveryMystery } from './mission1';
 import type { Mission } from './types';
 
-/** Placeholder mission records until the full mission model arrives in build step 6. */
-export const lateDeliveryMystery: Mission = {
-  id: 'late-delivery-mystery',
-  title: 'The Late Delivery Mystery',
-};
+export { lateDeliveryMystery };
 
 export const missions: readonly Mission[] = [lateDeliveryMystery];
 

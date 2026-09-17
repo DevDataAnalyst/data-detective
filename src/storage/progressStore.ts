@@ -1,4 +1,9 @@
 import { createInitialProgress, type ProgressState } from '../game/progress';
+import type {
+  MissionProgress,
+  MissionTaskProgress,
+  MissionTaskStatus,
+} from '../game/missionProgress';
 import { createActivity, type ActivityState } from '../game/streak';
 import type { KeyValueStore } from './keyValue';
 
@@ -44,6 +49,36 @@ function parseActivity(value: unknown): ActivityState {
   };
 }
 
+const TASK_STATUSES: readonly MissionTaskStatus[] = ['not_started', 'attempted', 'passed'];
+
+function parseMissions(value: unknown): Record<string, MissionProgress> {
+  if (!isRecord(value)) return {};
+  const missions: Record<string, MissionProgress> = {};
+  for (const [missionId, raw] of Object.entries(value)) {
+    if (!isRecord(raw)) continue;
+    const tasks: Record<string, MissionTaskProgress> = {};
+    if (isRecord(raw.tasks)) {
+      for (const [taskId, task] of Object.entries(raw.tasks)) {
+        if (!isRecord(task)) continue;
+        tasks[taskId] = {
+          code: typeof task.code === 'string' ? task.code : null,
+          lastWorkingCode: typeof task.lastWorkingCode === 'string' ? task.lastWorkingCode : null,
+          runs: finiteNumber(task.runs, 0),
+          status: TASK_STATUSES.includes(task.status as MissionTaskStatus)
+            ? (task.status as MissionTaskStatus)
+            : 'not_started',
+        };
+      }
+    }
+    missions[missionId] = {
+      activeTaskId: typeof raw.activeTaskId === 'string' ? raw.activeTaskId : null,
+      tasks,
+      recommendation: typeof raw.recommendation === 'string' ? raw.recommendation : '',
+    };
+  }
+  return missions;
+}
+
 /**
  * Reads saved progress defensively: anything missing or malformed falls back to a fresh start
  * for that part, so a bad value never crashes the app.
@@ -79,6 +114,7 @@ export function parseStoredProgress(raw: string | null): ProgressState {
       counts: numberRecord(practice.counts),
     },
     dailyGoal: finiteNumber(stored.dailyGoal, initial.dailyGoal),
+    missions: parseMissions(stored.missions),
   };
 }
 

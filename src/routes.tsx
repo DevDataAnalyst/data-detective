@@ -17,13 +17,13 @@ export const routes: RouteObject[] = [
         children: [
           { index: true, element: <PathPage /> },
           { path: 'checkpoint', element: <CheckpointPage /> },
-          { path: 'mission', element: <MissionPage /> },
           { path: 'profile', element: <ProfilePage /> },
           { path: '*', element: <NotFoundPage /> },
         ],
       },
-      // Lessons are full screen, without the app shell, so learners can focus.
+      // Lessons and the mission are full screen, without the app shell, so learners can focus.
       { path: 'lesson/:lessonId', element: <LessonPage /> },
+      { path: 'mission', element: <MissionPage /> },
     ],
   },
 ];

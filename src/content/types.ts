@@ -145,10 +145,50 @@ export interface Checkpoint {
   items: CheckpointItem[];
 }
 
-/** Placeholder until build step 6 defines the mission model. */
+interface MissionTaskBase {
+  /** Unique within the mission. */
+  id: string;
+  title: string;
+  /** Short instructions. Supports **bold**, `code` and blank-line paragraph breaks. */
+  instructions: string;
+  /** Optional stretch task. Not needed to complete the mission. */
+  stretch?: boolean;
+}
+
+/** A task solved by writing and running Python. */
+export interface CodeTask extends MissionTaskBase {
+  kind: 'code';
+  starterCode: string;
+  /** Variables the learner's code should create, shown as a checklist, e.g. `["df"]`. */
+  creates: string[];
+}
+
+/** A task answered in plain words, such as the final recommendation. */
+export interface WrittenTask extends MissionTaskBase {
+  kind: 'written';
+  placeholder: string;
+  /** Suggested length, shown to the learner. */
+  suggestedSentences: { min: number; max: number };
+}
+
+export type MissionTask = CodeTask | WrittenTask;
+
+export interface MissionDataset {
+  /** Name of the file in Python's working directory, e.g. `deliveries.csv`. */
+  fileName: string;
+  /** Where the app fetches it from, relative to the site root. */
+  url: string;
+  columns: Array<{ name: string; description: string }>;
+}
+
 export interface Mission {
   id: string;
   title: string;
+  /** Shown at the top of the workspace. At most 120 words. */
+  brief: string;
+  dataset: MissionDataset;
+  /** Required tasks first, then stretch tasks. */
+  tasks: MissionTask[];
 }
 
 export interface Unit {
