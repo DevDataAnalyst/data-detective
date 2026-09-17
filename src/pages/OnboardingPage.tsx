@@ -7,6 +7,7 @@ import type { LearnerGoal } from '../game/progress';
 import { completeOnboarding } from '../game/rewards';
 import { DAILY_GOAL_CHOICES } from '../game/streak';
 import { now } from '../storage/clock';
+import { useEvents } from '../storage/eventsContext';
 import { useProgressStore } from '../storage/progressContext';
 
 const GOALS: ReadonlyArray<{ id: LearnerGoal; title: string; detail: string }> = [
@@ -34,6 +35,7 @@ const STEPS = 3;
 /** First visit: a welcome, the learner's goal and a daily goal, then straight into lesson 1. */
 export function OnboardingPage() {
   const store = useProgressStore();
+  const events = useEvents();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [goal, setGoal] = useState<LearnerGoal | null>(null);
@@ -54,6 +56,7 @@ export function OnboardingPage() {
   const finish = () => {
     if (!goal || dailyGoal === null) return;
     store.update((state) => completeOnboarding(state, { goal, dailyGoal, now: now() }));
+    events.record({ type: 'onboarding_completed', goal, dailyGoal });
     void navigate(`/lesson/${unit1.lessons[0].id}`, { replace: true });
   };
 

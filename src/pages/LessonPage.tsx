@@ -4,6 +4,7 @@ import { buttonStyles } from '../components/buttonStyles';
 import { LockIcon } from '../components/icons';
 import { LessonPlayer } from '../components/lesson/LessonPlayer';
 import { useRewards } from '../components/rewards/useRewards';
+import { MicroSurvey } from '../components/survey/MicroSurvey';
 import { findLesson } from '../content';
 import { completedLessonIds } from '../game/progress';
 import { lessonStatus, unlockingLessonId } from '../game/unlocks';
@@ -44,6 +45,19 @@ export function LessonPage() {
       key={lesson.id}
       lesson={lesson}
       lessonNumber={index + 1}
+      summaryExtra={
+        completed.size >= 3 ? (
+          <MicroSurvey
+            surveyId="lessons_feel"
+            question="How did the lessons feel so far?"
+            options={[
+              { value: 'too_easy', label: 'Too easy' },
+              { value: 'about_right', label: 'About right' },
+              { value: 'too_hard', label: 'Too hard' },
+            ]}
+          />
+        ) : null
+      }
       onExit={() => navigate('/')}
       onFinish={(result) =>
         rewards.completeLesson(result.lessonId, result.firstAttemptAccuracy).award

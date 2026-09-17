@@ -1,10 +1,11 @@
-import { useEffect, useEffectEvent, useState } from 'react';
+import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { buttonStyles } from '../components/buttonStyles';
 import { useOnline } from '../components/hooks';
 import { BoltIcon, CheckIcon, LockIcon, SearchIcon } from '../components/icons';
 import { RichText } from '../components/RichText';
 import { useRewards } from '../components/rewards/useRewards';
+import { MicroSurvey } from '../components/survey/MicroSurvey';
 import type { CodeTask, Mission, MissionTask } from '../content/types';
 import {
   missionProgress,
@@ -24,6 +25,7 @@ import {
   taskLock,
   taskStatus,
 } from '../game/missionRules';
+import { useEvents } from '../storage/eventsContext';
 import { useProgress, useProgressStore } from '../storage/progressContext';
 import { CodeTaskPanel } from './components/CodeTaskPanel';
 import { HintPanel } from './components/HintPanel';
@@ -70,6 +72,7 @@ export default function MissionWorkspace({ mission, createRuntime }: MissionWork
   const store = useProgressStore();
   const progress = useProgress();
   const rewards = useRewards();
+  const events = useEvents();
   const navigate = useNavigate();
   const saved = missionProgress(progress, mission.id);
   const taskIds = mission.tasks.map((task) => task.id);
@@ -87,6 +90,39 @@ export default function MissionWorkspace({ mission, createRuntime }: MissionWork
   const [feedback, setFeedback] = useState<Record<string, ShownFeedback>>({});
   const [runningTaskId, setRunningTaskId] = useState<string | null>(null);
   const [announcement, setAnnouncement] = useState('');
+
+  // Playtest events: opening the mission, how long Python took, and leaving part way through.
+  const loadReported = useRef(false);
+  const reportLoad = useEffectEvent(() => {
+    if (runtimeState.phase === 'ready' && !loadReported.current) {
+      loadReported.current = true;
+      events.record({ type: 'pyodide_loaded', ms: runtimeState.loadMs ?? 0 });
+    }
+    if (runtimeState.phase === 'failed') {
+      events.record({ type: 'pyodide_failed', message: runtimeState.error ?? 'unknown' });
+    }
+  });
+  useEffect(() => {
+    reportLoad();
+  }, [runtimeState.phase]);
+
+  const reportOpenedAndAbandoned = useEffectEvent(() => {
+    const saved = missionProgress(store.getSnapshot(), mission.id);
+    if (saved.completedAt) return;
+    events.record({
+      type: 'mission_abandoned',
+      missionId: mission.id,
+      lastTaskId:
+        missionProgress(store.getSnapshot(), mission.id).activeTaskId ?? mission.tasks[0].id,
+      codeTasksPassed: missionTaskCounts(mission, saved).requiredPassed,
+    });
+  });
+  useEffect(() => {
+    events.record({ type: 'mission_opened', missionId: mission.id });
+    return () => reportOpenedAndAbandoned();
+    // Runs once for each visit to the workspace.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Loading fails without a connection, so try again as soon as the connection is back.
   const online = useOnline();
@@ -133,6 +169,13 @@ export default function MissionWorkspace({ mission, createRuntime }: MissionWork
       );
     }
     const result = feedbackForRun(outcome, { alreadyPassed });
+    events.record({
+      type: 'task_run',
+      taskId: task.id,
+      passed: result?.kind === 'passed',
+      hadError: outcome.kind === 'completed' && outcome.result.error !== null,
+      ms: outcome.kind === 'completed' ? outcome.durationMs : 0,
+    });
     const xp = result?.kind === 'passed' ? rewards.passMissionTask(mission, task.id).xp : 0;
     setFeedback((previous) => {
       const next = { ...previous };
@@ -150,8 +193,10 @@ export default function MissionWorkspace({ mission, createRuntime }: MissionWork
     setAnnouncement('Python was reset. Run your tasks again to recreate their variables.');
   };
 
-  const showHint = (task: CodeTask, level: number) =>
+  const showHint = (task: CodeTask, level: number) => {
+    events.record({ type: 'hint_viewed', taskId: task.id, level });
     store.update((state) => recordHintShown(state, mission.id, task.id, level));
+  };
 
   const submitRecommendation = (answer: { text: string; selfReview: string[] }) => {
     const outcome = rewards.completeMission({
@@ -161,6 +206,12 @@ export default function MissionWorkspace({ mission, createRuntime }: MissionWork
       facts: runtimeState.summary,
     });
     if (outcome.completedNow) {
+      events.record({
+        type: 'mission_completed',
+        missionId: mission.id,
+        codeTasksPassed: counts.requiredPassed,
+        stretchPassed: counts.stretchPassed,
+      });
       void navigate(MISSION_SUMMARY_PATH, { state: { justCompleted: true } });
     }
   };
@@ -279,6 +330,18 @@ export default function MissionWorkspace({ mission, createRuntime }: MissionWork
             </dl>
           </details>
         </details>
+
+        {Object.keys(saved.tasks).length === 0 && !completed && (
+          <MicroSurvey
+            surveyId="mission_ready"
+            question="Before you start: how ready do you feel for this?"
+            scale={{ low: '1 · not ready', high: '5 · very ready' }}
+            options={[1, 2, 3, 4, 5].map((value) => ({
+              value: String(value),
+              label: String(value),
+            }))}
+          />
+        )}
 
         <RuntimeBanner state={runtimeState} online={online} onRetry={() => runtime.retry()} />
 

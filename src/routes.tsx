@@ -8,6 +8,7 @@ import { MissionSummaryPage } from './pages/MissionSummaryPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { OnboardingPage } from './pages/OnboardingPage';
 import { PathPage } from './pages/PathPage';
+import { PlaytestPage } from './pages/PlaytestPage';
 import { ProfilePage } from './pages/ProfilePage';
 
 export const routes: RouteObject[] = [
@@ -19,6 +20,7 @@ export const routes: RouteObject[] = [
         children: [
           { index: true, element: <PathPage /> },
           { path: 'profile', element: <ProfilePage /> },
+          { path: 'playtest', element: <PlaytestPage /> },
           { path: '*', element: <NotFoundPage /> },
         ],
       },

@@ -4,14 +4,14 @@ import { createBrowserRouter } from 'react-router';
 import { RouterProvider } from 'react-router/dom';
 import './index.css';
 import { routes } from './routes';
-import { appProgressStore } from './storage/appStorage';
+import { appEventLog, appProgressStore } from './storage/appStorage';
 import { ProgressProvider } from './storage/ProgressProvider';
 
 const router = createBrowserRouter(routes);
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <ProgressProvider store={appProgressStore}>
+    <ProgressProvider store={appProgressStore} events={appEventLog}>
       <RouterProvider router={router} />
     </ProgressProvider>
   </StrictMode>,

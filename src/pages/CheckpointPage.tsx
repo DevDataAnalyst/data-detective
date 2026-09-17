@@ -24,6 +24,7 @@ import type { CheckpointOutcome } from '../game/rewards';
 import { lessonStatus } from '../game/unlocks';
 import { checkpointXp } from '../game/xp';
 import { useNow } from '../storage/clock';
+import { useEvents } from '../storage/eventsContext';
 import { useProgress } from '../storage/progressContext';
 
 export function CheckpointPage() {
@@ -31,6 +32,7 @@ export function CheckpointPage() {
   const { checkpoint } = unit;
   const progress = useProgress();
   const rewards = useRewards();
+  const events = useEvents();
   const navigate = useNavigate();
   const currentTime = useNow();
   const [result, setResult] = useState<{
@@ -151,12 +153,18 @@ export function CheckpointPage() {
       xp={checkpointXp(false)}
       retakeDelay={retakeDelay}
       onExit={() => void navigate('/')}
-      onFinish={(session) =>
-        setResult({
-          outcome: rewards.finishCheckpoint(unit, correctByQuestion(session)),
-          answers: session.answers,
-        })
-      }
+      onFinish={(session) => {
+        const outcome = rewards.finishCheckpoint(unit, correctByQuestion(session));
+        events.record({
+          type: 'checkpoint_finished',
+          checkpointId: checkpoint.id,
+          correct: outcome.score.correct,
+          total: outcome.score.total,
+          passed: outcome.score.passed,
+          ms: (session.finishedAt ?? 0) - (session.startedAt ?? 0),
+        });
+        setResult({ outcome, answers: session.answers });
+      }}
     />
   );
 }

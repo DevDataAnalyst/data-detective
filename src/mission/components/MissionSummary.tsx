@@ -7,6 +7,7 @@ import type { Mission, WrittenTask } from '../../content/types';
 import type { MissionProgress } from '../../game/missionProgress';
 import { missionTaskCounts } from '../../game/missionRules';
 import { missionXpSummary, XP_RULES } from '../../game/xp';
+import { MicroSurvey, SurveyNote } from '../../components/survey/MicroSurvey';
 import { summaryLines } from '../portfolio';
 import { RecommendationReview } from './RecommendationReview';
 
@@ -192,6 +193,31 @@ export function MissionSummary({
             />
           </section>
         )}
+
+        <section aria-labelledby="mission-survey" className="space-y-3">
+          <h2 id="mission-survey" className="text-lg font-bold text-slate-900">
+            Three quick questions
+          </h2>
+          <MicroSurvey
+            surveyId="lessons_prepared"
+            question="Did the lessons prepare you for the mission?"
+            scale={{ low: '1 · not at all', high: '5 · completely' }}
+            options={[1, 2, 3, 4, 5].map((value) => ({
+              value: String(value),
+              label: String(value),
+            }))}
+          />
+          <MicroSurvey
+            surveyId="more_useful"
+            question="Which part felt more useful?"
+            options={[
+              { value: 'lessons', label: 'Lessons' },
+              { value: 'mission', label: 'Mission' },
+              { value: 'both', label: 'Both equally' },
+            ]}
+          />
+          <SurveyNote question="What would you change?" />
+        </section>
 
         <div className="flex flex-col gap-3 sm:flex-row">
           <Link to="/" className={`${buttonStyles.primary} sm:flex-1`}>

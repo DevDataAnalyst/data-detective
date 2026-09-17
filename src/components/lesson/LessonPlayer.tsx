@@ -1,4 +1,13 @@
-import { useEffect, useEffectEvent, useMemo, useReducer, useRef, useState } from 'react';
+import {
+  useEffect,
+  useEffectEvent,
+  useMemo,
+  useReducer,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
+import { useEvents } from '../../storage/eventsContext';
 import { fillTemplate } from '../../content/template';
 import type { Lesson } from '../../content/types';
 import type { LessonXpAward } from '../../game/xp';
@@ -38,9 +47,17 @@ interface LessonPlayerProps {
   onExit: () => void;
   /** Called once when the summary is reached. Returns the XP awarded, to show on the summary. */
   onFinish?: (result: LessonResult) => LessonXpAward | void;
+  /** Shown under the summary, for a one-tap question at a natural pause. */
+  summaryExtra?: ReactNode;
 }
 
-export function LessonPlayer({ lesson, lessonNumber, onExit, onFinish }: LessonPlayerProps) {
+export function LessonPlayer({
+  lesson,
+  lessonNumber,
+  onExit,
+  onFinish,
+  summaryExtra,
+}: LessonPlayerProps) {
   const questionsById = useMemo(
     () => new Map(lesson.questions.map((question) => [question.id, question])),
     [lesson],
@@ -56,6 +73,9 @@ export function LessonPlayer({ lesson, lessonNumber, onExit, onFinish }: LessonP
   const headingRef = useRef<HTMLHeadingElement>(null);
   const finishReported = useRef(false);
   const reducedMotion = usePrefersReducedMotion();
+  const events = useEvents();
+  /** When the current question appeared, set by the effect below. */
+  const shownAt = useRef(0);
 
   const questionId = currentQuestionId(session);
   const question = questionId ? (questionsById.get(questionId) ?? null) : null;
@@ -69,6 +89,12 @@ export function LessonPlayer({ lesson, lessonNumber, onExit, onFinish }: LessonP
     dispatch(action);
     if (next.phase === 'summary' && !finishReported.current) {
       finishReported.current = true;
+      events.record({
+        type: 'lesson_completed',
+        lessonId: lesson.id,
+        firstAttemptAccuracy: firstAttemptAccuracy(next),
+        ms: sessionDurationMs(next) ?? 0,
+      });
       const awarded = onFinish?.({
         lessonId: lesson.id,
         firstAttemptAccuracy: firstAttemptAccuracy(next),
@@ -78,10 +104,24 @@ export function LessonPlayer({ lesson, lessonNumber, onExit, onFinish }: LessonP
     }
   };
 
-  const start = () => apply({ type: 'start', now: Date.now() });
+  const start = () => {
+    events.record({ type: 'lesson_started', lessonId: lesson.id });
+    apply({ type: 'start', now: Date.now() });
+  };
   const check = () => {
     if (!question || inFeedback || !isAnswerReady(answer)) return;
-    apply({ type: 'submit', correct: gradeAnswer(question, answer) });
+    const correct = gradeAnswer(question, answer);
+    events.record({
+      type: 'question_answered',
+      questionId: question.id,
+      questionType: question.type,
+      source: 'lesson',
+      lessonId: lesson.id,
+      firstAttempt: attemptNumber(session) === 0,
+      correct,
+      ms: Date.now() - shownAt.current,
+    });
+    apply({ type: 'submit', correct });
   };
   const next = () => apply({ type: 'continue', now: Date.now() });
 
@@ -103,9 +143,23 @@ export function LessonPlayer({ lesson, lessonNumber, onExit, onFinish }: LessonP
   // Each new question takes focus, so screen readers read the prompt first.
   useEffect(() => {
     if (!attemptKey) return;
+    shownAt.current = Date.now();
     window.scrollTo?.({ top: 0 });
     headingRef.current?.focus({ preventScroll: true });
   }, [attemptKey]);
+
+  // Leaving part way through is the signal that a lesson was abandoned.
+  const reportAbandoned = useEffectEvent(() => {
+    if (session.phase !== 'question') return;
+    events.record({
+      type: 'lesson_abandoned',
+      lessonId: lesson.id,
+      answered: session.completedIds.length,
+      total,
+      ms: Date.now() - (session.startedAt ?? Date.now()),
+    });
+  });
+  useEffect(() => () => reportAbandoned(), []);
 
   const exit = () => (session.phase === 'question' ? setExitOpen(true) : onExit());
 
@@ -167,12 +221,15 @@ export function LessonPlayer({ lesson, lessonNumber, onExit, onFinish }: LessonP
         )}
 
         {session.phase === 'summary' && (
-          <LessonSummary
-            lessonTitle={lesson.title}
-            accuracy={firstAttemptAccuracy(session)}
-            durationMs={sessionDurationMs(session) ?? 0}
-            award={award}
-          />
+          <div className="space-y-6">
+            <LessonSummary
+              lessonTitle={lesson.title}
+              accuracy={firstAttemptAccuracy(session)}
+              durationMs={sessionDurationMs(session) ?? 0}
+              award={award}
+            />
+            {summaryExtra}
+          </div>
         )}
       </main>
 

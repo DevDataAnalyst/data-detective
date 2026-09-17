@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react';
+import { Link } from 'react-router';
 import { buttonStyles } from '../components/buttonStyles';
 import { DailyXpChart } from '../components/charts/DailyXpChart';
 import { ConfirmDialog } from '../components/ConfirmDialog';
@@ -67,6 +68,17 @@ export function ProfilePage() {
         <p className="text-slate-600">
           {completedCount} of {unit1.lessons.length} lessons completed
         </p>
+      </section>
+
+      <section className="rounded-2xl bg-white p-4 ring-1 ring-slate-200">
+        <h2 className="font-bold">Playtest data</h2>
+        <p className="text-sm text-slate-600">
+          While this prototype is being tested, the app keeps a log of what you do on this device.
+          You can see it, export it and clear it.
+        </p>
+        <Link to="/playtest" className={`mt-3 ${buttonStyles.secondary}`}>
+          Open playtest data
+        </Link>
       </section>
 
       {import.meta.env.DEV && <DevTools today={today} />}

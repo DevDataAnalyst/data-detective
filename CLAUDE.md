@@ -207,6 +207,23 @@ Run from the project root. Needs Node 22.22 or newer.
 - The mission route is code split. Keep CodeMirror and Pyodide out of the initial bundle: the
   lesson layer must never download them.
 
+## Playtest instrumentation
+
+- `src/storage/events.ts` is a local event log under its own key, capped at 2000 events. Nothing
+  is ever sent anywhere: no analytics service, no network calls. Components record with
+  `useEvents()`; outside a provider that is a throwaway log, so recording never needs a guard.
+- Events are recorded where the thing happens: the lesson and checkpoint players, the mission
+  workspace, `useRewards` (daily goal and streak) and onboarding. Leaving a lesson, the checkpoint
+  or the mission part way through is recorded on unmount, which is how abandonment is detected.
+- `summarizePlaytest` in `src/game/playtest.ts` turns the log into the prototype's questions:
+  lessons completed, first-try accuracy by question type, median lesson time, where the learner
+  stopped, the gap from the last lesson to opening the mission, task runs and hint levels, and
+  survey answers. It is pure, so it is tested against a handmade log.
+- Three one-tap surveys, each asked once (`useSurveyPending`): after the third lesson, when the
+  mission first opens, and on the mission summary, where an optional note is the only free text.
+- `/playtest` (linked from the profile) shows the summary and exports `{summary, events}` as JSON.
+  Keep it that way: event fields are ids, numbers and flags, never anything a learner typed.
+
 ## Build steps
 
 - [x] 1. Scaffold
@@ -218,5 +235,5 @@ Run from the project root. Needs Node 22.22 or newer.
 - [x] 7. Mission grading
 - [x] 8. Test-out checkpoint
 - [x] 9. Polish
-- [ ] 10. Validation instrumentation
+- [x] 10. Validation instrumentation
 - [ ] 11. QA and deploy

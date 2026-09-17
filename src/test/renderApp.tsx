@@ -3,6 +3,7 @@ import { createMemoryRouter, RouterProvider } from 'react-router';
 import { isOnboarded } from '../game/progress';
 import { completeOnboarding } from '../game/rewards';
 import { routes } from '../routes';
+import { createEventLog } from '../storage/events';
 import { createMemoryStore, type KeyValueStore } from '../storage/keyValue';
 import { ProgressProvider } from '../storage/ProgressProvider';
 import { createProgressStore, type ProgressStore } from '../storage/progressStore';
@@ -26,6 +27,7 @@ export function renderApp({
   onboarded = true,
 }: RenderAppOptions = {}) {
   const progressStore = store ?? createProgressStore(keyValue ?? createMemoryStore());
+  const events = createEventLog(createMemoryStore());
   if (onboarded && !isOnboarded(progressStore.getSnapshot())) {
     progressStore.update((state) =>
       completeOnboarding(state, {
@@ -37,9 +39,9 @@ export function renderApp({
   }
   const router = createMemoryRouter(routes, { initialEntries: [path] });
   const view = render(
-    <ProgressProvider store={progressStore}>
+    <ProgressProvider store={progressStore} events={events}>
       <RouterProvider router={router} />
     </ProgressProvider>,
   );
-  return { ...view, router, store: progressStore };
+  return { ...view, router, store: progressStore, events };
 }

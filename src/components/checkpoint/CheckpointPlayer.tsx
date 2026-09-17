@@ -8,6 +8,7 @@ import {
   type CheckpointSessionState,
 } from '../../game/checkpoint';
 import { gradeAnswer, isAnswerReady, type Answer } from '../../game/grading';
+import { useEvents } from '../../storage/eventsContext';
 import { buttonStyles } from '../buttonStyles';
 import { ConfirmDialog } from '../ConfirmDialog';
 import { handlesEnterNatively, usePrefersReducedMotion } from '../hooks';
@@ -50,6 +51,9 @@ export function CheckpointPlayer({
   const headingRef = useRef<HTMLHeadingElement>(null);
   const finishReported = useRef(false);
   const reducedMotion = usePrefersReducedMotion();
+  const events = useEvents();
+  /** When the current question appeared, set by the effect below. */
+  const shownAt = useRef(0);
 
   const questionId = session.phase === 'question' ? session.questionIds[session.index] : null;
   const question = questionId ? (questions.get(questionId) ?? null) : null;
@@ -66,10 +70,24 @@ export function CheckpointPlayer({
     }
   };
 
-  const start = () => apply({ type: 'start', now: Date.now() });
+  const start = () => {
+    events.record({ type: 'checkpoint_started', checkpointId: checkpoint.id });
+    apply({ type: 'start', now: Date.now() });
+  };
   const submit = () => {
     if (!question || !isAnswerReady(answer)) return;
-    apply({ type: 'answer', answer, correct: gradeAnswer(question, answer), now: Date.now() });
+    const correct = gradeAnswer(question, answer);
+    events.record({
+      type: 'question_answered',
+      questionId: question.id,
+      questionType: question.type,
+      source: 'checkpoint',
+      lessonId: checkpoint.items[session.index]?.lessonId ?? null,
+      firstAttempt: true,
+      correct,
+      ms: Date.now() - shownAt.current,
+    });
+    apply({ type: 'answer', answer, correct, now: Date.now() });
   };
 
   // Enter moves on once an answer is given. Buttons and links keep their own Enter behaviour.
@@ -90,9 +108,22 @@ export function CheckpointPlayer({
   // Each new question takes focus, so screen readers read the prompt first.
   useEffect(() => {
     if (!questionId) return;
+    shownAt.current = Date.now();
     window.scrollTo?.({ top: 0 });
     headingRef.current?.focus({ preventScroll: true });
   }, [questionId]);
+
+  // Leaving part way through does not count as an attempt, but it is worth knowing about.
+  const reportAbandoned = useEffectEvent(() => {
+    if (session.phase !== 'question') return;
+    events.record({
+      type: 'checkpoint_abandoned',
+      checkpointId: checkpoint.id,
+      answered: session.index,
+      total,
+    });
+  });
+  useEffect(() => () => reportAbandoned(), []);
 
   const exit = () => (session.phase === 'question' ? setExitOpen(true) : onExit());
 

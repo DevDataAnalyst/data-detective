@@ -13,6 +13,7 @@ import type {
 import { PythonRuntime, type WorkerLike } from '../mission/python/pythonRuntime';
 import MissionWorkspace from '../mission/MissionWorkspace';
 import { MissionSummaryPage } from '../pages/MissionSummaryPage';
+import { createEventLog } from '../storage/events';
 import { createMemoryStore } from '../storage/keyValue';
 import { ProgressProvider } from '../storage/ProgressProvider';
 import { createProgressStore, type ProgressStore } from '../storage/progressStore';
@@ -66,6 +67,7 @@ export class FakeWorker implements WorkerLike {
 /** Renders the mission workspace (and its summary route) with fake Python workers. */
 export function renderWorkspace(store: ProgressStore = createProgressStore(createMemoryStore())) {
   const workers: FakeWorker[] = [];
+  const events = createEventLog(createMemoryStore());
   const router = createMemoryRouter(
     [
       {
@@ -92,11 +94,11 @@ export function renderWorkspace(store: ProgressStore = createProgressStore(creat
     { initialEntries: ['/mission'] },
   );
   const view = render(
-    <ProgressProvider store={store}>
+    <ProgressProvider store={store} events={events}>
       <RouterProvider router={router} />
     </ProgressProvider>,
   );
-  return { ...view, workers, store, router };
+  return { ...view, workers, store, router, events };
 }
 
 /** Waits for the first worker and reports Python as ready. */

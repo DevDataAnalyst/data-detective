@@ -11,6 +11,7 @@ import {
 } from '../../game/rewards';
 import { toDateKey, type DateKey } from '../../game/streak';
 import { now } from '../../storage/clock';
+import { useEvents } from '../../storage/eventsContext';
 import { useProgressStore } from '../../storage/progressContext';
 import { useCelebrate } from '../celebration/celebrationContext';
 
@@ -20,12 +21,21 @@ import { useCelebrate } from '../celebration/celebrationContext';
  */
 export function useRewards() {
   const store = useProgressStore();
+  const events = useEvents();
   const celebrate = useCelebrate();
 
   const save = <T extends XpOutcome>(outcome: T, day: DateKey): T => {
     store.update(() => outcome.state);
+    if (outcome.streakChange !== 'none') {
+      events.record({
+        type: 'streak_changed',
+        change: outcome.streakChange,
+        streak: outcome.state.activity.currentStreak,
+      });
+    }
     if (outcome.goalJustMet) {
       const { activity, dailyGoal } = outcome.state;
+      events.record({ type: 'daily_goal_met', dailyGoal, streak: activity.currentStreak });
       celebrate({
         streak: activity.currentStreak,
         xpToday: activity.xpByDay[day] ?? 0,

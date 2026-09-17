@@ -1,3 +1,4 @@
+import { createEventLog } from './events';
 import { openBrowserStorage } from './keyValue';
 import { createProgressStore } from './progressStore';
 
@@ -7,3 +8,6 @@ const browserStorage = openBrowserStorage();
 export const appProgressStore = createProgressStore(browserStorage.store, {
   persistent: browserStorage.persistent,
 });
+
+/** The app's playtest event log, saved beside progress and never sent anywhere. */
+export const appEventLog = createEventLog(browserStorage.store);
