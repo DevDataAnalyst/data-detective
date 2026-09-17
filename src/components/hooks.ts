@@ -1,4 +1,4 @@
-import { useCallback, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
 
 const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
 
@@ -55,4 +55,24 @@ export function handlesEnterNatively(target: EventTarget | null): boolean {
     target instanceof HTMLTextAreaElement ||
     target instanceof HTMLSelectElement
   );
+}
+
+/** Counts up from 0 to `target` with an ease-out, or shows `target` at once when not animating. */
+export function useCountUp(target: number, animate: boolean, durationMs = 900): number {
+  const [value, setValue] = useState(0);
+
+  useEffect(() => {
+    if (!animate || typeof requestAnimationFrame !== 'function') return;
+    let frame = 0;
+    const start = performance.now();
+    const tick = (time: number) => {
+      const progress = Math.min(1, (time - start) / durationMs);
+      setValue(Math.round(target * (1 - (1 - progress) ** 3)));
+      if (progress < 1) frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [target, animate, durationMs]);
+
+  return animate && typeof requestAnimationFrame === 'function' ? value : target;
 }

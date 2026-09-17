@@ -118,13 +118,24 @@ Run from the project root. Needs Node 22.22 or newer.
   its own in-memory storage.
 - Development-only UI is wrapped in `import.meta.env.DEV` so it is stripped from production builds.
 
+## XP, daily goal and streaks
+
+- XP amounts come only from `src/game/xp.ts`; streak and daily goal rules from `src/game/streak.ts`;
+  `src/game/rewards.ts` combines them. UI code calls `useRewards()` and never adds XP itself.
+- Dates are local calendar `DateKey`s (YYYY-MM-DD). Pure functions take `today`/`now`; the app
+  reads time from `src/storage/clock.ts`, which has a dev-only day offset (profile page).
+- Decision: the mission's 100 base XP is paid as 20 XP per required code task when first passed,
+  so any mission progress meets the 20 XP daily goal. Stretch tasks pay 15 XP each, up to 30.
+  Completing the mission grants the streak freeze.
+- `RootLayout` persists the day rollover (used freezes, resets) and shows the goal celebration.
+
 ## Build steps
 
 - [x] 1. Scaffold
 - [x] 2. Content model
 - [x] 3. Lesson player
 - [x] 4. Path map
-- [ ] 5. XP and streaks
+- [x] 5. XP and streaks
 - [ ] 6. Mission workspace
 - [ ] 7. Mission grading
 - [ ] 8. Test-out checkpoint

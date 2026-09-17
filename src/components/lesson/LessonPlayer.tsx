@@ -1,6 +1,7 @@
 import { useEffect, useEffectEvent, useMemo, useReducer, useRef, useState } from 'react';
 import { fillTemplate } from '../../content/template';
 import type { Lesson } from '../../content/types';
+import type { LessonXpAward } from '../../game/xp';
 import { gradeAnswer, isAnswerReady, type Answer } from '../../game/grading';
 import {
   attemptNumber,
@@ -35,11 +36,9 @@ interface LessonPlayerProps {
   /** One-based position on the path, shown on the intro. */
   lessonNumber: number;
   onExit: () => void;
-  onFinish?: (result: LessonResult) => void;
+  /** Called once when the summary is reached. Returns the XP awarded, to show on the summary. */
+  onFinish?: (result: LessonResult) => LessonXpAward | void;
 }
-
-/** Placeholder until the progression rules arrive in build step 5. */
-const PLACEHOLDER_LESSON_XP = 10;
 
 export function LessonPlayer({ lesson, lessonNumber, onExit, onFinish }: LessonPlayerProps) {
   const questionsById = useMemo(
@@ -53,6 +52,7 @@ export function LessonPlayer({ lesson, lessonNumber, onExit, onFinish }: LessonP
   );
   const [draft, setDraft] = useState<{ key: string; answer: Answer | null } | null>(null);
   const [exitOpen, setExitOpen] = useState(false);
+  const [award, setAward] = useState<LessonXpAward | null>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const finishReported = useRef(false);
   const reducedMotion = usePrefersReducedMotion();
@@ -69,11 +69,12 @@ export function LessonPlayer({ lesson, lessonNumber, onExit, onFinish }: LessonP
     dispatch(action);
     if (next.phase === 'summary' && !finishReported.current) {
       finishReported.current = true;
-      onFinish?.({
+      const awarded = onFinish?.({
         lessonId: lesson.id,
         firstAttemptAccuracy: firstAttemptAccuracy(next),
         durationMs: sessionDurationMs(next) ?? 0,
       });
+      if (awarded) setAward(awarded);
     }
   };
 
@@ -170,7 +171,7 @@ export function LessonPlayer({ lesson, lessonNumber, onExit, onFinish }: LessonP
             lessonTitle={lesson.title}
             accuracy={firstAttemptAccuracy(session)}
             durationMs={sessionDurationMs(session) ?? 0}
-            xpEarned={PLACEHOLDER_LESSON_XP}
+            award={award}
           />
         )}
       </main>

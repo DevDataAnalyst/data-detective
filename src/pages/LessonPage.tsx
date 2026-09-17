@@ -3,15 +3,16 @@ import { Link, useNavigate, useParams } from 'react-router';
 import { buttonStyles } from '../components/buttonStyles';
 import { LockIcon } from '../components/icons';
 import { LessonPlayer } from '../components/lesson/LessonPlayer';
+import { useRewards } from '../components/rewards/useRewards';
 import { findLesson } from '../content';
-import { completedLessonIds, markLessonCompleted } from '../game/progress';
+import { completedLessonIds } from '../game/progress';
 import { lessonStatus, unlockingLessonId } from '../game/unlocks';
-import { useProgress, useProgressStore } from '../storage/progressContext';
+import { useProgress } from '../storage/progressContext';
 
 export function LessonPage() {
   const { lessonId = '' } = useParams();
   const navigate = useNavigate();
-  const store = useProgressStore();
+  const rewards = useRewards();
   const progress = useProgress();
   const location = findLesson(lessonId);
 
@@ -45,7 +46,7 @@ export function LessonPage() {
       lessonNumber={index + 1}
       onExit={() => navigate('/')}
       onFinish={(result) =>
-        store.update((state) => markLessonCompleted(state, result.lessonId, new Date()))
+        rewards.completeLesson(result.lessonId, result.firstAttemptAccuracy).award
       }
     />
   );

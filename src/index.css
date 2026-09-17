@@ -61,6 +61,18 @@
   --animate-pop-in: pop-in 520ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
   --animate-ping-soft: ping-soft 2.4s cubic-bezier(0, 0, 0.2, 1) infinite;
   --animate-float: float 2.6s ease-in-out infinite;
+  --animate-confetti: confetti 1.4s ease-in 1 both;
+
+  @keyframes confetti {
+    0% {
+      transform: translateY(0) rotate(0deg);
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(80px) rotate(320deg);
+      opacity: 0;
+    }
+  }
 
   @keyframes ping-soft {
     0% {

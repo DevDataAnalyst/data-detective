@@ -1,4 +1,7 @@
 import { Link, NavLink } from 'react-router';
+import { dailyStatus } from '../game/streak';
+import { useToday } from '../storage/clock';
+import { useProgress } from '../storage/progressContext';
 import { BoltIcon, FlameIcon } from './icons';
 
 const desktopLinkClass = ({ isActive }: { isActive: boolean }) =>
@@ -8,10 +11,10 @@ const desktopLinkClass = ({ isActive }: { isActive: boolean }) =>
   ].join(' ');
 
 export function TopBar() {
-  // Placeholder values until the progression system lands in build step 5.
-  const xp = 0;
-  const streak = 0;
-  const goalMetToday = false;
+  const progress = useProgress();
+  const today = useToday();
+  const status = dailyStatus(progress.activity, today, progress.dailyGoal);
+  const streakLabel = `${status.streak} day streak${status.goalMetToday ? '' : ', today’s goal not met yet'}`;
 
   return (
     <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
@@ -41,18 +44,23 @@ export function TopBar() {
 
         <div className="ml-auto flex items-center gap-2">
           <p
-            className="flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-sm font-bold text-slate-700"
-            aria-label={`${streak} day streak`}
+            data-testid="streak-counter"
+            aria-label={streakLabel}
+            title={streakLabel}
+            className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-sm font-bold ${
+              status.goalMetToday ? 'bg-streak-100 text-streak-600' : 'bg-slate-100 text-slate-500'
+            }`}
           >
-            <FlameIcon className={goalMetToday ? 'text-streak-500' : 'text-locked-400'} />
-            <span aria-hidden="true">{streak}</span>
+            <FlameIcon aria-hidden="true" />
+            <span aria-hidden="true">{status.streak}</span>
           </p>
           <p
+            data-testid="xp-counter"
+            aria-label={`${progress.activity.totalXp} XP in total`}
             className="flex items-center gap-1 rounded-full bg-xp-50 px-2.5 py-1 text-sm font-bold text-xp-700"
-            aria-label={`${xp} XP`}
           >
-            <BoltIcon />
-            <span aria-hidden="true">{xp} XP</span>
+            <BoltIcon aria-hidden="true" />
+            <span aria-hidden="true">{progress.activity.totalXp} XP</span>
           </p>
         </div>
       </div>

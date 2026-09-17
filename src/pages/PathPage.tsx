@@ -1,23 +1,27 @@
 import { Link } from 'react-router';
 import { buttonStyles } from '../components/buttonStyles';
+import { DailyGoalRing } from '../components/DailyGoalRing';
+import { FlameIcon, SnowflakeIcon } from '../components/icons';
 import { PathMap } from '../components/path/PathMap';
 import { findMission } from '../content/missions';
 import { unit1 } from '../content/unit1';
 import { completedLessonIds } from '../game/progress';
+import { dailyStatus } from '../game/streak';
+import { XP_RULES } from '../game/xp';
+import { useToday } from '../storage/clock';
 import { useProgress } from '../storage/progressContext';
-
-/** Shown on the mission node until the XP rules land in build step 5. */
-const MISSION_XP = 100;
 
 export function PathPage() {
   const progress = useProgress();
+  const today = useToday();
   const unit = unit1;
   const completed = completedLessonIds(progress);
   const completedCount = unit.lessons.filter((lesson) => completed.has(lesson.id)).length;
   const mission = findMission(unit.missionId);
+  const status = dailyStatus(progress.activity, today, progress.dailyGoal);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <header className="rounded-3xl bg-current-600 p-5 text-white shadow-[0_6px_0_var(--color-current-800)]">
         <p className="text-sm font-bold tracking-wide uppercase">Unit 1</p>
         <h1 className="text-2xl font-bold">{unit.title}</h1>
@@ -43,6 +47,37 @@ export function PathPage() {
       </header>
 
       <section
+        aria-labelledby="daily-goal-title"
+        className="flex items-center gap-4 rounded-2xl bg-white p-4 ring-1 ring-slate-200"
+      >
+        <DailyGoalRing xpToday={status.xpToday} dailyGoal={status.dailyGoal} />
+        <div className="min-w-0 flex-1">
+          <h2 id="daily-goal-title" className="font-bold text-slate-900">
+            Daily goal
+          </h2>
+          <p className="text-sm text-slate-600" data-testid="daily-goal-text">
+            {status.goalMetToday
+              ? `Done for today: ${status.xpToday} of ${status.dailyGoal} XP.`
+              : `${status.xpToday} of ${status.dailyGoal} XP today. ${status.xpToGoal} XP to go.`}
+          </p>
+          <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-semibold">
+            <span
+              className={`flex items-center gap-1 ${status.goalMetToday ? 'text-streak-600' : 'text-slate-500'}`}
+            >
+              <FlameIcon aria-hidden="true" />
+              {status.streak} day streak
+            </span>
+            {status.freezesHeld > 0 && (
+              <span className="flex items-center gap-1 text-current-700">
+                <SnowflakeIcon aria-hidden="true" />
+                Streak freeze ready
+              </span>
+            )}
+          </p>
+        </div>
+      </section>
+
+      <section
         aria-labelledby="test-out-title"
         className="flex flex-wrap items-center gap-3 rounded-2xl bg-white p-4 ring-1 ring-slate-200"
       >
@@ -64,7 +99,7 @@ export function PathPage() {
         completed={completed}
         checkpointPassed={false}
         missionTitle={mission?.title ?? 'Mission'}
-        missionXp={MISSION_XP}
+        missionXp={XP_RULES.missionBase}
       />
     </div>
   );

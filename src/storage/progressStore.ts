@@ -1,4 +1,5 @@
 import { createInitialProgress, type ProgressState } from '../game/progress';
+import { createActivity, type ActivityState } from '../game/streak';
 import type { KeyValueStore } from './keyValue';
 
 export const PROGRESS_STORAGE_KEY = 'data-detective:progress';
@@ -6,6 +7,41 @@ const SCHEMA_VERSION = 1;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function finiteNumber(value: unknown, fallback: number): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+}
+
+function stringList(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === 'string')
+    : [];
+}
+
+function numberRecord(value: unknown): Record<string, number> {
+  if (!isRecord(value)) return {};
+  return Object.fromEntries(
+    Object.entries(value).filter(
+      (entry): entry is [string, number] =>
+        typeof entry[1] === 'number' && Number.isFinite(entry[1]),
+    ),
+  );
+}
+
+function parseActivity(value: unknown): ActivityState {
+  const fresh = createActivity();
+  if (!isRecord(value)) return fresh;
+  return {
+    totalXp: finiteNumber(value.totalXp, fresh.totalXp),
+    xpByDay: numberRecord(value.xpByDay),
+    goalMetDays: stringList(value.goalMetDays),
+    currentStreak: finiteNumber(value.currentStreak, fresh.currentStreak),
+    longestStreak: finiteNumber(value.longestStreak, fresh.longestStreak),
+    lastStreakDay: typeof value.lastStreakDay === 'string' ? value.lastStreakDay : null,
+    freezesHeld: finiteNumber(value.freezesHeld, fresh.freezesHeld),
+    freezeUsedDays: stringList(value.freezeUsedDays),
+  };
 }
 
 /**
@@ -32,7 +68,18 @@ export function parseStoredProgress(raw: string | null): ProgressState {
       }
     }
   }
-  return { ...initial, lessons };
+
+  const practice = isRecord(stored.practiceAwards) ? stored.practiceAwards : {};
+
+  return {
+    lessons,
+    activity: parseActivity(stored.activity),
+    practiceAwards: {
+      day: typeof practice.day === 'string' ? practice.day : null,
+      counts: numberRecord(practice.counts),
+    },
+    dailyGoal: finiteNumber(stored.dailyGoal, initial.dailyGoal),
+  };
 }
 
 export function serializeProgress(state: ProgressState): string {
