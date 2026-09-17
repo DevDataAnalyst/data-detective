@@ -1,48 +1,10 @@
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
-import userEvent, { type UserEvent } from '@testing-library/user-event';
+import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-import type { Lesson, Question } from '../../content/types';
+import type { Lesson } from '../../content/types';
 import { unit1 } from '../../content/unit1';
+import { answerCorrectly, checkAndContinue } from '../../test/answerQuestion';
 import { LessonPlayer } from './LessonPlayer';
-
-/** Answers the question on screen correctly, using the keyboard wherever a learner could. */
-async function answerCorrectly(user: UserEvent, question: Question) {
-  switch (question.type) {
-    case 'multiple_choice':
-      await user.keyboard(String(question.correctIndex + 1));
-      break;
-    case 'numeric_estimate': {
-      const input = screen.getByRole('textbox');
-      act(() => input.focus());
-      await user.keyboard(String(question.correctValue));
-      break;
-    }
-    case 'predict_reveal': {
-      const { min, step } = question.slider;
-      const snapped = min + Math.round((question.trueValue - min) / step) * step;
-      const slider = screen.getByRole('slider');
-      // Learners must move the slider to commit, even when the answer is where it starts.
-      fireEvent.change(slider, { target: { value: String(question.slider.max) } });
-      fireEvent.change(slider, { target: { value: String(snapped) } });
-      break;
-    }
-    case 'tap_outlier': {
-      const dots = screen.getAllByRole('checkbox');
-      for (const index of question.outlierIndices) {
-        act(() => dots[index].focus());
-        await user.keyboard(' ');
-      }
-      break;
-    }
-  }
-}
-
-async function checkAndContinue(user: UserEvent) {
-  await user.keyboard('{Enter}');
-  const continueButton = await screen.findByRole('button', { name: /continue/i });
-  expect(continueButton).toHaveFocus();
-  await user.keyboard('{Enter}');
-}
 
 describe('LessonPlayer', () => {
   it.each(unit1.lessons.map((lesson, index) => [lesson.title, lesson, index] as const))(

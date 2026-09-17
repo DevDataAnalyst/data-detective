@@ -1,14 +1,12 @@
-import { render, screen, within } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { createMemoryRouter, RouterProvider } from 'react-router';
 import { describe, expect, it } from 'vitest';
-import { routes } from './routes';
+import { renderApp } from './test/renderApp';
 
 describe('app shell', () => {
   it('moves between the path and profile pages with the bottom navigation', async () => {
     const user = userEvent.setup();
-    const router = createMemoryRouter(routes, { initialEntries: ['/'] });
-    render(<RouterProvider router={router} />);
+    renderApp({ path: '/' });
 
     expect(screen.getByRole('heading', { level: 1, name: 'Data Detective' })).toBeInTheDocument();
 

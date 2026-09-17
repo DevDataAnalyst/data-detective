@@ -107,12 +107,23 @@ Run from the project root. Needs Node 22.22 or newer.
   toggles dots. Test keyboard flows with Testing Library; the browser pane's key presses don't
   activate buttons.
 
+## Progress and storage
+
+- The saved progress shape and its pure updates live in `src/game/progress.ts`; unlock rules in
+  `src/game/unlocks.ts`.
+- `src/storage/progressStore.ts` persists progress under one versioned localStorage key, parses
+  defensively and falls back to memory when storage is blocked. Components read it with
+  `useProgress()` and write with `useProgressStore().update(...)`.
+- Tests render the whole app with `renderApp()` from `src/test/renderApp.tsx`, which gives each test
+  its own in-memory storage.
+- Development-only UI is wrapped in `import.meta.env.DEV` so it is stripped from production builds.
+
 ## Build steps
 
 - [x] 1. Scaffold
 - [x] 2. Content model
 - [x] 3. Lesson player
-- [ ] 4. Path map
+- [x] 4. Path map
 - [ ] 5. XP and streaks
 - [ ] 6. Mission workspace
 - [ ] 7. Mission grading
