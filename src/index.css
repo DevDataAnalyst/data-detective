@@ -1,0 +1,86 @@
+@import 'tailwindcss';
+
+/*
+ * Design tokens. Semantic colours are named for what they mean in the game, so components say
+ * `bg-correct-100` rather than `bg-green-100`. Incorrect is amber on purpose: wrong answers are a
+ * normal part of learning, not an error.
+ */
+@theme {
+  --font-sans:
+    system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans', 'Helvetica Neue', Arial, sans-serif,
+    'Apple Color Emoji', 'Segoe UI Emoji';
+  --font-mono:
+    ui-monospace, 'Cascadia Code', 'SF Mono', 'Roboto Mono', Menlo, Consolas, 'Liberation Mono',
+    monospace;
+
+  --color-correct-50: #f0fdf4;
+  --color-correct-100: #dcfce7;
+  --color-correct-200: #bbf7d0;
+  --color-correct-500: #22c55e;
+  --color-correct-600: #16a34a;
+  --color-correct-700: #15803d;
+  --color-correct-800: #166534;
+  --color-correct-900: #14532d;
+
+  --color-incorrect-50: #fffbeb;
+  --color-incorrect-100: #fef3c7;
+  --color-incorrect-200: #fde68a;
+  --color-incorrect-500: #f59e0b;
+  --color-incorrect-600: #d97706;
+  --color-incorrect-700: #b45309;
+  --color-incorrect-800: #92400e;
+  --color-incorrect-900: #78350f;
+
+  --color-locked-100: #f1f5f9;
+  --color-locked-200: #e2e8f0;
+  --color-locked-300: #cbd5e1;
+  --color-locked-400: #94a3b8;
+  --color-locked-500: #64748b;
+  --color-locked-600: #475569;
+
+  --color-current-50: #eff6ff;
+  --color-current-100: #dbeafe;
+  --color-current-200: #bfdbfe;
+  --color-current-500: #3b82f6;
+  --color-current-600: #2563eb;
+  --color-current-700: #1d4ed8;
+  --color-current-800: #1e40af;
+
+  --color-xp-50: #f5f3ff;
+  --color-xp-100: #ede9fe;
+  --color-xp-200: #ddd6fe;
+  --color-xp-500: #8b5cf6;
+  --color-xp-600: #7c3aed;
+  --color-xp-700: #6d28d9;
+
+  --color-streak-100: #ffedd5;
+  --color-streak-500: #f97316;
+  --color-streak-600: #ea580c;
+}
+
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+    text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-slate-50 font-sans text-slate-900 antialiased;
+  }
+
+  :focus-visible {
+    outline: 3px solid var(--color-current-600);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}

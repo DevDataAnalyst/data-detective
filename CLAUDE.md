@@ -49,18 +49,40 @@ testers experience both layers.
 
 ## Commands
 
-_To be filled in once the project is scaffolded (build step 1)._
+Run from the project root. Needs Node 22.22 or newer.
 
-| Task  | Command |
-| ----- | ------- |
-| dev   |         |
-| build |         |
-| test  |         |
-| lint  |         |
+| Task      | Command                                                                |
+| --------- | ---------------------------------------------------------------------- |
+| dev       | `npm run dev` (Vite dev server on http://localhost:5173)               |
+| build     | `npm run build` (type-checks with `tsc -b`, then builds to `dist/`)    |
+| test      | `npm test` (Vitest, single run); `npm run test:watch` while developing |
+| lint      | `npm run lint` (ESLint, then Prettier check); `npm run format` to fix  |
+| typecheck | `npm run typecheck`                                                    |
+| preview   | `npm run preview` (serves the production build locally)                |
+
+## Project structure
+
+- `src/content`: typed course content (units, lessons, questions, missions). No React here.
+- `src/game`: pure game logic (XP, streaks, unlocking, grading, lesson sessions) with unit tests.
+- `src/storage`: the only code that touches localStorage.
+- `src/components`: shared UI components.
+- `src/pages`: one component per route.
+- `src/mission`: the Python mission workspace (Pyodide worker, editor, grading).
+
+## Conventions
+
+- Routes are defined in `src/routes.tsx` using React Router 8 (`react-router`; `RouterProvider`
+  comes from `react-router/dom` in the app and from `react-router` in tests).
+- Tailwind CSS v4: design tokens live in the `@theme` block in `src/index.css` (there is no
+  `tailwind.config` file). Use the semantic colours: `correct`, `incorrect` (amber, never red),
+  `locked`, `current`, `xp` and `streak`.
+- Tests sit next to the code they test as `*.test.ts(x)`. Import `describe`/`it`/`expect` from
+  `vitest` explicitly (no globals).
+- TypeScript is pinned to 6.0.x because typescript-eslint does not support TypeScript 7 yet.
 
 ## Build steps
 
-- [ ] 1. Scaffold
+- [x] 1. Scaffold
 - [ ] 2. Content model
 - [ ] 3. Lesson player
 - [ ] 4. Path map
