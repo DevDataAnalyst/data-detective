@@ -13,5 +13,7 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     include: ['src/**/*.test.{ts,tsx}'],
+    // Pyodide tests download packages, so they run separately with npm run test:python.
+    exclude: ['src/**/*.pyodide.test.ts', 'node_modules/**'],
   },
 });

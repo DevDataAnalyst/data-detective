@@ -1,23 +1,26 @@
 import { useId, useState } from 'react';
 import { Link } from 'react-router';
 import type { Unit } from '../../content/types';
-import {
-  isMissionUnlocked,
-  lessonStatuses,
-  nextLessonId,
-  type LessonStatus,
-} from '../../game/unlocks';
+import type { MissionState } from '../../game/missionRules';
+import { lessonStatuses, nextLessonId, type LessonStatus } from '../../game/unlocks';
+import { MISSION_SUMMARY_PATH } from '../../mission/missionHelpers';
 import { buttonStyles } from '../buttonStyles';
 import { BoltIcon, CheckIcon, LockIcon, SearchIcon, StarIcon } from '../icons';
 import { NodePopover } from './NodePopover';
 import { connectorPath, PATH_LAYOUT, pathPositions, type NodePosition } from './pathGeometry';
 
+export interface PathMission {
+  title: string;
+  xp: number;
+  state: MissionState;
+  codeTasksPassed: number;
+  codeTaskCount: number;
+}
+
 interface PathMapProps {
   unit: Unit;
   completed: ReadonlySet<string>;
-  checkpointPassed: boolean;
-  missionTitle: string;
-  missionXp: number;
+  mission: PathMission;
 }
 
 const MISSION_NODE = 'mission';
@@ -34,20 +37,30 @@ const CIRCLE_CLASSES: Record<LessonStatus, string> = {
   locked: 'bg-locked-200 text-locked-500 shadow-[0_6px_0_var(--color-locked-300)]',
 };
 
-export function PathMap({
-  unit,
-  completed,
-  checkpointPassed,
-  missionTitle,
-  missionXp,
-}: PathMapProps) {
+function missionStateText({ state, codeTasksPassed, codeTaskCount }: PathMission): string {
+  switch (state) {
+    case 'locked':
+      return 'locked';
+    case 'available':
+      return 'unlocked';
+    case 'in_progress':
+      return `in progress, ${codeTasksPassed} of ${codeTaskCount} code tasks passed`;
+    case 'completed':
+      return 'completed';
+  }
+}
+
+export function PathMap({ unit, completed, mission: missionInfo }: PathMapProps) {
   const baseId = useId();
   const [openNode, setOpenNode] = useState<string | null>(null);
 
+  const { title: missionTitle, xp: missionXp, state: missionState } = missionInfo;
   const lessonIds = unit.lessons.map((lesson) => lesson.id);
   const statuses = lessonStatuses(lessonIds, completed);
-  const missionUnlocked = isMissionUnlocked(lessonIds, completed, checkpointPassed);
-  const upNext = nextLessonId(lessonIds, completed) ?? (missionUnlocked ? MISSION_NODE : null);
+  const missionUnlocked = missionState !== 'locked';
+  const missionDone = missionState === 'completed';
+  const upNext =
+    nextLessonId(lessonIds, completed) ?? (missionUnlocked && !missionDone ? MISSION_NODE : null);
   const { lessons: positions, mission, height } = pathPositions(unit.lessons.length);
   const allPositions = [...positions, mission];
   const reached = [...statuses.map((status) => status !== 'locked'), missionUnlocked];
@@ -172,7 +185,7 @@ export function PathMap({
           <button
             type="button"
             data-path-node={MISSION_NODE}
-            aria-label={`Mission: ${missionTitle}, ${missionUnlocked ? 'unlocked' : 'locked'}, worth ${missionXp} XP`}
+            aria-label={`Mission: ${missionTitle}, ${missionStateText(missionInfo)}, worth ${missionXp} XP`}
             aria-expanded={openNode === MISSION_NODE}
             aria-controls={openNode === MISSION_NODE ? popoverId : undefined}
             onClick={() => toggle(MISSION_NODE)}
@@ -180,7 +193,7 @@ export function PathMap({
           >
             {upNext === MISSION_NODE && <UpNextBubble label="Next" />}
             <span className="relative flex size-[104px] items-center justify-center">
-              {missionUnlocked && (
+              {missionUnlocked && !missionDone && (
                 <span
                   aria-hidden="true"
                   className="absolute inset-0 rounded-full bg-xp-500/35 motion-safe:animate-ping-soft motion-reduce:hidden"
@@ -189,15 +202,22 @@ export function PathMap({
               <span
                 aria-hidden="true"
                 className={`relative flex size-full items-center justify-center rounded-full text-5xl transition-transform group-active:translate-y-1 ${
-                  missionUnlocked
-                    ? 'bg-linear-to-br from-xp-500 to-xp-700 text-white shadow-[0_7px_0_var(--color-xp-700)]'
-                    : 'bg-locked-200 text-locked-500 shadow-[0_7px_0_var(--color-locked-300)]'
+                  missionDone
+                    ? 'bg-correct-600 text-white shadow-[0_7px_0_var(--color-correct-800)]'
+                    : missionUnlocked
+                      ? 'bg-linear-to-br from-xp-500 to-xp-700 text-white shadow-[0_7px_0_var(--color-xp-700)]'
+                      : 'bg-locked-200 text-locked-500 shadow-[0_7px_0_var(--color-locked-300)]'
                 }`}
               >
                 <SearchIcon />
                 {!missionUnlocked && (
                   <span className="absolute -right-1 -bottom-1 flex size-9 items-center justify-center rounded-full bg-white text-xl text-locked-600 ring-2 ring-locked-200">
                     <LockIcon />
+                  </span>
+                )}
+                {missionDone && (
+                  <span className="absolute -right-1 -bottom-1 flex size-9 items-center justify-center rounded-full bg-white text-xl text-correct-700 ring-2 ring-correct-200">
+                    <CheckIcon />
                   </span>
                 )}
               </span>
@@ -208,9 +228,20 @@ export function PathMap({
               </span>
               <span className="block font-bold text-slate-900">{missionTitle}</span>
             </span>
-            <span className="inline-flex items-center gap-1 rounded-full bg-xp-100 px-2.5 py-0.5 text-sm font-bold text-xp-700">
-              <BoltIcon aria-hidden="true" />+{missionXp} XP
-            </span>
+            {missionState === 'in_progress' ? (
+              <span className="inline-flex items-center gap-1 rounded-full bg-xp-100 px-2.5 py-0.5 text-sm font-bold text-xp-700">
+                {missionInfo.codeTasksPassed} of {missionInfo.codeTaskCount} tasks passed
+              </span>
+            ) : missionDone ? (
+              <span className="inline-flex items-center gap-1 rounded-full bg-correct-100 px-2.5 py-0.5 text-sm font-bold text-correct-800">
+                <CheckIcon aria-hidden="true" />
+                Completed
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 rounded-full bg-xp-100 px-2.5 py-0.5 text-sm font-bold text-xp-700">
+                <BoltIcon aria-hidden="true" />+{missionXp} XP
+              </span>
+            )}
           </button>
         </li>
       </ol>
@@ -225,7 +256,29 @@ export function PathMap({
           <h2 id={popoverTitleId} className="mt-0.5 text-lg font-bold text-slate-900">
             {missionTitle}
           </h2>
-          {missionUnlocked ? (
+          {missionDone ? (
+            <>
+              <p className="mt-1 text-slate-700">
+                You solved it. Your summary and portfolio text are here whenever you need them.
+              </p>
+              <Link to={MISSION_SUMMARY_PATH} className={`mt-3 w-full ${buttonStyles.primary}`}>
+                See summary
+              </Link>
+              <Link to="/mission" className={`mt-2 w-full ${buttonStyles.secondary}`}>
+                Open mission
+              </Link>
+            </>
+          ) : missionState === 'in_progress' ? (
+            <>
+              <p className="mt-1 text-slate-700">
+                You have passed {missionInfo.codeTasksPassed} of {missionInfo.codeTaskCount} code
+                tasks. Your code is saved.
+              </p>
+              <Link to="/mission" className={`mt-3 w-full ${buttonStyles.primary}`}>
+                Continue mission
+              </Link>
+            </>
+          ) : missionUnlocked ? (
             <>
               <p className="mt-1 text-slate-700">
                 Write real Python to find out where deliveries are really late.

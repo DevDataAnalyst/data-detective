@@ -5,7 +5,10 @@ import { FlameIcon, SnowflakeIcon } from '../components/icons';
 import { PathMap } from '../components/path/PathMap';
 import { findMission } from '../content/missions';
 import { unit1 } from '../content/unit1';
+import { missionProgress } from '../game/missionProgress';
+import { missionState, missionTaskCounts } from '../game/missionRules';
 import { completedLessonIds } from '../game/progress';
+import { isMissionUnlocked } from '../game/unlocks';
 import { dailyStatus } from '../game/streak';
 import { XP_RULES } from '../game/xp';
 import { useToday } from '../storage/clock';
@@ -19,6 +22,13 @@ export function PathPage() {
   const completedCount = unit.lessons.filter((lesson) => completed.has(lesson.id)).length;
   const mission = findMission(unit.missionId);
   const status = dailyStatus(progress.activity, today, progress.dailyGoal);
+  const missionUnlocked = isMissionUnlocked(
+    unit.lessons.map((lesson) => lesson.id),
+    completed,
+    false,
+  );
+  const savedMission = mission ? missionProgress(progress, mission.id) : null;
+  const counts = mission && savedMission ? missionTaskCounts(mission, savedMission) : null;
 
   return (
     <div className="space-y-5">
@@ -97,9 +107,18 @@ export function PathPage() {
       <PathMap
         unit={unit}
         completed={completed}
-        checkpointPassed={false}
-        missionTitle={mission?.title ?? 'Mission'}
-        missionXp={XP_RULES.missionBase}
+        mission={{
+          title: mission?.title ?? 'Mission',
+          xp: XP_RULES.missionBase,
+          state:
+            mission && savedMission
+              ? missionState(mission, savedMission, missionUnlocked)
+              : missionUnlocked
+                ? 'available'
+                : 'locked',
+          codeTasksPassed: counts?.requiredPassed ?? 0,
+          codeTaskCount: counts?.requiredTotal ?? 0,
+        }}
       />
     </div>
   );

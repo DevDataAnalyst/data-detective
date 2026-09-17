@@ -12,7 +12,8 @@
     "typecheck": "tsc -b",
     "lint": "eslint . --max-warnings 0 && prettier --check .",
     "format": "prettier --write .",
-    "generate:data": "node scripts/generate-deliveries.ts"
+    "generate:data": "node scripts/generate-deliveries.ts",
+    "test:python": "vitest run --config vitest.python.config.ts"
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.20.3",
@@ -43,6 +44,7 @@
     "globals": "^17.12.0",
     "jsdom": "^30.1.0",
     "prettier": "^3.9.7",
+    "pyodide": "^314.0.7",
     "tailwindcss": "^4.3.3",
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.70.0",

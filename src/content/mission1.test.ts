@@ -47,6 +47,34 @@ describe('mission content', () => {
     );
   });
 
+  it('checks summary placeholders, task references and portfolio length', () => {
+    const { summary } = lateDeliveryMystery;
+    const broken = {
+      ...lateDeliveryMystery,
+      summary: {
+        whatYouDid: [...summary.whatYouDid, { text: 'Found {suspects} suspects' }],
+        portfolio: [
+          ...summary.portfolio,
+          { text: 'Charted the rush', requiresTask: 'chart-it' },
+          { text: 'Checked ratings' },
+        ],
+      },
+    };
+    const issues = formatIssues(validateMission(broken));
+    expect(issues).toMatch(/\{suspects\} is not a known mission fact/);
+    expect(issues).toMatch(/refers to unknown task "chart-it"/);
+    expect(issues).toMatch(/shows 5 lines; keep it to 3–4/);
+  });
+
+  it('needs a fill-in-the-blank example in every code hint', () => {
+    const tasks = lateDeliveryMystery.tasks.map((task) =>
+      task.kind === 'code' && task.id === 'load-data'
+        ? { ...task, hints: { ...task.hints, example: 'df = pd.read_csv("deliveries.csv")' } }
+        : task,
+    );
+    expect(formatIssues(validateMission({ ...lateDeliveryMystery, tasks }))).toMatch(/____/);
+  });
+
   it('catches a stretch task placed before a required one', () => {
     const [first, ...rest] = lateDeliveryMystery.tasks;
     const broken = { ...lateDeliveryMystery, tasks: [{ ...first, stretch: true }, ...rest] };

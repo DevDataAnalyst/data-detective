@@ -51,14 +51,16 @@ testers experience both layers.
 
 Run from the project root. Needs Node 22.22 or newer.
 
-| Task      | Command                                                                |
-| --------- | ---------------------------------------------------------------------- |
-| dev       | `npm run dev` (Vite dev server on http://localhost:5173)               |
-| build     | `npm run build` (type-checks with `tsc -b`, then builds to `dist/`)    |
-| test      | `npm test` (Vitest, single run); `npm run test:watch` while developing |
-| lint      | `npm run lint` (ESLint, then Prettier check); `npm run format` to fix  |
-| typecheck | `npm run typecheck`                                                    |
-| preview   | `npm run preview` (serves the production build locally)                |
+| Task      | Command                                                                 |
+| --------- | ----------------------------------------------------------------------- |
+| dev       | `npm run dev` (Vite dev server on http://localhost:5173)                |
+| build     | `npm run build` (type-checks with `tsc -b`, then builds to `dist/`)     |
+| test      | `npm test` (Vitest, single run); `npm run test:watch` while developing  |
+| python    | `npm run test:python` (grading checks in real Pyodide; slow, networked) |
+| data      | `npm run generate:data` (rewrites `public/data/deliveries.csv`)         |
+| lint      | `npm run lint` (ESLint, then Prettier check); `npm run format` to fix   |
+| typecheck | `npm run typecheck`                                                     |
+| preview   | `npm run preview` (serves the production build locally)                 |
 
 ## Project structure
 
@@ -72,7 +74,8 @@ Run from the project root. Needs Node 22.22 or newer.
 ## Conventions
 
 - Routes are defined in `src/routes.tsx` using React Router 8 (`react-router`; `RouterProvider`
-  comes from `react-router/dom` in the app and from `react-router` in tests).
+  comes from `react-router/dom` in the app and from `react-router` in tests). `RootLayout` holds
+  `ScrollRestoration`, so new pages open at the top.
 - Tailwind CSS v4: design tokens live in the `@theme` block in `src/index.css` (there is no
   `tailwind.config` file). Use the semantic colours: `correct`, `incorrect` (amber, never red),
   `locked`, `current`, `xp` and `streak`.
@@ -145,6 +148,29 @@ Run from the project root. Needs Node 22.22 or newer.
 - When editing files through shell heredocs, backslashes can be swallowed. Prefer the Edit tool
   for regexes.
 
+## Mission grading and completion
+
+- Hidden checks live in `src/mission/python/checks.py`. At load, `compute_reference` works out
+  every reference answer from the CSV (never hard-coded), and `reference_summary()` sends the
+  dataset facts (orders, outliers, slowest city…) to the page. After each run with a `taskId`, the
+  worker calls `check_task`, which returns `{passed, message}` and never raises. Messages point at
+  what to fix without giving the answer. `npm run test:python` runs every check against correct
+  and deliberately wrong solutions in Pyodide under Node (needs the network the first time).
+- `src/mission/grading.ts` turns a run into feedback (an error comes first; a passed task stays
+  passed). Unlock order, the suggested task and task status are pure functions in
+  `src/game/missionRules.ts`: code tasks open one after another, the recommendation after every
+  code task, stretch tasks after the last code task.
+- Hints have three levels in the content (nudge, method, example with a `____` blank). Opened
+  levels are saved as `hintsShown`; hints never cost XP.
+- The recommendation has no automatic grading: the learner ticks a self-review checklist, sends
+  it, then sees the model answer. Sending calls `completeMission`, which saves the text and ticks
+  and grants the streak freeze.
+- `/mission/summary` is the mission complete screen. It does not load Python. Its "what you did"
+  and portfolio lines are content (`mission.summary`), filled with the saved dataset facts; lines
+  can depend on stretch tasks with `requiresTask`/`unlessTask`. Validation keeps the portfolio
+  block to 3–4 lines.
+- Mission content can quote only the facts in `MISSION_FACTS` (`src/content/validate.ts`).
+
 ## Build steps
 
 - [x] 1. Scaffold
@@ -153,7 +179,7 @@ Run from the project root. Needs Node 22.22 or newer.
 - [x] 4. Path map
 - [x] 5. XP and streaks
 - [x] 6. Mission workspace
-- [ ] 7. Mission grading
+- [x] 7. Mission grading
 - [ ] 8. Test-out checkpoint
 - [ ] 9. Polish
 - [ ] 10. Validation instrumentation

@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { markTaskPassed, recordHintShown, recordTaskRun } from '../game/missionProgress';
 import { markLessonCompleted } from '../game/progress';
 import { createMemoryStore } from './keyValue';
 import { createProgressStore, parseStoredProgress, PROGRESS_STORAGE_KEY } from './progressStore';
@@ -52,6 +53,39 @@ describe('progress store', () => {
     expect(store.getSnapshot().lessons.a).toBeDefined();
   });
 
+  it('saves mission progress, including passes, hints and completion', () => {
+    const keyValue = createMemoryStore();
+    const store = createProgressStore(keyValue);
+    const facts = {
+      orders: 600,
+      missingDeliveryTimes: 18,
+      cities: 5,
+      outliers: 13,
+      misleadingCity: 'Hyderabad',
+      slowestCity: 'Kolkata',
+    };
+    store.update((state) => {
+      let next = recordTaskRun(state, 'm', 'load-data', { code: 'df = 1', succeeded: true });
+      next = markTaskPassed(next, 'm', 'load-data', new Date('2026-03-10T10:00:00Z'));
+      next = recordHintShown(next, 'm', 'load-data', 2);
+      return {
+        ...next,
+        missions: {
+          m: {
+            ...next.missions.m,
+            recommendation: 'Kolkata is slow.',
+            selfReview: ['slowest-city'],
+            completedAt: '2026-03-10T11:00:00.000Z',
+            freezeGranted: true,
+            facts,
+          },
+        },
+      };
+    });
+
+    expect(createProgressStore(keyValue).getSnapshot()).toEqual(store.getSnapshot());
+  });
+
   it('ignores corrupt or unexpected saved data', () => {
     expect(parseStoredProgress('not json').lessons).toEqual({});
     expect(parseStoredProgress('[1,2,3]').lessons).toEqual({});
@@ -60,5 +94,32 @@ describe('progress store', () => {
         JSON.stringify({ version: 1, progress: { lessons: { ok: { completedAt: 'x' }, bad: 5 } } }),
       ).lessons,
     ).toEqual({ ok: { completedAt: 'x' } });
+
+    const missions = parseStoredProgress(
+      JSON.stringify({
+        version: 1,
+        progress: {
+          missions: {
+            m: {
+              tasks: { a: { hintsShown: 99, status: 'won', passedAt: 7 } },
+              selfReview: ['ok', 3],
+              facts: { orders: '600' },
+              freezeGranted: 'yes',
+            },
+          },
+        },
+      }),
+    ).missions;
+    expect(missions.m).toMatchObject({
+      selfReview: ['ok'],
+      facts: null,
+      freezeGranted: false,
+      completedAt: null,
+    });
+    expect(missions.m.tasks.a).toMatchObject({
+      hintsShown: 3,
+      status: 'not_started',
+      passedAt: null,
+    });
   });
 });

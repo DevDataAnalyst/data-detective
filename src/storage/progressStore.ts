@@ -1,5 +1,6 @@
 import { createInitialProgress, type ProgressState } from '../game/progress';
 import type {
+  MissionFacts,
   MissionProgress,
   MissionTaskProgress,
   MissionTaskStatus,
@@ -49,6 +50,22 @@ function parseActivity(value: unknown): ActivityState {
   };
 }
 
+function parseFacts(value: unknown): MissionFacts | null {
+  if (!isRecord(value)) return null;
+  const numbers = ['orders', 'missingDeliveryTimes', 'cities', 'outliers'] as const;
+  const texts = ['misleadingCity', 'slowestCity'] as const;
+  if (!numbers.every((key) => typeof value[key] === 'number')) return null;
+  if (!texts.every((key) => typeof value[key] === 'string')) return null;
+  return {
+    orders: value.orders as number,
+    missingDeliveryTimes: value.missingDeliveryTimes as number,
+    cities: value.cities as number,
+    outliers: value.outliers as number,
+    misleadingCity: value.misleadingCity as string,
+    slowestCity: value.slowestCity as string,
+  };
+}
+
 const TASK_STATUSES: readonly MissionTaskStatus[] = ['not_started', 'attempted', 'passed'];
 
 function parseMissions(value: unknown): Record<string, MissionProgress> {
@@ -63,6 +80,8 @@ function parseMissions(value: unknown): Record<string, MissionProgress> {
         tasks[taskId] = {
           code: typeof task.code === 'string' ? task.code : null,
           lastWorkingCode: typeof task.lastWorkingCode === 'string' ? task.lastWorkingCode : null,
+          passedAt: typeof task.passedAt === 'string' ? task.passedAt : null,
+          hintsShown: Math.min(3, Math.max(0, finiteNumber(task.hintsShown, 0))),
           runs: finiteNumber(task.runs, 0),
           status: TASK_STATUSES.includes(task.status as MissionTaskStatus)
             ? (task.status as MissionTaskStatus)
@@ -74,6 +93,10 @@ function parseMissions(value: unknown): Record<string, MissionProgress> {
       activeTaskId: typeof raw.activeTaskId === 'string' ? raw.activeTaskId : null,
       tasks,
       recommendation: typeof raw.recommendation === 'string' ? raw.recommendation : '',
+      selfReview: stringList(raw.selfReview),
+      completedAt: typeof raw.completedAt === 'string' ? raw.completedAt : null,
+      freezeGranted: raw.freezeGranted === true,
+      facts: parseFacts(raw.facts),
     };
   }
   return missions;

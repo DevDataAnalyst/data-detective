@@ -2,6 +2,7 @@ import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { unit1 } from '../content/unit1';
+import { markTaskPassed, recordTaskRun, updateMission } from '../game/missionProgress';
 import { markLessonCompleted } from '../game/progress';
 import { createMemoryStore } from '../storage/keyValue';
 import { createProgressStore } from '../storage/progressStore';
@@ -83,6 +84,54 @@ describe('path page', () => {
     expect(
       within(screen.getByRole('dialog')).getByRole('link', { name: 'Open mission' }),
     ).toHaveAttribute('href', '/mission');
+  });
+
+  it('shows mission progress, then completion, on the mission node', async () => {
+    const user = userEvent.setup();
+    const store = createProgressStore(createMemoryStore());
+    const at = new Date('2026-03-10T10:00:00Z');
+    store.update((state) => {
+      let next = unit1.lessons.reduce(
+        (current, lesson) => markLessonCompleted(current, lesson.id, at),
+        state,
+      );
+      next = recordTaskRun(next, 'late-delivery-mystery', 'load-data', {
+        code: 'df = 1',
+        succeeded: true,
+      });
+      next = markTaskPassed(next, 'late-delivery-mystery', 'load-data', at);
+      return markTaskPassed(next, 'late-delivery-mystery', 'missing-values', at);
+    });
+    const view = renderApp({ store });
+
+    await user.click(lessonNode(/mission.*in progress, 2 of 5 code tasks passed/i));
+    expect(screen.getByText('2 of 5 tasks passed')).toBeInTheDocument();
+    expect(
+      within(screen.getByRole('dialog')).getByRole('link', { name: 'Continue mission' }),
+    ).toHaveAttribute('href', '/mission');
+    view.unmount();
+
+    store.update((state) =>
+      updateMission(state, 'late-delivery-mystery', (mission) => ({
+        ...mission,
+        completedAt: at.toISOString(),
+      })),
+    );
+    renderApp({ store });
+    await user.click(lessonNode(/mission.*completed/i));
+    const popover = within(screen.getByRole('dialog'));
+    expect(popover.getByRole('link', { name: 'See summary' })).toHaveAttribute(
+      'href',
+      '/mission/summary',
+    );
+    expect(popover.getByRole('link', { name: 'Open mission' })).toHaveAttribute('href', '/mission');
+  });
+
+  it('sends learners to the mission when they open the summary before finishing it', async () => {
+    renderApp({ path: '/mission/summary' });
+    expect(
+      await screen.findByRole('heading', { name: 'The mission is still locked' }),
+    ).toBeInTheDocument();
   });
 
   it('keeps learners out of locked lessons opened by URL', () => {

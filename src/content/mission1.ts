@@ -22,6 +22,39 @@ export const lateDeliveryMystery: Mission = {
       { name: 'rating', description: 'Customer rating, 1–5 stars' },
     ],
   },
+  summary: {
+    whatYouDid: [
+      { text: 'Loaded {orders} delivery orders with pandas' },
+      {
+        text: 'Found {missingDeliveryTimes} missing delivery times and removed only those rows',
+      },
+      { text: 'Compared mean and median delivery times across {cities} cities' },
+      { text: 'Flagged {outliers} outliers with the 1.5 × IQR rule' },
+      {
+        text: 'Showed that {misleadingCity}’s high average came from a few extreme values, while {slowestCity} is genuinely slow',
+      },
+      { text: 'Found the hours when {slowestCity} is slowest', requiresTask: 'dinner-rush' },
+      { text: 'Drew a chart to make the case', requiresTask: 'make-a-chart' },
+      { text: 'Wrote a recommendation for the operations manager' },
+    ],
+    portfolio: [
+      { text: 'Delivery delay analysis (Python, pandas), practice project' },
+      {
+        text: '• Cleaned a dataset of {orders} food delivery orders, handling {missingDeliveryTimes} missing delivery times without discarding useful rows.',
+      },
+      {
+        text: '• Compared delivery times across {cities} cities using means, medians and the 1.5 × IQR rule, flagging {outliers} outliers.',
+      },
+      {
+        text: '• Showed that one city’s high average came from logging errors while {slowestCity} was genuinely slowest, especially at dinner time, and recommended next steps.',
+        requiresTask: 'dinner-rush',
+      },
+      {
+        text: '• Showed that one city’s high average came from logging errors while {slowestCity} was genuinely slowest, and recommended next steps.',
+        unlessTask: 'dinner-rush',
+      },
+    ],
+  },
   tasks: [
     {
       id: 'load-data',
@@ -42,6 +75,12 @@ print("Orders:", n_orders)
 df.head()
 `,
       creates: ['df', 'n_orders'],
+      hints: {
+        nudge: 'pandas reads a CSV file with a single function whose name starts with `read_`.',
+        method:
+          'Use `pd.read_csv("deliveries.csv")` to make `df`. The built-in `len(df)` counts its rows.',
+        example: 'df = pd.read_csv("deliveries.csv")\nn_orders = ____(df)',
+      },
     },
     {
       id: 'missing-values',
@@ -58,6 +97,12 @@ clean = ____
 print("Rows before:", len(df), "after:", len(clean))
 `,
       creates: ['missing', 'clean'],
+      hints: {
+        nudge: 'First mark where values are missing, then add up the marks in each column.',
+        method:
+          '`df.isna()` marks missing values as True and `.sum()` counts them per column. `dropna(subset=[...])` drops a row only when the listed columns are missing.',
+        example: 'missing = df.isna().____()\nclean = df.dropna(subset=["____"])',
+      },
     },
     {
       id: 'city-averages',
@@ -71,6 +116,12 @@ city_stats = ____
 city_stats
 `,
       creates: ['city_stats'],
+      hints: {
+        nudge: 'You want one row per city, so group the orders by city first.',
+        method:
+          'Use `clean.groupby("city")["delivery_time_min"]`, then `.agg()` with a list of the summaries you want.',
+        example: 'city_stats = clean.groupby("city")["delivery_time_min"].agg(["mean", "____"])',
+      },
     },
     {
       id: 'flag-outliers',
@@ -91,6 +142,14 @@ print("Fences:", lower, "to", upper)
 print("Outliers:", n_outliers)
 `,
       creates: ['n_outliers'],
+      hints: {
+        nudge:
+          'Q1 and Q3 are the 25th and 75th percentiles. Anything beyond the fences counts as an outlier.',
+        method:
+          '`times.quantile(0.25)` gives Q1. The filter `(times < lower) | (times > upper)` is True for outliers, and `.sum()` counts the Trues.',
+        example:
+          'q1 = times.quantile(0.25)\nq3 = times.quantile(____)\nupper = q3 + 1.5 * iqr\nn_outliers = ((times < lower) | (times > ____)).sum()',
+      },
     },
     {
       id: 'without-outliers',
@@ -108,6 +167,14 @@ print(city_stats["mean"].round(1))
 print(city_stats_no_outliers.round(1))
 `,
       creates: ['city_stats_no_outliers'],
+      hints: {
+        nudge:
+          'Keep the orders whose delivery time sits between the fences, then repeat the group-by from task 3.',
+        method:
+          'Filter with `clean[(clean["delivery_time_min"] >= lower) & (clean["delivery_time_min"] <= upper)]`, then group by city and take `.mean()`.',
+        example:
+          'no_outliers = clean[(clean["delivery_time_min"] >= lower) & (clean["delivery_time_min"] <= upper)]\ncity_stats_no_outliers = no_outliers.groupby("city")["delivery_time_min"].____()',
+      },
     },
     {
       id: 'recommendation',
@@ -118,6 +185,17 @@ print(city_stats_no_outliers.round(1))
       placeholder:
         'For example: “The high average in … is mostly caused by …. The city that is genuinely slow is …, especially ….”',
       suggestedSentences: { min: 2, max: 4 },
+      minWords: 15,
+      selfReview: [
+        { id: 'slowest-city', label: 'I name the city that is genuinely slowest' },
+        {
+          id: 'mean-vs-median',
+          label: 'I explain that a few extreme values distort the mean, or compare mean and median',
+        },
+        { id: 'next-step', label: 'I suggest a concrete next step for the team' },
+      ],
+      modelAnswer:
+        'Kolkata is where deliveries are genuinely slow: it has the highest median delivery time, and it stays the slowest city after removing outliers, especially for dinner orders placed between 7 pm and 11 pm. Hyderabad only looks worst on average because a handful of orders were logged as taking over five hours, which must be recording errors; its median is normal. I suggest fixing the delivery time logging first, then reviewing Kolkata’s evening operations, such as how many riders are available at dinner time.',
     },
     {
       id: 'dinner-rush',
@@ -133,6 +211,14 @@ slow_city_by_hour = ____
 slow_city_by_hour
 `,
       creates: ['slow_city_by_hour'],
+      hints: {
+        nudge:
+          'Check `city_stats_no_outliers` to see which city is slowest, then look only at that city.',
+        method:
+          '`clean[clean["city"] == slow_city]` keeps one city. Group it by `order_hour` and take the mean delivery time.',
+        example:
+          'slow_city = "____"\ncity_orders = clean[clean["city"] == slow_city]\nslow_city_by_hour = city_orders.groupby("____")["delivery_time_min"].mean()',
+      },
     },
     {
       id: 'make-a-chart',
@@ -152,6 +238,13 @@ ax.set_title("____")
 plt.show()
 `,
       creates: [],
+      hints: {
+        nudge: 'A pandas Series can draw itself. Point it at the `ax` you already made.',
+        method:
+          '`city_stats_no_outliers.plot.bar(ax=ax)` draws one bar per city, and `ax.set_title("...")` adds a title.',
+        example:
+          'city_stats_no_outliers.plot.bar(ax=ax)\nax.set_title("____")\nax.set_ylabel("Mean delivery time (min)")\nplt.show()',
+      },
     },
   ],
 };

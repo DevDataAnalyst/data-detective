@@ -155,12 +155,23 @@ interface MissionTaskBase {
   stretch?: boolean;
 }
 
+/** Three hints, shown one at a time. Supports `code` and **bold** like instructions. */
+export interface CodeTaskHints {
+  /** A gentle push in the right direction. */
+  nudge: string;
+  /** Names the pandas method or idea to use. */
+  method: string;
+  /** Nearly complete code with ____ blanks left to fill in. Shown as a code block. */
+  example: string;
+}
+
 /** A task solved by writing and running Python. */
 export interface CodeTask extends MissionTaskBase {
   kind: 'code';
   starterCode: string;
   /** Variables the learner's code should create, shown as a checklist, e.g. `["df"]`. */
   creates: string[];
+  hints: CodeTaskHints;
 }
 
 /** A task answered in plain words, such as the final recommendation. */
@@ -169,6 +180,12 @@ export interface WrittenTask extends MissionTaskBase {
   placeholder: string;
   /** Suggested length, shown to the learner. */
   suggestedSentences: { min: number; max: number };
+  /** The answer needs at least this many words before it can be submitted. */
+  minWords: number;
+  /** Points learners tick for themselves before submitting. There is no automatic grading. */
+  selfReview: Array<{ id: string; label: string }>;
+  /** Shown after submitting, so learners can compare their own answer. */
+  modelAnswer: string;
 }
 
 export type MissionTask = CodeTask | WrittenTask;
@@ -181,6 +198,17 @@ export interface MissionDataset {
   columns: Array<{ name: string; description: string }>;
 }
 
+/**
+ * A line on the mission complete screen. `{orders}`, `{missingDeliveryTimes}`, `{cities}`,
+ * `{outliers}`, `{misleadingCity}` and `{slowestCity}` are filled from facts worked out from the
+ * dataset. `requiresTask` shows the line only if that task was passed; `unlessTask` hides it then.
+ */
+export interface MissionSummaryLine {
+  text: string;
+  requiresTask?: string;
+  unlessTask?: string;
+}
+
 export interface Mission {
   id: string;
   title: string;
@@ -189,6 +217,13 @@ export interface Mission {
   dataset: MissionDataset;
   /** Required tasks first, then stretch tasks. */
   tasks: MissionTask[];
+  /** The mission complete screen. */
+  summary: {
+    /** What the learner did, in plain words. */
+    whatYouDid: MissionSummaryLine[];
+    /** A 3–4 line project description learners can adapt. No claims about jobs. */
+    portfolio: MissionSummaryLine[];
+  };
 }
 
 export interface Unit {

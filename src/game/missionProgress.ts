@@ -1,4 +1,4 @@
-/** Saved progress inside a mission: code drafts, runs and task status. Pure updates. */
+/** Saved progress inside a mission: code drafts, runs, passes, hints and completion. Pure updates. */
 import type { ProgressState } from './progress';
 
 export type MissionTaskStatus = 'not_started' | 'attempted' | 'passed';
@@ -10,20 +10,57 @@ export interface MissionTaskProgress {
   lastWorkingCode: string | null;
   runs: number;
   status: MissionTaskStatus;
+  /** When the task was first passed, as an ISO 8601 timestamp. */
+  passedAt: string | null;
+  /** How many hint levels the learner has opened, 0 to 3. */
+  hintsShown: number;
+}
+
+/** Facts about the dataset worked out when Python loaded it, kept for the summary screen. */
+export interface MissionFacts {
+  orders: number;
+  missingDeliveryTimes: number;
+  cities: number;
+  outliers: number;
+  /** The city whose mean looks worst because of outliers. */
+  misleadingCity: string;
+  /** The city that is slowest once outliers are removed. */
+  slowestCity: string;
 }
 
 export interface MissionProgress {
   activeTaskId: string | null;
   tasks: Record<string, MissionTaskProgress>;
   recommendation: string;
+  /** Self-review items the learner ticked when submitting the recommendation. */
+  selfReview: string[];
+  completedAt: string | null;
+  /** Whether completing the mission added a streak freeze (not if one was already held). */
+  freezeGranted: boolean;
+  facts: MissionFacts | null;
 }
 
 export function emptyMissionProgress(): MissionProgress {
-  return { activeTaskId: null, tasks: {}, recommendation: '' };
+  return {
+    activeTaskId: null,
+    tasks: {},
+    recommendation: '',
+    selfReview: [],
+    completedAt: null,
+    freezeGranted: false,
+    facts: null,
+  };
 }
 
 export function emptyTaskProgress(): MissionTaskProgress {
-  return { code: null, lastWorkingCode: null, runs: 0, status: 'not_started' };
+  return {
+    code: null,
+    lastWorkingCode: null,
+    runs: 0,
+    status: 'not_started',
+    passedAt: null,
+    hintsShown: 0,
+  };
 }
 
 export function missionProgress(state: ProgressState, missionId: string): MissionProgress {
@@ -38,7 +75,7 @@ export function taskProgress(
   return missionProgress(state, missionId).tasks[taskId] ?? emptyTaskProgress();
 }
 
-function updateMission(
+export function updateMission(
   state: ProgressState,
   missionId: string,
   update: (mission: MissionProgress) => MissionProgress,
@@ -96,6 +133,30 @@ export function recordTaskRun(
   }));
 }
 
+/** Marks a task passed. The first pass time is kept. */
+export function markTaskPassed(
+  state: ProgressState,
+  missionId: string,
+  taskId: string,
+  at: Date,
+): ProgressState {
+  return updateTask(state, missionId, taskId, (task) =>
+    task.status === 'passed' ? task : { ...task, status: 'passed', passedAt: at.toISOString() },
+  );
+}
+
+/** Remembers the deepest hint level opened. Hints never cost XP. */
+export function recordHintShown(
+  state: ProgressState,
+  missionId: string,
+  taskId: string,
+  level: number,
+): ProgressState {
+  return updateTask(state, missionId, taskId, (task) =>
+    level <= task.hintsShown ? task : { ...task, hintsShown: Math.min(3, level) },
+  );
+}
+
 /** Code that recreates the learner's variables, in task order. */
 export function replayCode(
   state: ProgressState,
@@ -116,5 +177,22 @@ export function saveRecommendation(
 ): ProgressState {
   return updateMission(state, missionId, (mission) =>
     mission.recommendation === text ? mission : { ...mission, recommendation: text },
+  );
+}
+
+function sameFacts(a: MissionFacts | null, b: MissionFacts): boolean {
+  return (
+    a !== null && (Object.keys(b) as Array<keyof MissionFacts>).every((key) => a[key] === b[key])
+  );
+}
+
+/** Keeps the facts Python worked out about the dataset, for the summary screen. */
+export function saveMissionFacts(
+  state: ProgressState,
+  missionId: string,
+  facts: MissionFacts,
+): ProgressState {
+  return updateMission(state, missionId, (mission) =>
+    sameFacts(mission.facts, facts) ? mission : { ...mission, facts: { ...facts } },
   );
 }

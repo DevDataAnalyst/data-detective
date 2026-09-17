@@ -1,3 +1,5 @@
+import type { MissionFacts } from '../../game/missionProgress';
+
 /** Messages between the mission workspace and the Python worker, plus what a run returns. */
 
 export type LoadStage = 'python' | 'packages' | 'data';
@@ -36,6 +38,15 @@ export interface PythonError {
   trace: Array<{ line: number; code: string }>;
 }
 
+/** The hidden check for a mission task, run after the learner's code. */
+export interface CheckResult {
+  passed: boolean;
+  message: string;
+}
+
+/** Facts about the dataset, used on the mission complete screen. */
+export type DatasetSummary = MissionFacts;
+
 export interface RunResult {
   stdout: string;
   rich: RichOutput[];
@@ -44,16 +55,17 @@ export interface RunResult {
 
 export type ToWorker =
   | { type: 'init'; datasetUrl: string; datasetFileName: string }
-  | { type: 'run'; id: number; code: string }
+  /** `taskId` asks the worker to check that task after the code runs. */
+  | { type: 'run'; id: number; code: string; taskId?: string }
   | { type: 'reset'; id: number };
 
 export type FromWorker =
   | { type: 'progress'; stage: LoadStage; message: string }
-  | { type: 'ready'; loadMs: number }
+  | { type: 'ready'; loadMs: number; summary: DatasetSummary }
   | { type: 'init-failed'; message: string }
   /** The run needs packages that are not loaded yet, e.g. "matplotlib, pillow". */
   | { type: 'run-downloading'; id: number; packages: string }
   /** Packages are ready and the learner's code has started. The run time limit starts now. */
   | { type: 'run-started'; id: number }
-  | { type: 'run-result'; id: number; result: RunResult }
+  | { type: 'run-result'; id: number; result: RunResult; check: CheckResult | null }
   | { type: 'reset-done'; id: number };

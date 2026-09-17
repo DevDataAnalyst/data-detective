@@ -1,4 +1,11 @@
-import type { FromWorker, LoadStage, RunResult, ToWorker } from './protocol';
+import type {
+  CheckResult,
+  DatasetSummary,
+  FromWorker,
+  LoadStage,
+  RunResult,
+  ToWorker,
+} from './protocol';
 
 export type RuntimePhase =
   | 'idle'
@@ -17,11 +24,13 @@ export interface RuntimeState {
   downloadingPackages: string | null;
   /** How long the last successful load took. */
   loadMs: number | null;
+  /** Facts about the dataset, known once Python has loaded it. */
+  summary: DatasetSummary | null;
   error: string | null;
 }
 
 export type RunOutcome =
-  | { kind: 'completed'; result: RunResult; durationMs: number }
+  | { kind: 'completed'; result: RunResult; check: CheckResult | null; durationMs: number }
   /** The code ran too long. Python was restarted and earlier work replayed. */
   | { kind: 'timed_out'; timeoutMs: number }
   | { kind: 'unavailable'; message: string };
@@ -75,6 +84,7 @@ export class PythonRuntime {
     stage: null,
     downloadingPackages: null,
     loadMs: null,
+    summary: null,
     error: null,
   };
   private readonly listeners = new Set<() => void>();
@@ -123,7 +133,8 @@ export class PythonRuntime {
     this.spawn('loading');
   }
 
-  async run(code: string): Promise<RunOutcome> {
+  /** Runs code. With `taskId`, the worker also checks that mission task afterwards. */
+  async run(code: string, taskId?: string): Promise<RunOutcome> {
     if (!(await this.whenReady())) {
       return { kind: 'unavailable', message: this.state.error ?? 'Python is not available.' };
     }
@@ -131,7 +142,7 @@ export class PythonRuntime {
 
     this.setState({ phase: 'running' });
     return new Promise<RunOutcome>((resolve) => {
-      const id = this.send(code, {
+      const id = this.send(code, taskId, {
         resolve,
         onRunTimeout: () => {
           this.pendingRuns.delete(id);
@@ -180,6 +191,7 @@ export class PythonRuntime {
    */
   private send(
     code: string,
+    taskId: string | undefined,
     handlers: Pick<Pending, 'resolve' | 'onRunTimeout' | 'onPackageTimeout'>,
   ): number {
     const id = this.nextId++;
@@ -188,7 +200,7 @@ export class PythonRuntime {
       started: this.now(),
       timer: setTimeout(() => handlers.onPackageTimeout(), this.packageTimeoutMs),
     });
-    this.worker?.postMessage({ type: 'run', id, code });
+    this.worker?.postMessage({ type: 'run', id, code, taskId });
     return id;
   }
 
@@ -221,6 +233,7 @@ export class PythonRuntime {
         this.setState({ stage: message.stage });
         break;
       case 'ready':
+        this.setState({ summary: message.summary });
         void this.becomeReady(message.loadMs);
         break;
       case 'init-failed':
@@ -252,6 +265,7 @@ export class PythonRuntime {
         pending.resolve({
           kind: 'completed',
           result: message.result,
+          check: message.check,
           durationMs: Math.round(this.now() - pending.started),
         });
         break;
@@ -293,7 +307,7 @@ export class PythonRuntime {
         this.replayTimedOut = true;
         resolve();
       };
-      const id = this.send(code, {
+      const id = this.send(code, undefined, {
         resolve: () => resolve(),
         onRunTimeout: giveUp,
         onPackageTimeout: giveUp,

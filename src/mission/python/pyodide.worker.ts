@@ -2,7 +2,8 @@
  * Web Worker that runs Python with Pyodide, so loading and running code never freezes the page.
  * Pyodide is fetched from the jsDelivr CDN the first time a mission opens.
  */
-import type { FromWorker, RunResult, ToWorker } from './protocol';
+import checksSource from './checks.py?raw';
+import type { CheckResult, DatasetSummary, FromWorker, RunResult, ToWorker } from './protocol';
 import runnerSource from './runner.py?raw';
 
 export const PYODIDE_VERSION = '314.0.7';
@@ -39,6 +40,7 @@ const scope = self as unknown as {
 let pyodide: Pyodide | null = null;
 let runCode: PyCallable | null = null;
 let newNamespace: PyCallable | null = null;
+let checkTask: PyCallable | null = null;
 let namespace: PyProxy | null = null;
 /** Messages are handled one at a time, in order. */
 let queue: Promise<void> = Promise.resolve();
@@ -62,17 +64,20 @@ async function initialise(datasetUrl: string, datasetFileName: string) {
   loaded.FS.writeFile(`${HOME}/${datasetFileName}`, await response.text());
 
   loaded.runPython(runnerSource);
-  // Warm up pandas so the learner's first run is quick.
-  loaded.runPython('import pandas');
+  loaded.runPython(checksSource);
+  // Work out the right answers from the data itself, so a regenerated dataset still grades.
+  loaded.runPython(`compute_reference(${JSON.stringify(datasetFileName)})`);
+  const summary = JSON.parse(loaded.runPython('reference_summary()') as string) as DatasetSummary;
   runCode = loaded.globals.get('run_code');
   newNamespace = loaded.globals.get('new_namespace');
+  checkTask = loaded.globals.get('check_task');
   namespace = newNamespace() as PyProxy;
   pyodide = loaded;
-  post({ type: 'ready', loadMs: Math.round(performance.now() - started) });
+  post({ type: 'ready', loadMs: Math.round(performance.now() - started), summary });
 }
 
-async function run(id: number, code: string) {
-  if (!pyodide || !runCode || !namespace) {
+async function run(id: number, code: string, taskId?: string) {
+  if (!pyodide || !runCode || !checkTask || !namespace) {
     throw new Error('Python is not ready yet');
   }
   try {
@@ -88,8 +93,11 @@ async function run(id: number, code: string) {
     // Unknown packages surface as a normal ModuleNotFoundError when the code runs.
   }
   post({ type: 'run-started', id });
-  const json = runCode(code, namespace) as string;
-  post({ type: 'run-result', id, result: JSON.parse(json) as RunResult });
+  const result = JSON.parse(runCode(code, namespace) as string) as RunResult;
+  const check = taskId
+    ? (JSON.parse(checkTask(taskId, namespace) as string) as CheckResult | null)
+    : null;
+  post({ type: 'run-result', id, result, check });
 }
 
 function reset(id: number) {
@@ -113,7 +121,7 @@ scope.addEventListener('message', (event) => {
         break;
       case 'run':
         try {
-          await run(message.id, message.code);
+          await run(message.id, message.code, message.taskId);
         } catch (error) {
           post({
             type: 'run-result',
@@ -128,6 +136,7 @@ scope.addEventListener('message', (event) => {
                 trace: [],
               },
             },
+            check: null,
           });
         }
         break;

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { buttonStyles } from '../../components/buttonStyles';
 import { PlayIcon, RefreshIcon } from '../../components/icons';
 import type { CodeTask } from '../../content/types';
@@ -17,6 +17,8 @@ interface CodeTaskPanelProps {
   downloadingPackages: string | null;
   runLabel: string;
   outcome: RunOutcome | null;
+  /** Check feedback for the latest run, shown between the run button and the output. */
+  feedback: ReactNode;
   onCodeChange: (code: string) => void;
   onRun: (code: string) => void;
   onResetEnvironment: () => void;
@@ -34,6 +36,7 @@ export function CodeTaskPanel({
   downloadingPackages,
   runLabel,
   outcome,
+  feedback,
   onCodeChange,
   onRun,
   onResetEnvironment,
@@ -101,6 +104,7 @@ export function CodeTaskPanel({
           Reset environment
         </button>
       </div>
+      {!running && feedback}
       <OutputPanel outcome={outcome} running={running} downloadingPackages={downloadingPackages} />
     </div>
   );

@@ -23,6 +23,9 @@ MAX_TEXT = 20_000
 
 _rich_outputs = []
 
+# Facts about the most recent run that the task checks can look at.
+LAST_RUN = {"figure_titles": []}
+
 
 def new_namespace():
     """A fresh place for learner variables."""
@@ -92,6 +95,9 @@ def _collect_figures():
         return
     for number in plt.get_fignums():
         figure = plt.figure(number)
+        LAST_RUN["figure_titles"].append(
+            " ".join(axes.get_title() for axes in figure.axes) + (figure._suptitle.get_text() if figure._suptitle else "")
+        )
         buffer = io.BytesIO()
         figure.savefig(buffer, format="png", dpi=110, bbox_inches="tight")
         _rich_outputs.append(
@@ -134,6 +140,7 @@ def _describe_error(error, code):
 def run_code(code, namespace):
     """Runs code in namespace. If the last statement is an expression, its value is displayed."""
     _rich_outputs.clear()
+    LAST_RUN["figure_titles"] = []
     output = io.StringIO()
     error = None
     try:

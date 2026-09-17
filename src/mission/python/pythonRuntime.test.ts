@@ -1,6 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { FromWorker, RunResult, ToWorker } from './protocol';
+import type { CheckResult, DatasetSummary, FromWorker, RunResult, ToWorker } from './protocol';
 import { PythonRuntime, type RunOutcome, type WorkerLike } from './pythonRuntime';
+
+const SUMMARY: DatasetSummary = {
+  orders: 600,
+  missingDeliveryTimes: 18,
+  cities: 5,
+  outliers: 13,
+  misleadingCity: 'Hyderabad',
+  slowestCity: 'Kolkata',
+};
 
 class FakeWorker implements WorkerLike {
   onmessage: ((event: MessageEvent<FromWorker>) => void) | null = null;
@@ -26,11 +35,11 @@ class FakeWorker implements WorkerLike {
   }
 
   /** Answers the latest run as a real worker would: started, then finished. */
-  finishLastRun(result: RunResult) {
+  finishLastRun(result: RunResult, check: CheckResult | null = null) {
     const run = this.lastRun();
     if (!run) throw new Error('No run to finish');
     this.emit({ type: 'run-started', id: run.id });
-    this.emit({ type: 'run-result', id: run.id, result });
+    this.emit({ type: 'run-result', id: run.id, result, check });
   }
 }
 
@@ -75,7 +84,7 @@ describe('PythonRuntime', () => {
     workers[0].emit({ type: 'progress', stage: 'packages', message: 'Loading pandas' });
     expect(runtime.getState().stage).toBe('packages');
 
-    workers[0].emit({ type: 'ready', loadMs: 4200 });
+    workers[0].emit({ type: 'ready', loadMs: 4200, summary: SUMMARY });
     expect(runtime.getState()).toMatchObject({ phase: 'ready', loadMs: 4200, stage: null });
   });
 
@@ -85,7 +94,7 @@ describe('PythonRuntime', () => {
     const outcome = runtime.run('print(1)');
     expect(workers[0].lastRun()).toBeUndefined();
 
-    workers[0].emit({ type: 'ready', loadMs: 10 });
+    workers[0].emit({ type: 'ready', loadMs: 10, summary: SUMMARY });
     await vi.waitFor(() => expect(workers[0].lastRun()).toBeDefined());
     expect(runtime.getState().phase).toBe('running');
 
@@ -98,7 +107,7 @@ describe('PythonRuntime', () => {
     const replay: string[] = [];
     const { runtime, workers } = setup(replay);
     runtime.start();
-    workers[0].emit({ type: 'ready', loadMs: 10 });
+    workers[0].emit({ type: 'ready', loadMs: 10, summary: SUMMARY });
     // Work saved after the first load is what comes back after a restart.
     replay.push('import pandas as pd', 'df = pd.read_csv("x.csv")');
 
@@ -115,7 +124,7 @@ describe('PythonRuntime', () => {
     expect(workers).toHaveLength(2);
     expect(runtime.getState().phase).toBe('restarting');
 
-    workers[1].emit({ type: 'ready', loadMs: 900 });
+    workers[1].emit({ type: 'ready', loadMs: 900, summary: SUMMARY });
     await vi.waitFor(() => expect(workers[1].lastRun()?.code).toBe('import pandas as pd'));
     workers[1].finishLastRun(okResult());
     await vi.waitFor(() => expect(workers[1].lastRun()?.code).toBe('df = pd.read_csv("x.csv")'));
@@ -128,7 +137,7 @@ describe('PythonRuntime', () => {
   it('does not count package downloads toward the time limit', async () => {
     const { runtime, workers } = setup();
     runtime.start();
-    workers[0].emit({ type: 'ready', loadMs: 10 });
+    workers[0].emit({ type: 'ready', loadMs: 10, summary: SUMMARY });
 
     const outcome = runtime.run('import matplotlib.pyplot as plt');
     await vi.waitFor(() => expect(workers[0].lastRun()).toBeDefined());
@@ -142,14 +151,14 @@ describe('PythonRuntime', () => {
 
     workers[0].emit({ type: 'run-started', id });
     expect(runtime.getState().downloadingPackages).toBeNull();
-    workers[0].emit({ type: 'run-result', id, result: okResult() });
+    workers[0].emit({ type: 'run-result', id, result: okResult(), check: null });
     await expect(outcome).resolves.toMatchObject({ kind: 'completed' });
   });
 
   it('gives up on a package download that never finishes', async () => {
     const { runtime, workers } = setup();
     runtime.start();
-    workers[0].emit({ type: 'ready', loadMs: 10 });
+    workers[0].emit({ type: 'ready', loadMs: 10, summary: SUMMARY });
 
     const outcome = runtime.run('import matplotlib');
     await vi.advanceTimersByTimeAsync(180_000);
@@ -162,7 +171,7 @@ describe('PythonRuntime', () => {
     const replay: string[] = [];
     const { runtime, workers } = setup(replay);
     runtime.start();
-    workers[0].emit({ type: 'ready', loadMs: 10 });
+    workers[0].emit({ type: 'ready', loadMs: 10, summary: SUMMARY });
     replay.push('while True: pass');
 
     const outcome = runtime.run('while True: pass');
@@ -171,14 +180,14 @@ describe('PythonRuntime', () => {
     await vi.advanceTimersByTimeAsync(10_000);
     await outcome;
 
-    workers[1].emit({ type: 'ready', loadMs: 10 });
+    workers[1].emit({ type: 'ready', loadMs: 10, summary: SUMMARY });
     await vi.waitFor(() => expect(workers[1].lastRun()).toBeDefined());
     workers[1].emit({ type: 'run-started', id: workers[1].lastRun()!.id });
     await vi.advanceTimersByTimeAsync(10_000);
 
     expect(workers).toHaveLength(3);
     expect(runtime.getState().phase).toBe('loading');
-    workers[2].emit({ type: 'ready', loadMs: 10 });
+    workers[2].emit({ type: 'ready', loadMs: 10, summary: SUMMARY });
     expect(runtime.getState().phase).toBe('ready');
     expect(workers[2].lastRun()).toBeUndefined();
   });
@@ -186,7 +195,7 @@ describe('PythonRuntime', () => {
   it('restores saved work when Python first loads', async () => {
     const { runtime, workers } = setup(['clean = df.dropna()']);
     runtime.start();
-    workers[0].emit({ type: 'ready', loadMs: 10 });
+    workers[0].emit({ type: 'ready', loadMs: 10, summary: SUMMARY });
     expect(runtime.getState().phase).toBe('restoring');
     await vi.waitFor(() => expect(workers[0].lastRun()?.code).toBe('clean = df.dropna()'));
     workers[0].finishLastRun(okResult());
@@ -211,7 +220,7 @@ describe('PythonRuntime', () => {
   it('resets the environment', async () => {
     const { runtime, workers } = setup();
     runtime.start();
-    workers[0].emit({ type: 'ready', loadMs: 10 });
+    workers[0].emit({ type: 'ready', loadMs: 10, summary: SUMMARY });
     const done = runtime.resetEnvironment();
     await vi.waitFor(() => expect(workers[0].sent.at(-1)?.type).toBe('reset'));
     const reset = workers[0].sent.at(-1) as Extract<ToWorker, { type: 'reset' }>;

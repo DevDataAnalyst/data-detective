@@ -1,15 +1,33 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router';
+import { createMemoryRouter, RouterProvider } from 'react-router';
 import { describe, expect, it } from 'vitest';
 import { lateDeliveryMystery } from '../content/mission1';
-import { missionProgress, taskProgress } from '../game/missionProgress';
+import { markTaskPassed, missionProgress, selectTask, taskProgress } from '../game/missionProgress';
+import { MissionSummaryPage } from '../pages/MissionSummaryPage';
 import { createMemoryStore } from '../storage/keyValue';
 import { ProgressProvider } from '../storage/ProgressProvider';
-import { createProgressStore } from '../storage/progressStore';
+import { createProgressStore, type ProgressStore } from '../storage/progressStore';
 import MissionWorkspace from './MissionWorkspace';
-import type { FromWorker, RunResult, ToWorker } from './python/protocol';
+import type {
+  CheckResult,
+  DatasetSummary,
+  FromWorker,
+  RunResult,
+  ToWorker,
+} from './python/protocol';
 import { PythonRuntime, type WorkerLike } from './python/pythonRuntime';
+
+const SUMMARY: DatasetSummary = {
+  orders: 600,
+  missingDeliveryTimes: 18,
+  cities: 5,
+  outliers: 13,
+  misleadingCity: 'Hyderabad',
+  slowestCity: 'Kolkata',
+};
+
+const OK: RunResult = { stdout: '', rich: [], error: null };
 
 class FakeWorker implements WorkerLike {
   onmessage: ((event: MessageEvent<FromWorker>) => void) | null = null;
@@ -31,39 +49,70 @@ class FakeWorker implements WorkerLike {
       Extract<ToWorker, { type: 'run' }> | undefined;
   }
 
-  finishLastRun(result: RunResult) {
+  finishLastRun(result: RunResult, check: CheckResult | null = null) {
     const run = this.lastRun();
     if (!run) throw new Error('Nothing is running');
     this.emit({ type: 'run-started', id: run.id });
-    this.emit({ type: 'run-result', id: run.id, result });
+    this.emit({ type: 'run-result', id: run.id, result, check });
   }
 }
 
 const MISSION = lateDeliveryMystery.id;
+const REQUIRED_CODE_TASKS = [
+  'load-data',
+  'missing-values',
+  'city-averages',
+  'flag-outliers',
+  'without-outliers',
+];
 
-function renderWorkspace() {
+function renderWorkspace(store: ProgressStore = createProgressStore(createMemoryStore())) {
   const workers: FakeWorker[] = [];
-  const store = createProgressStore(createMemoryStore());
+  const router = createMemoryRouter(
+    [
+      {
+        path: '/mission',
+        element: (
+          <MissionWorkspace
+            mission={lateDeliveryMystery}
+            createRuntime={(options) =>
+              new PythonRuntime({
+                ...options,
+                createWorker: () => {
+                  const worker = new FakeWorker();
+                  workers.push(worker);
+                  return worker;
+                },
+              })
+            }
+          />
+        ),
+      },
+      { path: '/mission/summary', element: <MissionSummaryPage /> },
+      { path: '/', element: <p>Path</p> },
+    ],
+    { initialEntries: ['/mission'] },
+  );
   render(
     <ProgressProvider store={store}>
-      <MemoryRouter>
-        <MissionWorkspace
-          mission={lateDeliveryMystery}
-          createRuntime={(options) =>
-            new PythonRuntime({
-              ...options,
-              createWorker: () => {
-                const worker = new FakeWorker();
-                workers.push(worker);
-                return worker;
-              },
-            })
-          }
-        />
-      </MemoryRouter>
+      <RouterProvider router={router} />
     </ProgressProvider>,
   );
-  return { workers, store };
+  return { workers, store, router };
+}
+
+async function pythonReady(workers: FakeWorker[]) {
+  await waitFor(() => expect(workers).toHaveLength(1));
+  workers[0].emit({ type: 'ready', loadMs: 10, summary: SUMMARY });
+  return workers[0];
+}
+
+async function runActiveTask(user: ReturnType<typeof userEvent.setup>, worker: FakeWorker) {
+  const runsBefore = worker.sent.filter((message) => message.type === 'run').length;
+  await user.click(await screen.findByRole('button', { name: 'Run' }));
+  await waitFor(() =>
+    expect(worker.sent.filter((message) => message.type === 'run')).toHaveLength(runsBefore + 1),
+  );
 }
 
 describe('MissionWorkspace', () => {
@@ -84,7 +133,7 @@ describe('MissionWorkspace', () => {
     workers[0].emit({ type: 'progress', stage: 'packages', message: 'Loading pandas' });
     expect(await screen.findByText('Step 2 of 3: Loading pandas…')).toBeInTheDocument();
 
-    workers[0].emit({ type: 'ready', loadMs: 1200 });
+    workers[0].emit({ type: 'ready', loadMs: 1200, summary: SUMMARY });
     expect(await screen.findByRole('button', { name: 'Run' })).toBeEnabled();
     expect(screen.queryByText('Setting up Python in your browser')).not.toBeInTheDocument();
   });
@@ -92,15 +141,16 @@ describe('MissionWorkspace', () => {
   it('runs code and shows printed output, tables and task status', async () => {
     const user = userEvent.setup();
     const { workers, store } = renderWorkspace();
-    await waitFor(() => expect(workers).toHaveLength(1));
-    workers[0].emit({ type: 'ready', loadMs: 10 });
+    const worker = await pythonReady(workers);
 
-    await user.click(await screen.findByRole('button', { name: 'Run' }));
-    await waitFor(() => expect(workers[0].lastRun()).toBeDefined());
+    await runActiveTask(user, worker);
     const task = lateDeliveryMystery.tasks[0];
-    expect(workers[0].lastRun()?.code).toBe(task.kind === 'code' ? task.starterCode : '');
+    expect(worker.lastRun()).toMatchObject({
+      code: task.kind === 'code' ? task.starterCode : '',
+      taskId: 'load-data',
+    });
 
-    workers[0].finishLastRun({
+    worker.finishLastRun({
       stdout: 'Orders: 600\n',
       rich: [
         {
@@ -134,49 +184,192 @@ describe('MissionWorkspace', () => {
       runs: 1,
       status: 'attempted',
     });
+    // Python keeps the dataset facts for the summary screen.
+    expect(missionProgress(store.getSnapshot(), MISSION).facts).toEqual(SUMMARY);
   });
 
   it('explains errors in plain words', async () => {
     const user = userEvent.setup();
     const { workers } = renderWorkspace();
-    await waitFor(() => expect(workers).toHaveLength(1));
-    workers[0].emit({ type: 'ready', loadMs: 10 });
+    const worker = await pythonReady(workers);
 
-    await user.click(await screen.findByRole('button', { name: 'Run' }));
-    await waitFor(() => expect(workers[0].lastRun()).toBeDefined());
-    workers[0].finishLastRun({
-      stdout: '',
-      rich: [],
-      error: {
-        type: 'NameError',
-        message: "name '____' is not defined",
-        line: 4,
-        trace: [{ line: 4, code: 'df = pd.read_csv(____)' }],
+    await runActiveTask(user, worker);
+    worker.finishLastRun(
+      {
+        stdout: '',
+        rich: [],
+        error: {
+          type: 'NameError',
+          message: "name '____' is not defined",
+          line: 4,
+          trace: [{ line: 4, code: 'df = pd.read_csv(____)' }],
+        },
       },
-    });
+      { passed: false, message: 'Create a DataFrame called `df`.' },
+    );
 
     expect(await screen.findByText('NameError on line 4')).toBeInTheDocument();
     expect(screen.getByText('Line 4: df = pd.read_csv(____)')).toBeInTheDocument();
     expect(
       screen.getByText('Replace each ____ blank with your own code before running.'),
     ).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'Task check' })).toHaveTextContent(
+      'Fix the error shown in the output below',
+    );
   });
 
-  it('switches between tasks and saves the written recommendation', async () => {
+  it('keeps later tasks locked until the earlier ones pass', async () => {
     const user = userEvent.setup();
-    const { store } = renderWorkspace();
+    renderWorkspace();
     const nav = screen.getByRole('navigation', { name: 'Mission tasks' });
 
-    await user.click(within(nav).getByRole('button', { name: /find the gaps/i }));
+    await user.click(within(nav).getByRole('button', { name: /find the gaps, locked/i }));
     expect(screen.getByRole('heading', { name: 'Find the gaps' })).toBeInTheDocument();
-    expect(missionProgress(store.getSnapshot(), MISSION).activeTaskId).toBe('missing-values');
+    expect(screen.getByText('Pass “Open the case file” to unlock this task.')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /run/i })).not.toBeInTheDocument();
 
-    await user.click(within(nav).getByRole('button', { name: /brief the manager/i }));
-    const textbox = screen.getByRole('textbox', { name: 'Your message to the operations manager' });
-    await user.type(textbox, 'Kolkata is genuinely slow at dinner. Hyderabad has logging errors.');
-    expect(screen.getByText('2 sentences. Aim for 2–4.')).toBeInTheDocument();
+    await user.click(within(nav).getByRole('button', { name: /brief the manager, locked/i }));
+    expect(
+      screen.getByText('Pass every code task to unlock your recommendation.'),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Go to task 1: Open the case file' }));
+    expect(screen.getByRole('heading', { name: 'Open the case file' })).toBeInTheDocument();
+  });
+
+  it('passes a task when the hidden check passes, awards XP once and opens the next task', async () => {
+    const user = userEvent.setup();
+    const { workers, store } = renderWorkspace();
+    const worker = await pythonReady(workers);
+
+    await runActiveTask(user, worker);
+    worker.finishLastRun(OK, { passed: true, message: 'Case file open: `df` has 600 orders.' });
+
+    const check = await screen.findByRole('group', { name: 'Task check' });
+    expect(check).toHaveTextContent('Task passed');
+    expect(check).toHaveTextContent('+20 XP');
+    expect(check).toHaveTextContent('Case file open: df has 600 orders.');
+    expect(store.getSnapshot().activity.totalXp).toBe(20);
+    expect(screen.getByText('1 of 5 code tasks passed')).toBeInTheDocument();
+
+    // Running a passed task again pays nothing more.
+    await runActiveTask(user, worker);
+    worker.finishLastRun(OK, { passed: true, message: 'Case file open: `df` has 600 orders.' });
     await waitFor(() =>
-      expect(missionProgress(store.getSnapshot(), MISSION).recommendation).toMatch(/^Kolkata/),
+      expect(screen.getByRole('group', { name: 'Task check' })).not.toHaveTextContent('XP'),
+    );
+    expect(store.getSnapshot().activity.totalXp).toBe(20);
+
+    await user.click(screen.getByRole('button', { name: 'Next: Find the gaps' }));
+    expect(screen.getByRole('heading', { name: 'Find the gaps' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Run' })).toBeEnabled();
+    const nav = screen.getByRole('navigation', { name: 'Mission tasks' });
+    expect(
+      within(nav).getByRole('button', { name: /open the case file, passed/i }),
+    ).toBeInTheDocument();
+  });
+
+  it('gives a specific message when the check fails, and opens hints one level at a time', async () => {
+    const user = userEvent.setup();
+    const { workers, store } = renderWorkspace();
+    const worker = await pythonReady(workers);
+
+    await runActiveTask(user, worker);
+    worker.finishLastRun(OK, {
+      passed: false,
+      message: '`n_orders` should be the number of rows in `df`.',
+    });
+
+    const check = await screen.findByRole('group', { name: 'Task check' });
+    expect(check).toHaveTextContent('Not quite yet');
+    expect(check).toHaveTextContent('n_orders should be the number of rows in df.');
+
+    await user.click(within(check).getByRole('button', { name: 'Show a hint' }));
+    const nudge = screen.getByText('Hint 1 of 3: a nudge').parentElement;
+    expect(nudge).toHaveFocus();
+    expect(nudge).toHaveTextContent('single function whose name starts with read_');
+    expect(screen.queryByText('Hint 2 of 3: the method')).not.toBeInTheDocument();
+
+    const hints = screen.getByRole('region', { name: 'Hints' });
+    await user.click(within(hints).getByRole('button', { name: 'Show another hint' }));
+    await user.click(within(hints).getByRole('button', { name: 'Show another hint' }));
+    expect(screen.getByText('Hint 3 of 3: fill in the blank').parentElement).toHaveTextContent(
+      'n_orders = ____(df)',
+    );
+    expect(within(hints).queryByRole('button')).not.toBeInTheDocument();
+    expect(taskProgress(store.getSnapshot(), MISSION, 'load-data').hintsShown).toBe(3);
+    expect(store.getSnapshot().activity.totalXp).toBe(0);
+  });
+
+  it('sends the recommendation with a self-review, completes the mission and shows the summary', async () => {
+    const user = userEvent.setup();
+    const store = createProgressStore(createMemoryStore());
+    store.update((state) =>
+      selectTask(
+        REQUIRED_CODE_TASKS.reduce(
+          (next, taskId) => markTaskPassed(next, MISSION, taskId, new Date()),
+          state,
+        ),
+        MISSION,
+        'recommendation',
+      ),
+    );
+    const { workers, router } = renderWorkspace(store);
+    await pythonReady(workers);
+
+    const textbox = screen.getByRole('textbox', { name: 'Your message to the operations manager' });
+    await user.type(textbox, 'Kolkata is slow.');
+    await user.click(screen.getByRole('button', { name: 'Send recommendation' }));
+    expect(screen.getByText(/write at least 15 words/i)).toBeInTheDocument();
+    expect(textbox).toHaveFocus();
+    expect(missionProgress(store.getSnapshot(), MISSION).completedAt).toBeNull();
+
+    await user.type(
+      textbox,
+      ' It stays slowest without outliers, especially at dinner. Hyderabad only looks slow because of a few logging errors, so fix the logging first.',
+    );
+    await user.click(
+      screen.getByRole('checkbox', { name: 'I name the city that is genuinely slowest' }),
+    );
+    await user.click(
+      screen.getByRole('checkbox', { name: 'I suggest a concrete next step for the team' }),
+    );
+    await user.click(screen.getByRole('button', { name: 'Send recommendation' }));
+
+    expect(await screen.findByRole('heading', { name: 'Mission complete' })).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe('/mission/summary');
+    const saved = missionProgress(store.getSnapshot(), MISSION);
+    expect(saved).toMatchObject({
+      recommendation: expect.stringMatching(/^Kolkata is slow\. It stays slowest/),
+      selfReview: ['slowest-city', 'next-step'],
+      freezeGranted: true,
+      facts: SUMMARY,
+    });
+    expect(saved.completedAt).not.toBeNull();
+    expect(store.getSnapshot().activity.freezesHeld).toBe(1);
+
+    const whatYouDid = screen.getByRole('region', { name: 'What you did' });
+    expect(
+      within(whatYouDid).getByText('Flagged 13 outliers with the 1.5 × IQR rule'),
+    ).toBeVisible();
+    const xp = screen.getByRole('region', { name: 'XP breakdown' });
+    expect(xp).toHaveTextContent('Mission (5 code tasks)100 XP');
+    expect(xp).toHaveTextContent('Total100 XP');
+    expect(screen.getByRole('region', { name: 'Streak freeze earned' })).toBeInTheDocument();
+
+    const portfolio = screen.getByTestId('portfolio-summary');
+    expect(portfolio).toHaveTextContent('600 food delivery orders');
+    expect(portfolio).not.toHaveTextContent(/job|placement|salary|hired/i);
+    await user.click(screen.getByRole('button', { name: 'Copy summary' }));
+    expect(await screen.findByText('Copied to your clipboard.')).toBeInTheDocument();
+    await expect(navigator.clipboard.readText()).resolves.toMatch(
+      /^Delivery delay analysis \(Python, pandas\), practice project\n• Cleaned/,
+    );
+
+    const compare = screen.getByRole('region', { name: 'Compare your recommendation' });
+    expect(within(compare).getByText(/fixing the delivery time logging first/)).toBeVisible();
+    expect(within(compare).getByText(/Not ticked:/).parentElement).toHaveTextContent(
+      'I explain that a few extreme values distort the mean',
     );
   });
 });

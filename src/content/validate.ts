@@ -32,6 +32,16 @@ export interface ValidationIssue {
   message: string;
 }
 
+/** Facts about a mission's dataset that summary text may quote, e.g. `{outliers}`. */
+export const MISSION_FACTS = [
+  'orders',
+  'missingDeliveryTimes',
+  'cities',
+  'outliers',
+  'misleadingCity',
+  'slowestCity',
+] as const;
+
 export const CONTENT_LIMITS = {
   introWords: 80,
   explanationWords: 60,
@@ -647,6 +657,36 @@ export function validateMission(mission: Mission): ValidationIssue[] {
     issues.push(issue(`${path}.tasks`, 'needs a required written task for the recommendation'));
   }
 
+  const summaryLines = [
+    ...mission.summary.whatYouDid.map((line) => ({ line, part: 'whatYouDid' })),
+    ...mission.summary.portfolio.map((line) => ({ line, part: 'portfolio' })),
+  ];
+  for (const { line, part } of summaryLines) {
+    for (const [, name] of line.text.matchAll(/\{(\w+)\}/g)) {
+      if (!(MISSION_FACTS as readonly string[]).includes(name)) {
+        issues.push(issue(`${path}.summary.${part}`, `{${name}} is not a known mission fact`));
+      }
+    }
+    for (const taskId of [line.requiresTask, line.unlessTask]) {
+      if (taskId && !ids.includes(taskId)) {
+        issues.push(issue(`${path}.summary.${part}`, `refers to unknown task "${taskId}"`));
+      }
+    }
+  }
+  const portfolioLines = (passed: ReadonlySet<string>) =>
+    mission.summary.portfolio.filter(
+      (line) =>
+        (!line.requiresTask || passed.has(line.requiresTask)) &&
+        (!line.unlessTask || !passed.has(line.unlessTask)),
+    ).length;
+  const stretchIds = mission.tasks.filter((task) => task.stretch).map((task) => task.id);
+  for (const passed of [new Set<string>(), new Set(stretchIds)]) {
+    const count = portfolioLines(passed);
+    if (count < 3 || count > 4) {
+      issues.push(issue(`${path}.summary.portfolio`, `shows ${count} lines; keep it to 3–4`));
+    }
+  }
+
   mission.tasks.forEach((task, index) => {
     const taskPath = `${path}.tasks[${index}](${task.id})`;
     if (!task.title.trim()) issues.push(issue(taskPath, 'title is empty'));
@@ -663,10 +703,23 @@ export function validateMission(mission: Mission): ValidationIssue[] {
           issues.push(issue(taskPath, `"${name}" is not a valid Python variable name`));
         }
       }
+      if (!task.hints.nudge.trim() || !task.hints.method.trim()) {
+        issues.push(issue(taskPath, 'needs a nudge hint and a method hint'));
+      }
+      if (!task.hints.example.includes('____')) {
+        issues.push(issue(taskPath, 'the example hint should leave a ____ blank to fill in'));
+      }
     } else {
       const { min, max } = task.suggestedSentences;
-      if (!(min >= 1 && max >= min))
+      if (!(min >= 1 && max >= min)) {
         issues.push(issue(taskPath, 'suggested sentences are invalid'));
+      }
+      if (!(task.minWords >= 1)) issues.push(issue(taskPath, 'minWords must be at least 1'));
+      const reviewIds = task.selfReview.map((item) => item.id);
+      if (reviewIds.length === 0 || new Set(reviewIds).size !== reviewIds.length) {
+        issues.push(issue(taskPath, 'needs self-review items with unique ids'));
+      }
+      if (!task.modelAnswer.trim()) issues.push(issue(taskPath, 'needs a model answer'));
     }
   });
   return issues;

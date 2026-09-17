@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Outlet } from 'react-router';
+import { Outlet, ScrollRestoration } from 'react-router';
 import { applyDayRollover } from '../game/rewards';
 import { now, useToday } from '../storage/clock';
 import { useProgressStore } from '../storage/progressContext';
@@ -22,6 +22,8 @@ export function RootLayout() {
 
   return (
     <CelebrationContext value={celebrate}>
+      {/* New pages start at the top; back and forward return to where the learner was. */}
+      <ScrollRestoration />
       <Outlet />
       {celebration && (
         <GoalCelebrationToast

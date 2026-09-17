@@ -1,6 +1,12 @@
 import type { MissionTask } from '../content/types';
 import type { RunOutcome } from './python/pythonRuntime';
 
+/** The mission complete screen. It does not load Python, so it opens quickly. */
+export const MISSION_SUMMARY_PATH = '/mission/summary';
+
+/** Each code task has a nudge, a pointer to the method, and an example with a blank. */
+export const HINT_LEVELS = 3;
+
 /** "1" to "5" for required tasks, "S1", "S2" for stretch tasks. */
 export function taskLabel(tasks: readonly MissionTask[], taskId: string): string {
   const required = tasks.filter((task) => !task.stretch);
@@ -35,4 +41,8 @@ export function countSentences(text: string): number {
     .split(/[.!?]+(?:\s|$)/)
     .map((sentence) => sentence.trim())
     .filter((sentence) => sentence.split(/\s+/).length >= 3).length;
+}
+
+export function countWords(text: string): number {
+  return text.split(/\s+/).filter((word) => /[\p{L}\p{N}]/u.test(word)).length;
 }
