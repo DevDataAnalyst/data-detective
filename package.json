@@ -13,7 +13,9 @@
     "lint": "eslint . --max-warnings 0 && prettier --check .",
     "format": "prettier --write .",
     "generate:data": "node scripts/generate-deliveries.ts",
-    "test:python": "vitest run --config vitest.python.config.ts"
+    "test:python": "vitest run --config vitest.python.config.ts",
+    "test:e2e": "playwright test",
+    "test:e2e:slow": "playwright test slow-network"
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.20.3",
@@ -28,6 +30,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/vite": "^4.3.3",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/jest-dom": "^7.0.1",

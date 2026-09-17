@@ -61,6 +61,7 @@ Run from the project root. Needs Node 22.22 or newer.
 | lint      | `npm run lint` (ESLint, then Prettier check); `npm run format` to fix   |
 | typecheck | `npm run typecheck`                                                     |
 | preview   | `npm run preview` (serves the production build locally)                 |
+| e2e       | `npm run test:e2e` (Playwright; builds, previews, needs the network)    |
 
 ## Project structure
 
@@ -224,6 +225,18 @@ Run from the project root. Needs Node 22.22 or newer.
 - `/playtest` (linked from the profile) shows the summary and exports `{summary, events}` as JSON.
   Keep it that way: event fields are ids, numbers and flags, never anything a learner typed.
 
+## End-to-end tests
+
+- `e2e/` holds Playwright tests that run against the production build (`playwright.config.ts`
+  builds and previews on port 4173). They use the real editor and real Pyodide from the CDN, so
+  they need the network and take minutes, unlike `npm test`.
+- `journey.spec.ts` is the whole path: onboarding, lesson 1, testing out, and the first three
+  mission tasks with correct code. `responsive.spec.ts` checks 360, 768 and 1280px for horizontal
+  overflow and saves screenshots. `slow-network.spec.ts` measures the Python load time on a
+  throttled connection and only runs with `RUN_SLOW_NETWORK=1`.
+- Helpers in `e2e/helpers.ts` answer any question type and write code into CodeMirror (typing it,
+  then checking the text, because the editor closes brackets by itself).
+
 ## Build steps
 
 - [x] 1. Scaffold
@@ -236,4 +249,4 @@ Run from the project root. Needs Node 22.22 or newer.
 - [x] 8. Test-out checkpoint
 - [x] 9. Polish
 - [x] 10. Validation instrumentation
-- [ ] 11. QA and deploy
+- [x] 11. QA and deploy
