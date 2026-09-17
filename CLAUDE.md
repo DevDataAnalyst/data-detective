@@ -80,10 +80,25 @@ Run from the project root. Needs Node 22.22 or newer.
   `vitest` explicitly (no globals).
 - TypeScript is pinned to 6.0.x because typescript-eslint does not support TypeScript 7 yet.
 
+## Content rules
+
+- Types are in `src/content/types.ts`; Unit 1 is `src/content/unit1.ts`. `validateUnit` in
+  `src/content/validate.ts` runs in the test suite, and any issue fails the build.
+- Never trust a typed-in number. Numeric answers are recomputed from the question's data:
+  `numeric_estimate` and `predict_reveal` name their `statistic`, `tap_outlier` indices must match
+  the 1.5 × IQR rule, and a multiple choice question whose correct option is a number needs a
+  `check`.
+- Numbers quoted in prompts and explanations use placeholders like `{mean}` or `{std_dev:1}`,
+  filled from the question's `dataset` by `fillTemplate`.
+- Quartiles follow pandas (linear interpolation). Content must also be right under the textbook
+  "halves" methods: exact answers must agree, estimates must fall within the tolerance. The same
+  goes for population vs sample standard deviation.
+- Statistics helpers live in `src/game/stats.ts`.
+
 ## Build steps
 
 - [x] 1. Scaffold
-- [ ] 2. Content model
+- [x] 2. Content model
 - [ ] 3. Lesson player
 - [ ] 4. Path map
 - [ ] 5. XP and streaks
