@@ -229,13 +229,17 @@ Run from the project root. Needs Node 22.22 or newer.
 
 - `e2e/` holds Playwright tests that run against the production build (`playwright.config.ts`
   builds and previews on port 4173). They use the real editor and real Pyodide from the CDN, so
-  they need the network and take minutes, unlike `npm test`.
+  they need the network and take minutes, unlike `npm test`. `PLAYWRIGHT_CHANNEL=chrome` runs them
+  in an installed Chrome instead of the bundled Chromium.
 - `journey.spec.ts` is the whole path: onboarding, lesson 1, testing out, and the first three
   mission tasks with correct code. `responsive.spec.ts` checks 360, 768 and 1280px for horizontal
-  overflow and saves screenshots. `slow-network.spec.ts` measures the Python load time on a
-  throttled connection and only runs with `RUN_SLOW_NETWORK=1`.
+  overflow and saves screenshots. `python-load.spec.ts` measures how long Python takes to load,
+  on this connection and on a Slow 4G profile, and only runs with `RUN_SLOW_NETWORK=1`.
 - Helpers in `e2e/helpers.ts` answer any question type and write code into CodeMirror (typing it,
   then checking the text, because the editor closes brackets by itself).
+- Measured Python load, cold cache, on a ~1.4 Mbit/s connection (about Chrome's "Slow 4G"): 143
+  seconds from opening the mission to a usable Run button. Keep that number in mind before adding
+  anything else to the worker's start-up.
 
 ## Build steps
 

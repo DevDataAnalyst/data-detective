@@ -38,13 +38,21 @@ jsDelivr CDN the first time it opens, so that part needs an internet connection.
 | lint and format  | `npm run lint`, `npm run format`                                  |
 | dataset          | `npm run generate:data`                                           |
 
-The end-to-end tests need browsers once: `npx playwright install chromium`.
+The end-to-end tests need browsers once: `npx playwright install chromium`. To use a Chrome that
+is already installed instead, run them as `PLAYWRIGHT_CHANNEL=chrome npm run test:e2e`. Each run starts
+with an empty browser cache, so the journey test downloads Python (about 25 MB) again each time
+and takes a few minutes.
 
-To measure the mission's load time on a throttled connection:
+To measure how long the mission takes to load Python:
 
 ```bash
 RUN_SLOW_NETWORK=1 npm run test:e2e:slow
 ```
+
+Measured on a connection of about 1.4 Mbit/s (close to Chrome's "Slow 4G" profile): **143 seconds**
+from opening the mission to being able to run code, with a cold cache. The browser caches the
+download, so opening the mission again is nearly instant. The workspace explains the wait, shows
+what it is doing, and lets the learner read the tasks and write code while it loads.
 
 ## Deploy to Vercel
 

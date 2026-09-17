@@ -19,7 +19,9 @@ async function setValue(page: Page, selector: string, value: string) {
 export async function answerCorrectly(page: Page, question: Question) {
   switch (question.type) {
     case 'multiple_choice':
-      await page.getByRole('radio').nth(question.correctIndex).check();
+      // The radio itself is visually hidden behind its card, so use the number key shortcut.
+      await page.keyboard.press(String(question.correctIndex + 1));
+      await expect(page.getByRole('radio').nth(question.correctIndex)).toBeChecked();
       break;
     case 'numeric_estimate':
       await page.getByRole('textbox').fill(String(question.correctValue));

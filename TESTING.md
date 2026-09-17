@@ -22,7 +22,8 @@ your browser.
    bring you back.
 3. **Try the mission.** After the seven lessons (or after testing out), open **The Late Delivery
    Mystery**. You write real Python with pandas in the browser on 600 messy delivery records.
-   Python takes 15–60 seconds to load the first time, and longer on a slow connection.
+   Python takes about 15 seconds to load the first time on a fast connection, and around two
+   minutes on a slow one. It is cached after that.
    Get as far as you can — even one or two tasks is useful. Use the hints freely; they are free.
 4. **Answer the one-tap questions** when they pop up. They take a second and are skippable.
 
@@ -57,13 +58,13 @@ Thanks — 20 minutes from you is worth a lot here.
 
 ## What to look at when the exports come back
 
-| Question                                   | Working                                                     | Needs changing                                                      |
-| ------------------------------------------ | ----------------------------------------------------------- | ------------------------------------------------------------------- |
-| Do lessons prepare learners for the mission? | Tasks 1–3 pass with few level-3 hints                       | Many need the fill-in-the-blank hint on tasks the lessons covered     |
-| Is the jump from lessons to mission too big? | Most open the mission within a day of the last lesson       | Long gap, or they stop on the loading screen or task 1                |
-| Is the lesson layer engaging enough?        | Most finish all seven lessons                               | Drop-off clusters on one lesson or one question type                  |
-| Does the streak help or distract?           | They come back on day two and play new lessons              | Lots of repeated practice on old lessons just to hit the daily goal   |
-| Which layer feels more valuable?            | Survey says "mission" or "both equally"                     | Lessons rated too easy and skipped, or the mission called irrelevant  |
+| Question                                     | Working                                               | Needs changing                                                       |
+| -------------------------------------------- | ----------------------------------------------------- | -------------------------------------------------------------------- |
+| Do lessons prepare learners for the mission? | Tasks 1–3 pass with few level-3 hints                 | Many need the fill-in-the-blank hint on tasks the lessons covered    |
+| Is the jump from lessons to mission too big? | Most open the mission within a day of the last lesson | Long gap, or they stop on the loading screen or task 1               |
+| Is the lesson layer engaging enough?         | Most finish all seven lessons                         | Drop-off clusters on one lesson or one question type                 |
+| Does the streak help or distract?            | They come back on day two and play new lessons        | Lots of repeated practice on old lessons just to hit the daily goal  |
+| Which layer feels more valuable?             | Survey says "mission" or "both equally"               | Lessons rated too easy and skipped, or the mission called irrelevant |
 
 Every number above comes out of the export: `lessonsCompleted`, `accuracyByType`,
 `mission.tasks[].hints`, `mission.gapFromLastLessonMs`, `stoppedAt` and `surveys`.

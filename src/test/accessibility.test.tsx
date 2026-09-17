@@ -177,6 +177,29 @@ describe('accessibility audit (axe)', () => {
     await expectAccessible('mission summary');
   }, 30_000);
 
+  it('playtest data, with events to show', async () => {
+    const { events } = renderApp({ path: '/playtest' });
+    act(() => {
+      events.record({ type: 'lesson_started', lessonId: 'the-mean' });
+      events.record({
+        type: 'lesson_completed',
+        lessonId: 'the-mean',
+        firstAttemptAccuracy: 1,
+        ms: 120_000,
+      });
+      events.record({
+        type: 'task_run',
+        taskId: 'load-data',
+        passed: true,
+        hadError: false,
+        ms: 200,
+      });
+      events.record({ type: 'survey_answered', surveyId: 'mission_ready', answer: '4' });
+    });
+    await screen.findByRole('heading', { name: 'Playtest data' });
+    await expectAccessible('playtest data');
+  });
+
   it('page not found', async () => {
     renderApp({ path: '/no-such-page' });
     await screen.findByRole('heading', { name: 'We couldn’t find that page' });

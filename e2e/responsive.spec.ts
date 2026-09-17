@@ -11,6 +11,8 @@ const WIDTHS = [
 /** Marks onboarding as done, so the pages under test open straight away. */
 async function skipOnboarding(page: Page) {
   await page.addInitScript(() => {
+    // Only on a first load: later navigations keep whatever the test set up.
+    if (window.localStorage.getItem('data-detective:progress')) return;
     window.localStorage.setItem(
       'data-detective:progress',
       JSON.stringify({

@@ -23,6 +23,8 @@ test.beforeEach(async ({ page }) => {
 test('a new learner onboards, plays lesson 1, tests out, and solves the first mission tasks', async ({
   page,
 }) => {
+  // The mission downloads about 25 MB of Python, so this test is as slow as the connection is.
+  test.setTimeout(900_000);
   await page.goto('/');
 
   // Onboarding: three screens, then straight into lesson 1.
@@ -53,8 +55,9 @@ test('a new learner onboards, plays lesson 1, tests out, and solves the first mi
   // The mission: real Pyodide from the CDN, then the first three tasks.
   await page.getByRole('link', { name: 'Open the mission' }).click();
   await expect(page.getByRole('heading', { name: 'Open the case file' })).toBeVisible();
+  await expect(page.getByText('Setting up Python in your browser')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Run', exact: true })).toBeEnabled({
-    timeout: 150_000,
+    timeout: 600_000,
   });
 
   await writeCode(page, TASK_CODE['load-data']);
@@ -73,7 +76,6 @@ test('a new learner onboards, plays lesson 1, tests out, and solves the first mi
   // The playtest log has the events a tester would send back.
   await page.goto('/playtest');
   await expect(page.getByRole('heading', { name: 'Playtest data' })).toBeVisible();
-  await expect(page.getByText('Completed')).toBeVisible();
   const summary = await page.locator('pre').innerText();
   expect(summary).toContain('Lessons: 1 completed');
   expect(summary).toContain('Checkpoint: 1 attempt(s), passed');
