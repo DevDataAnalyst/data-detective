@@ -12,11 +12,12 @@ export const routes: RouteObject[] = [
     element: <AppShell />,
     children: [
       { index: true, element: <PathPage /> },
-      { path: 'lesson/:lessonId', element: <LessonPage /> },
       { path: 'checkpoint', element: <CheckpointPage /> },
       { path: 'mission', element: <MissionPage /> },
       { path: 'profile', element: <ProfilePage /> },
       { path: '*', element: <NotFoundPage /> },
     ],
   },
+  // Lessons are full screen, without the app shell, so learners can focus.
+  { path: 'lesson/:lessonId', element: <LessonPage /> },
 ];

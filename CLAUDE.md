@@ -95,11 +95,23 @@ Run from the project root. Needs Node 22.22 or newer.
   goes for population vs sample standard deviation.
 - Statistics helpers live in `src/game/stats.ts`.
 
+## Lesson player
+
+- `src/game/lessonSession.ts` is the reducer (wrong answers re-queue at the end); `src/game/grading.ts`
+  grades every question type. The React side is `src/components/lesson/LessonPlayer.tsx`.
+- One component per question type in `src/components/questions`, all taking `QuestionProps`
+  (`reveal` shows the right answer, `locked` stops changes). Reuse them outside lessons.
+- Charts are plain SVG. `src/components/charts/dotPlotLayout.ts` holds the pure layout maths.
+  Interactive dots keep 44px targets by stacking, so tap-outlier plots can get tall on phones.
+- Keyboard: number keys pick options, Enter checks and continues (buttons keep native Enter), Space
+  toggles dots. Test keyboard flows with Testing Library; the browser pane's key presses don't
+  activate buttons.
+
 ## Build steps
 
 - [x] 1. Scaffold
 - [x] 2. Content model
-- [ ] 3. Lesson player
+- [x] 3. Lesson player
 - [ ] 4. Path map
 - [ ] 5. XP and streaks
 - [ ] 6. Mission workspace

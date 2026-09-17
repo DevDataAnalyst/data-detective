@@ -27,6 +27,12 @@ export function formatValue(dataset: Pick<NumberDataset, 'prefix' | 'suffix'>, v
   return `${dataset.prefix ?? ''}${number}${dataset.suffix ? ` ${dataset.suffix}` : ''}`;
 }
 
+/** The dataset label with its unit, e.g. "Delivery time (min)" or "Monthly stipend (₹)". */
+export function captionWithUnit(dataset: Pick<NumberDataset, 'label' | 'prefix' | 'suffix'>) {
+  const unit = dataset.suffix ?? dataset.prefix;
+  return unit ? `${dataset.label} (${unit})` : dataset.label;
+}
+
 /** Replaces `{statistic}` and `{statistic:decimals}` placeholders with values from the dataset. */
 export function fillTemplate(text: string, dataset?: NumberDataset): string {
   if (!dataset) return text;

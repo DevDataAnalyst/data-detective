@@ -1,4 +1,5 @@
 import { Link } from 'react-router';
+import { unit1 } from '../content/unit1';
 
 export function PathPage() {
   return (
@@ -7,24 +8,16 @@ export function PathPage() {
       <h1 id="path-title" className="text-2xl font-bold">
         Data Detective
       </h1>
-      <p className="text-slate-600">Your lesson path will appear here.</p>
-      <ul className="flex flex-wrap gap-2">
-        <li>
-          <Link className="text-current-700 underline" to="/lesson/placeholder">
-            Sample lesson
-          </Link>
-        </li>
-        <li>
-          <Link className="text-current-700 underline" to="/checkpoint">
-            Checkpoint
-          </Link>
-        </li>
-        <li>
-          <Link className="text-current-700 underline" to="/mission">
-            Mission
-          </Link>
-        </li>
-      </ul>
+      <p className="text-slate-600">The lesson path map arrives in build step 4.</p>
+      <ol className="list-decimal space-y-2 pl-6">
+        {unit1.lessons.map((lesson) => (
+          <li key={lesson.id}>
+            <Link className="text-current-700 underline" to={`/lesson/${lesson.id}`}>
+              {lesson.title}
+            </Link>
+          </li>
+        ))}
+      </ol>
     </section>
   );
 }
