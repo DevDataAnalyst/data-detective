@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import { markTaskPassed, recordHintShown, recordTaskRun } from '../game/missionProgress';
 import { markLessonCompleted } from '../game/progress';
+import { finishCheckpoint } from '../game/rewards';
+import { unit1 } from '../content/unit1';
 import { createMemoryStore } from './keyValue';
 import { createProgressStore, parseStoredProgress, PROGRESS_STORAGE_KEY } from './progressStore';
 
@@ -84,6 +86,41 @@ describe('progress store', () => {
     });
 
     expect(createProgressStore(keyValue).getSnapshot()).toEqual(store.getSnapshot());
+  });
+
+  it('saves checkpoint attempts and lessons marked as tested out', () => {
+    const keyValue = createMemoryStore();
+    const store = createProgressStore(keyValue);
+    const allRight = Object.fromEntries(
+      unit1.checkpoint.items.map((item) => [item.question.id, true]),
+    );
+    store.update(
+      (state) =>
+        finishCheckpoint(state, {
+          unit: unit1,
+          correctByQuestion: allRight,
+          now: new Date('2026-03-10T10:00:00Z'),
+        }).state,
+    );
+
+    const reloaded = createProgressStore(keyValue).getSnapshot();
+    expect(reloaded).toEqual(store.getSnapshot());
+    expect(reloaded.lessons['the-mean']).toEqual({
+      completedAt: '2026-03-10T10:00:00.000Z',
+      testedOut: true,
+    });
+
+    const odd = parseStoredProgress(
+      JSON.stringify({
+        version: 1,
+        progress: {
+          lessons: { a: { completedAt: 'x', testedOut: 'yes' } },
+          checkpoints: { c: { passedAt: 3, attempts: -2, lastAttempt: { at: 'x' } }, d: 'no' },
+        },
+      }),
+    );
+    expect(odd.lessons.a).toEqual({ completedAt: 'x' });
+    expect(odd.checkpoints).toEqual({ c: { passedAt: null, attempts: 0, lastAttempt: null } });
   });
 
   it('ignores corrupt or unexpected saved data', () => {

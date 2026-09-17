@@ -1,9 +1,10 @@
-import type { Mission } from '../../content/types';
+import type { Mission, Unit } from '../../content/types';
 import type { MissionFacts } from '../../game/missionProgress';
 import {
   awardXp,
   completeLesson,
   completeMission,
+  finishCheckpoint,
   passMissionTask,
   type XpOutcome,
 } from '../../game/rewards';
@@ -46,6 +47,11 @@ export function useRewards() {
     awardXp(amount: number) {
       const at = now();
       return save(awardXp(store.getSnapshot(), amount, at), toDateKey(at));
+    },
+    finishCheckpoint(unit: Unit, correctByQuestion: Readonly<Record<string, boolean>>) {
+      const at = now();
+      const outcome = finishCheckpoint(store.getSnapshot(), { unit, correctByQuestion, now: at });
+      return save(outcome, toDateKey(at));
     },
     passMissionTask(mission: Mission, taskId: string) {
       const at = now();

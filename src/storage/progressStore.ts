@@ -1,3 +1,4 @@
+import type { CheckpointAttempt, CheckpointProgress } from '../game/checkpoint';
 import { createInitialProgress, type ProgressState } from '../game/progress';
 import type {
   MissionFacts,
@@ -102,6 +103,32 @@ function parseMissions(value: unknown): Record<string, MissionProgress> {
   return missions;
 }
 
+function parseAttempt(value: unknown): CheckpointAttempt | null {
+  if (!isRecord(value) || typeof value.at !== 'string') return null;
+  if (typeof value.correct !== 'number' || typeof value.total !== 'number') return null;
+  return {
+    at: value.at,
+    correct: value.correct,
+    total: value.total,
+    passed: value.passed === true,
+    missedLessonIds: stringList(value.missedLessonIds),
+  };
+}
+
+function parseCheckpoints(value: unknown): Record<string, CheckpointProgress> {
+  if (!isRecord(value)) return {};
+  const checkpoints: Record<string, CheckpointProgress> = {};
+  for (const [checkpointId, raw] of Object.entries(value)) {
+    if (!isRecord(raw)) continue;
+    checkpoints[checkpointId] = {
+      passedAt: typeof raw.passedAt === 'string' ? raw.passedAt : null,
+      attempts: Math.max(0, finiteNumber(raw.attempts, 0)),
+      lastAttempt: parseAttempt(raw.lastAttempt),
+    };
+  }
+  return checkpoints;
+}
+
 /**
  * Reads saved progress defensively: anything missing or malformed falls back to a fresh start
  * for that part, so a bad value never crashes the app.
@@ -122,7 +149,10 @@ export function parseStoredProgress(raw: string | null): ProgressState {
   if (isRecord(stored.lessons)) {
     for (const [id, entry] of Object.entries(stored.lessons)) {
       if (isRecord(entry) && typeof entry.completedAt === 'string') {
-        lessons[id] = { completedAt: entry.completedAt };
+        lessons[id] =
+          entry.testedOut === true
+            ? { completedAt: entry.completedAt, testedOut: true }
+            : { completedAt: entry.completedAt };
       }
     }
   }
@@ -138,6 +168,7 @@ export function parseStoredProgress(raw: string | null): ProgressState {
     },
     dailyGoal: finiteNumber(stored.dailyGoal, initial.dailyGoal),
     missions: parseMissions(stored.missions),
+    checkpoints: parseCheckpoints(stored.checkpoints),
   };
 }
 

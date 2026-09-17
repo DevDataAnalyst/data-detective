@@ -20,6 +20,8 @@ export interface PathMission {
 interface PathMapProps {
   unit: Unit;
   completed: ReadonlySet<string>;
+  /** Completed lessons that were marked done by passing the checkpoint. */
+  testedOut: ReadonlySet<string>;
   mission: PathMission;
 }
 
@@ -50,7 +52,7 @@ function missionStateText({ state, codeTasksPassed, codeTaskCount }: PathMission
   }
 }
 
-export function PathMap({ unit, completed, mission: missionInfo }: PathMapProps) {
+export function PathMap({ unit, completed, testedOut, mission: missionInfo }: PathMapProps) {
   const baseId = useId();
   const [openNode, setOpenNode] = useState<string | null>(null);
 
@@ -96,9 +98,20 @@ export function PathMap({ unit, completed, mission: missionInfo }: PathMapProps)
             <span>Complete “{unit.lessons[index - 1]?.title}” to unlock this lesson.</span>
           </p>
         ) : (
-          <Link to={`/lesson/${lesson.id}`} className={`mt-3 w-full ${buttonStyles.primary}`}>
-            {status === 'completed' ? 'Practise again' : 'Start'}
-          </Link>
+          <>
+            {testedOut.has(lesson.id) && (
+              <p className="mt-1 text-slate-700">
+                You tested out of this lesson. Play it any time for practice.
+              </p>
+            )}
+            <Link to={`/lesson/${lesson.id}`} className={`mt-3 w-full ${buttonStyles.primary}`}>
+              {testedOut.has(lesson.id)
+                ? 'Practise'
+                : status === 'completed'
+                  ? 'Practise again'
+                  : 'Start'}
+            </Link>
+          </>
         )}
       </NodePopover>
     );
@@ -139,7 +152,7 @@ export function PathMap({ unit, completed, mission: missionInfo }: PathMapProps)
               <button
                 type="button"
                 data-path-node={lesson.id}
-                aria-label={`Lesson ${index + 1}: ${lesson.title}, ${STATUS_TEXT[status]}`}
+                aria-label={`Lesson ${index + 1}: ${lesson.title}, ${STATUS_TEXT[status]}${testedOut.has(lesson.id) ? ' (tested out)' : ''}`}
                 aria-expanded={isOpen}
                 aria-controls={isOpen ? popoverId : undefined}
                 onClick={() => toggle(lesson.id)}

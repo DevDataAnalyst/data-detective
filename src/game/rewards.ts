@@ -2,7 +2,8 @@
  * Turns learner achievements into progress updates: XP, the daily goal and the streak. Every
  * function is pure and takes `now`, so tests can pick any date and time.
  */
-import type { Mission } from '../content/types';
+import type { Mission, Unit } from '../content/types';
+import { scoreCheckpoint, type CheckpointAttempt, type CheckpointScore } from './checkpoint';
 import {
   markTaskPassed,
   missionProgress,
@@ -10,9 +11,14 @@ import {
   type MissionFacts,
 } from './missionProgress';
 import { codeTasksDone, requiredCodeTasks } from './missionRules';
-import { markLessonCompleted, type ProgressState } from './progress';
+import {
+  checkpointProgress,
+  markLessonCompleted,
+  markLessonsTestedOut,
+  type ProgressState,
+} from './progress';
 import { grantFreeze, recordXp, rollOver, toDateKey, type StreakChange } from './streak';
-import { lessonXp, missionTaskXp, stretchTaskXp, type LessonXpAward } from './xp';
+import { checkpointXp, lessonXp, missionTaskXp, stretchTaskXp, type LessonXpAward } from './xp';
 
 export interface XpOutcome {
   state: ProgressState;
@@ -149,4 +155,59 @@ export function completeMission(
     completedNow: true,
     freezeGranted: freeze.granted,
   };
+}
+
+export interface CheckpointOutcome extends XpOutcome {
+  score: CheckpointScore;
+  /** True the first time the checkpoint is passed, which is when XP is paid. */
+  firstPass: boolean;
+  /** Lessons newly marked done by testing out. */
+  testedOutLessonIds: string[];
+}
+
+/**
+ * Records a finished checkpoint attempt. Passing marks every lesson in the unit as done (tagged as
+ * tested out, unless already played), which opens the mission, and pays checkpoint XP once.
+ * A failed attempt changes no lessons and starts the retake wait.
+ */
+export function finishCheckpoint(
+  state: ProgressState,
+  input: { unit: Unit; correctByQuestion: Readonly<Record<string, boolean>>; now: Date },
+): CheckpointOutcome {
+  const { unit, now } = input;
+  const { checkpoint } = unit;
+  const lessonIds = unit.lessons.map((lesson) => lesson.id);
+  const score = scoreCheckpoint(checkpoint, lessonIds, input.correctByQuestion);
+  const previous = checkpointProgress(state, checkpoint.id);
+  const firstPass = score.passed && previous.passedAt === null;
+  const attempt: CheckpointAttempt = {
+    at: now.toISOString(),
+    correct: score.correct,
+    total: score.total,
+    passed: score.passed,
+    missedLessonIds: score.missedLessonIds,
+  };
+
+  let next: ProgressState = {
+    ...state,
+    checkpoints: {
+      ...state.checkpoints,
+      [checkpoint.id]: {
+        passedAt: previous.passedAt ?? (score.passed ? attempt.at : null),
+        attempts: previous.attempts + 1,
+        lastAttempt: attempt,
+      },
+    },
+  };
+  const testedOutLessonIds = score.passed
+    ? lessonIds.filter((lessonId) => !state.lessons[lessonId])
+    : [];
+  if (score.passed) next = markLessonsTestedOut(next, lessonIds, now);
+
+  const xp = score.passed ? checkpointXp(!firstPass) : 0;
+  const outcome: XpOutcome =
+    xp > 0
+      ? awardXp(next, xp, now)
+      : { state: next, xp: 0, goalJustMet: false, streakChange: 'none' };
+  return { ...outcome, score, firstPass, testedOutLessonIds };
 }

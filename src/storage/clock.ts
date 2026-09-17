@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import { toDateKey, type DateKey } from '../game/streak';
 
 /**
@@ -81,4 +81,14 @@ function subscribe(listener: () => void): () => void {
 /** Today's local date. Updates at midnight, when the app regains focus, and on dev offset changes. */
 export function useToday(): DateKey {
   return useSyncExternalStore(subscribe, today, today);
+}
+
+/** The current time, refreshed every `refreshMs`, for countdowns such as the checkpoint retake. */
+export function useNow(refreshMs = 30_000): Date {
+  const [current, setCurrent] = useState(now);
+  useEffect(() => {
+    const timer = setInterval(() => setCurrent(now()), refreshMs);
+    return () => clearInterval(timer);
+  }, [refreshMs]);
+  return current;
 }

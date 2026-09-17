@@ -4,7 +4,7 @@ import { buttonStyles } from '../components/buttonStyles';
 import { LockIcon } from '../components/icons';
 import { lateDeliveryMystery } from '../content/missions';
 import { unit1 } from '../content/unit1';
-import { completedLessonIds } from '../game/progress';
+import { completedLessonIds, hasPassedCheckpoint } from '../game/progress';
 import { isMissionUnlocked } from '../game/unlocks';
 import { useProgress } from '../storage/progressContext';
 
@@ -17,7 +17,7 @@ export function MissionPage() {
   const unlocked = isMissionUnlocked(
     unit.lessons.map((lesson) => lesson.id),
     completedLessonIds(progress),
-    false,
+    hasPassedCheckpoint(progress, unit.checkpoint.id),
   );
 
   if (!unlocked) {

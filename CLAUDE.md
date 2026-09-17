@@ -171,6 +171,21 @@ Run from the project root. Needs Node 22.22 or newer.
   block to 3–4 lines.
 - Mission content can quote only the facts in `MISSION_FACTS` (`src/content/validate.ts`).
 
+## Test-out checkpoint
+
+- Rules are in `src/game/checkpoint.ts`: scoring (`correctNeeded` from the content's `passMark`),
+  the retake wait (`checkpointAvailability`, using the content's `retakeDelayMinutes` and a passed
+  in `now`) and the session reducer (each question once, no re-queue, no feedback until the end).
+- `finishCheckpoint` in `src/game/rewards.ts` records every finished attempt. A pass marks all
+  lessons done with `testedOut: true` (lessons already played keep their record), opens the
+  mission and pays checkpoint XP once. A fail changes no lessons. Leaving part way records nothing.
+- Decision: lessons still unlock in order after a failed attempt. Results list the missed topics
+  with links to lessons that are open; locked ones say what opens them, and the suggested start is
+  the first open missed lesson, else the next lesson on the path (`reviewStartLessonId`).
+- The page is `/checkpoint` (full screen). Time-dependent screens read `useNow()` from
+  `src/storage/clock.ts`; tests fake `Date` with `vi.setSystemTime`.
+- `src/test/answerQuestion.ts` has `answerCorrectly` and `answerIncorrectly` for any question type.
+
 ## Build steps
 
 - [x] 1. Scaffold
@@ -180,7 +195,7 @@ Run from the project root. Needs Node 22.22 or newer.
 - [x] 5. XP and streaks
 - [x] 6. Mission workspace
 - [x] 7. Mission grading
-- [ ] 8. Test-out checkpoint
+- [x] 8. Test-out checkpoint
 - [ ] 9. Polish
 - [ ] 10. Validation instrumentation
 - [ ] 11. QA and deploy

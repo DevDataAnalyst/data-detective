@@ -16,19 +16,29 @@ interface QuestionViewProps {
   shortcuts: boolean;
   animate: boolean;
   headingRef?: Ref<HTMLHeadingElement>;
+  /** h2 when the question fills the page; h3 when it sits in a list, such as a review. */
+  headingLevel?: 'h2' | 'h3';
 }
 
 /** Shows the prompt and the right component for the question type. */
-export function QuestionView({ question, answer, headingRef, ...shared }: QuestionViewProps) {
+export function QuestionView({
+  question,
+  answer,
+  headingRef,
+  headingLevel: Heading = 'h2',
+  ...shared
+}: QuestionViewProps) {
   return (
     <div className="space-y-5">
-      <h2
+      <Heading
         ref={headingRef}
         tabIndex={-1}
-        className="text-xl leading-snug font-bold text-slate-900 outline-none sm:text-2xl"
+        className={`leading-snug font-bold text-slate-900 outline-none ${
+          Heading === 'h2' ? 'text-xl sm:text-2xl' : 'text-lg'
+        }`}
       >
         {fillTemplate(question.prompt, question.dataset)}
-      </h2>
+      </Heading>
       {renderBody(question, answer, shared)}
     </div>
   );
@@ -37,7 +47,7 @@ export function QuestionView({ question, answer, headingRef, ...shared }: Questi
 function renderBody(
   question: Question,
   answer: Answer | null,
-  shared: Omit<QuestionViewProps, 'question' | 'answer' | 'headingRef'>,
+  shared: Omit<QuestionViewProps, 'question' | 'answer' | 'headingRef' | 'headingLevel'>,
 ) {
   switch (question.type) {
     case 'multiple_choice':

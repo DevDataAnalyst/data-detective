@@ -7,26 +7,41 @@ import { findMission } from '../content/missions';
 import { unit1 } from '../content/unit1';
 import { missionProgress } from '../game/missionProgress';
 import { missionState, missionTaskCounts } from '../game/missionRules';
-import { completedLessonIds } from '../game/progress';
+import { checkpointAvailability } from '../game/checkpoint';
+import {
+  checkpointProgress,
+  completedLessonIds,
+  hasPassedCheckpoint,
+  testedOutLessonIds,
+} from '../game/progress';
 import { isMissionUnlocked } from '../game/unlocks';
 import { dailyStatus } from '../game/streak';
 import { XP_RULES } from '../game/xp';
-import { useToday } from '../storage/clock';
+import { describeMinutes } from '../components/checkpoint/checkpointCopy';
+import { useNow, useToday } from '../storage/clock';
 import { useProgress } from '../storage/progressContext';
 
 export function PathPage() {
   const progress = useProgress();
   const today = useToday();
+  const currentTime = useNow();
   const unit = unit1;
   const completed = completedLessonIds(progress);
   const completedCount = unit.lessons.filter((lesson) => completed.has(lesson.id)).length;
   const mission = findMission(unit.missionId);
   const status = dailyStatus(progress.activity, today, progress.dailyGoal);
+  const checkpointPassed = hasPassedCheckpoint(progress, unit.checkpoint.id);
   const missionUnlocked = isMissionUnlocked(
     unit.lessons.map((lesson) => lesson.id),
     completed,
-    false,
+    checkpointPassed,
   );
+  const checkpoint = checkpointAvailability(
+    checkpointProgress(progress, unit.checkpoint.id),
+    unit.checkpoint.retakeDelayMinutes,
+    currentTime,
+  );
+  const showTestOut = !checkpointPassed && completedCount < unit.lessons.length;
   const savedMission = mission ? missionProgress(progress, mission.id) : null;
   const counts = mission && savedMission ? missionTaskCounts(mission, savedMission) : null;
 
@@ -87,26 +102,31 @@ export function PathPage() {
         </div>
       </section>
 
-      <section
-        aria-labelledby="test-out-title"
-        className="flex flex-wrap items-center gap-3 rounded-2xl bg-white p-4 ring-1 ring-slate-200"
-      >
-        <div className="min-w-0 flex-1">
-          <h2 id="test-out-title" className="font-bold text-slate-900">
-            Already know this?
-          </h2>
-          <p className="text-sm text-slate-600">
-            Pass a 10-question checkpoint to skip ahead to the mission.
-          </p>
-        </div>
-        <Link to="/checkpoint" className={buttonStyles.secondary}>
-          Test out
-        </Link>
-      </section>
+      {showTestOut && (
+        <section
+          aria-labelledby="test-out-title"
+          className="flex flex-wrap items-center gap-3 rounded-2xl bg-white p-4 ring-1 ring-slate-200"
+        >
+          <div className="min-w-0 flex-1">
+            <h2 id="test-out-title" className="font-bold text-slate-900">
+              Already know this?
+            </h2>
+            <p className="text-sm text-slate-600">
+              {checkpoint.kind === 'waiting'
+                ? `You can take the checkpoint again in ${describeMinutes(checkpoint.minutesLeft)}.`
+                : `Pass a ${unit.checkpoint.items.length}-question checkpoint to skip ahead to the mission.`}
+            </p>
+          </div>
+          <Link to="/checkpoint" className={buttonStyles.secondary}>
+            {checkpoint.kind === 'waiting' ? 'See what to review' : 'Test out'}
+          </Link>
+        </section>
+      )}
 
       <PathMap
         unit={unit}
         completed={completed}
+        testedOut={testedOutLessonIds(progress)}
         mission={{
           title: mission?.title ?? 'Mission',
           xp: XP_RULES.missionBase,
