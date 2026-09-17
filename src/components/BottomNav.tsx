@@ -1,10 +1,13 @@
 import { NavLink } from 'react-router';
 import { PathIcon, UserIcon } from './icons';
 
+// The active tab gets a bar as well as colour, so colour is not the only signal.
 const linkClass = ({ isActive }: { isActive: boolean }) =>
   [
-    'flex min-h-14 flex-col items-center justify-center gap-0.5 text-xs font-semibold',
-    isActive ? 'text-current-700' : 'text-slate-500',
+    'relative flex min-h-14 flex-col items-center justify-center gap-0.5 text-xs font-semibold',
+    isActive
+      ? 'text-current-700 before:absolute before:inset-x-1/4 before:top-0 before:h-1 before:rounded-b-full before:bg-current-600'
+      : 'text-slate-600',
   ].join(' ');
 
 export function BottomNav() {

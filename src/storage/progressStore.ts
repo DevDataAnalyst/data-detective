@@ -1,5 +1,11 @@
 import type { CheckpointAttempt, CheckpointProgress } from '../game/checkpoint';
-import { createInitialProgress, type ProgressState } from '../game/progress';
+import {
+  createInitialProgress,
+  LEARNER_GOALS,
+  type LearnerGoal,
+  type LearnerProfile,
+  type ProgressState,
+} from '../game/progress';
 import type {
   MissionFacts,
   MissionProgress,
@@ -103,6 +109,14 @@ function parseMissions(value: unknown): Record<string, MissionProgress> {
   return missions;
 }
 
+function parseProfile(value: unknown): LearnerProfile {
+  if (!isRecord(value)) return { goal: null, onboardedAt: null };
+  return {
+    goal: LEARNER_GOALS.includes(value.goal as LearnerGoal) ? (value.goal as LearnerGoal) : null,
+    onboardedAt: typeof value.onboardedAt === 'string' ? value.onboardedAt : null,
+  };
+}
+
 function parseAttempt(value: unknown): CheckpointAttempt | null {
   if (!isRecord(value) || typeof value.at !== 'string') return null;
   if (typeof value.correct !== 'number' || typeof value.total !== 'number') return null;
@@ -160,6 +174,7 @@ export function parseStoredProgress(raw: string | null): ProgressState {
   const practice = isRecord(stored.practiceAwards) ? stored.practiceAwards : {};
 
   return {
+    profile: parseProfile(stored.profile),
     lessons,
     activity: parseActivity(stored.activity),
     practiceAwards: {
@@ -181,7 +196,10 @@ export interface ProgressStore {
   subscribe(listener: () => void): () => void;
   update(updater: (state: ProgressState) => ProgressState): void;
   reset(): void;
-  /** False when progress only lives in memory and will be lost on refresh. */
+  /**
+   * False when progress only lives in memory and will be lost on refresh: storage was blocked
+   * from the start, or a save failed (for example because storage is full).
+   */
   readonly persistent: boolean;
 }
 
@@ -191,11 +209,14 @@ export function createProgressStore(
 ): ProgressStore {
   const listeners = new Set<() => void>();
   let state = parseStoredProgress(safeRead(keyValue));
+  let persistent = options.persistent ?? true;
 
   const notify = () => listeners.forEach((listener) => listener());
 
   return {
-    persistent: options.persistent ?? true,
+    get persistent() {
+      return persistent;
+    },
     getSnapshot: () => state,
     subscribe(listener) {
       listeners.add(listener);
@@ -208,7 +229,8 @@ export function createProgressStore(
       try {
         keyValue.setItem(PROGRESS_STORAGE_KEY, serializeProgress(state));
       } catch {
-        // Storage full or blocked: keep going in memory.
+        // Storage full or blocked: keep going in memory, and let the UI say so.
+        persistent = false;
       }
       notify();
     },

@@ -36,6 +36,24 @@ export function useElementWidth<T extends Element>(fallback: number) {
   return [ref, width] as const;
 }
 
+function subscribeToConnection(onChange: () => void): () => void {
+  window.addEventListener('online', onChange);
+  window.addEventListener('offline', onChange);
+  return () => {
+    window.removeEventListener('online', onChange);
+    window.removeEventListener('offline', onChange);
+  };
+}
+
+/** False while the browser reports no network connection. */
+export function useOnline(): boolean {
+  return useSyncExternalStore(
+    subscribeToConnection,
+    () => navigator.onLine,
+    () => true,
+  );
+}
+
 /** Keys typed into these elements should not trigger lesson shortcuts. */
 export function isTextEntryTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;

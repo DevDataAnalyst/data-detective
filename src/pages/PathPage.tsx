@@ -1,4 +1,4 @@
-import { Link } from 'react-router';
+import { Link, Navigate } from 'react-router';
 import { buttonStyles } from '../components/buttonStyles';
 import { DailyGoalRing } from '../components/DailyGoalRing';
 import { FlameIcon, SnowflakeIcon } from '../components/icons';
@@ -12,6 +12,7 @@ import {
   checkpointProgress,
   completedLessonIds,
   hasPassedCheckpoint,
+  isOnboarded,
   testedOutLessonIds,
 } from '../game/progress';
 import { isMissionUnlocked } from '../game/unlocks';
@@ -44,6 +45,8 @@ export function PathPage() {
   const showTestOut = !checkpointPassed && completedCount < unit.lessons.length;
   const savedMission = mission ? missionProgress(progress, mission.id) : null;
   const counts = mission && savedMission ? missionTaskCounts(mission, savedMission) : null;
+
+  if (!isOnboarded(progress)) return <Navigate to="/welcome" replace />;
 
   return (
     <div className="space-y-5">
@@ -87,7 +90,7 @@ export function PathPage() {
           </p>
           <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-semibold">
             <span
-              className={`flex items-center gap-1 ${status.goalMetToday ? 'text-streak-600' : 'text-slate-500'}`}
+              className={`flex items-center gap-1 ${status.goalMetToday ? 'text-streak-700' : 'text-slate-600'}`}
             >
               <FlameIcon aria-hidden="true" />
               {status.streak} day streak

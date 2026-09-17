@@ -6,6 +6,7 @@ import { LessonPage } from './pages/LessonPage';
 import { MissionPage } from './pages/MissionPage';
 import { MissionSummaryPage } from './pages/MissionSummaryPage';
 import { NotFoundPage } from './pages/NotFoundPage';
+import { OnboardingPage } from './pages/OnboardingPage';
 import { PathPage } from './pages/PathPage';
 import { ProfilePage } from './pages/ProfilePage';
 
@@ -22,6 +23,7 @@ export const routes: RouteObject[] = [
         ],
       },
       // Lessons, the checkpoint and the mission are full screen, so learners can focus.
+      { path: 'welcome', element: <OnboardingPage /> },
       { path: 'lesson/:lessonId', element: <LessonPage /> },
       { path: 'checkpoint', element: <CheckpointPage /> },
       { path: 'mission', element: <MissionPage /> },

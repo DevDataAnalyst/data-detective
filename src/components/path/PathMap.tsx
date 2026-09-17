@@ -86,7 +86,7 @@ export function PathMap({ unit, completed, testedOut, mission: missionInfo }: Pa
     const status = statuses[index];
     return (
       <NodePopover key={lessonId} {...popoverFor(positions[index])}>
-        <p className="text-xs font-bold tracking-wide text-slate-500 uppercase">
+        <p className="text-xs font-bold tracking-wide text-slate-600 uppercase">
           Lesson {index + 1} · about {lesson.estimatedMinutes} min
         </p>
         <h2 id={popoverTitleId} className="mt-0.5 text-lg font-bold text-slate-900">
@@ -182,7 +182,7 @@ export function PathMap({ unit, completed, testedOut, mission: missionInfo }: Pa
                   </span>
                 </span>
                 <span
-                  className={`rounded-lg bg-slate-50 px-1.5 py-0.5 text-center text-sm leading-tight font-semibold ${status === 'locked' ? 'text-slate-500' : 'text-slate-800'}`}
+                  className={`rounded-lg bg-slate-50 px-1.5 py-0.5 text-center text-sm leading-tight font-semibold ${status === 'locked' ? 'text-slate-600' : 'text-slate-800'}`}
                 >
                   {lesson.title}
                 </span>

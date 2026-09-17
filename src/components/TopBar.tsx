@@ -2,7 +2,7 @@ import { Link, NavLink } from 'react-router';
 import { dailyStatus } from '../game/streak';
 import { useToday } from '../storage/clock';
 import { useProgress } from '../storage/progressContext';
-import { BoltIcon, FlameIcon } from './icons';
+import { BoltIcon, CheckIcon, FlameIcon } from './icons';
 
 const desktopLinkClass = ({ isActive }: { isActive: boolean }) =>
   [
@@ -45,22 +45,23 @@ export function TopBar() {
         <div className="ml-auto flex items-center gap-2">
           <p
             data-testid="streak-counter"
-            aria-label={streakLabel}
             title={streakLabel}
             className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-sm font-bold ${
-              status.goalMetToday ? 'bg-streak-100 text-streak-600' : 'bg-slate-100 text-slate-500'
+              status.goalMetToday ? 'bg-streak-100 text-streak-800' : 'bg-slate-100 text-slate-600'
             }`}
           >
             <FlameIcon aria-hidden="true" />
             <span aria-hidden="true">{status.streak}</span>
+            {status.goalMetToday && <CheckIcon aria-hidden="true" className="text-xs" />}
+            <span className="sr-only">{streakLabel}</span>
           </p>
           <p
             data-testid="xp-counter"
-            aria-label={`${progress.activity.totalXp} XP in total`}
             className="flex items-center gap-1 rounded-full bg-xp-50 px-2.5 py-1 text-sm font-bold text-xp-700"
           >
             <BoltIcon aria-hidden="true" />
             <span aria-hidden="true">{progress.activity.totalXp} XP</span>
+            <span className="sr-only">{progress.activity.totalXp} XP in total</span>
           </p>
         </div>
       </div>

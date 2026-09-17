@@ -1,5 +1,7 @@
 import { render } from '@testing-library/react';
 import { createMemoryRouter, RouterProvider } from 'react-router';
+import { isOnboarded } from '../game/progress';
+import { completeOnboarding } from '../game/rewards';
 import { routes } from '../routes';
 import { createMemoryStore, type KeyValueStore } from '../storage/keyValue';
 import { ProgressProvider } from '../storage/ProgressProvider';
@@ -9,11 +11,30 @@ interface RenderAppOptions {
   path?: string;
   keyValue?: KeyValueStore;
   store?: ProgressStore;
+  /** Set false to see onboarding, as a first-time visitor would. */
+  onboarded?: boolean;
 }
 
-/** Renders the whole app at a path, with its own in-memory storage. */
-export function renderApp({ path = '/', keyValue, store }: RenderAppOptions = {}) {
+/**
+ * Renders the whole app at a path, with its own in-memory storage. The learner has finished
+ * onboarding (keeping the default daily goal) unless `onboarded` is false.
+ */
+export function renderApp({
+  path = '/',
+  keyValue,
+  store,
+  onboarded = true,
+}: RenderAppOptions = {}) {
   const progressStore = store ?? createProgressStore(keyValue ?? createMemoryStore());
+  if (onboarded && !isOnboarded(progressStore.getSnapshot())) {
+    progressStore.update((state) =>
+      completeOnboarding(state, {
+        goal: 'curious',
+        dailyGoal: state.dailyGoal,
+        now: new Date('2026-01-01T09:00:00Z'),
+      }),
+    );
+  }
   const router = createMemoryRouter(routes, { initialEntries: [path] });
   const view = render(
     <ProgressProvider store={progressStore}>

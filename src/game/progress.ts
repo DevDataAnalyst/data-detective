@@ -10,7 +10,18 @@ export interface LessonProgress {
   testedOut?: true;
 }
 
+/** Why the learner is here, asked during onboarding. */
+export const LEARNER_GOALS = ['data_analyst', 'data_scientist', 'ml_engineer', 'curious'] as const;
+export type LearnerGoal = (typeof LEARNER_GOALS)[number];
+
+export interface LearnerProfile {
+  goal: LearnerGoal | null;
+  /** When onboarding was finished, as an ISO 8601 timestamp. */
+  onboardedAt: string | null;
+}
+
 export interface ProgressState {
+  profile: LearnerProfile;
   lessons: Record<string, LessonProgress>;
   activity: ActivityState;
   /** Practice XP awards per lesson, counted for a single day. */
@@ -22,6 +33,7 @@ export interface ProgressState {
 
 export function createInitialProgress(): ProgressState {
   return {
+    profile: { goal: null, onboardedAt: null },
     lessons: {},
     activity: createActivity(),
     practiceAwards: { day: null, counts: {} },
@@ -29,6 +41,15 @@ export function createInitialProgress(): ProgressState {
     missions: {},
     checkpoints: {},
   };
+}
+
+/** Onboarding shows on a first visit only: learners with earlier progress skip it. */
+export function isOnboarded(state: ProgressState): boolean {
+  return (
+    state.profile.onboardedAt !== null ||
+    Object.keys(state.lessons).length > 0 ||
+    state.activity.totalXp > 0
+  );
 }
 
 /** Records a completed lesson. The first completion time is kept if it was already completed. */

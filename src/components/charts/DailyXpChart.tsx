@@ -58,7 +58,7 @@ export function DailyXpChart({ days, dailyGoal }: DailyXpChartProps) {
           className="stroke-streak-500"
           strokeWidth={1.5}
         />
-        <text x={left} y={goalY - 5} className="fill-streak-600 text-[11px] font-bold">
+        <text x={left} y={goalY - 5} className="fill-streak-700 text-[11px] font-bold">
           {`Goal ${dailyGoal} XP`}
         </text>
         {days.map((day, index) => {
@@ -94,7 +94,7 @@ export function DailyXpChart({ days, dailyGoal }: DailyXpChartProps) {
                   x={x + barWidth / 2}
                   y={height - 9}
                   textAnchor="middle"
-                  className={`text-[11px] ${isToday ? 'fill-slate-900 font-bold' : 'fill-slate-500'}`}
+                  className={`text-[11px] ${isToday ? 'fill-slate-900 font-bold' : 'fill-slate-600'}`}
                 >
                   {isToday ? 'Today' : weekday.slice(0, 1)}
                 </text>

@@ -15,9 +15,17 @@ import {
   checkpointProgress,
   markLessonCompleted,
   markLessonsTestedOut,
+  type LearnerGoal,
   type ProgressState,
 } from './progress';
-import { grantFreeze, recordXp, rollOver, toDateKey, type StreakChange } from './streak';
+import {
+  applyDailyGoal,
+  grantFreeze,
+  recordXp,
+  rollOver,
+  toDateKey,
+  type StreakChange,
+} from './streak';
 import { checkpointXp, lessonXp, missionTaskXp, stretchTaskXp, type LessonXpAward } from './xp';
 
 export interface XpOutcome {
@@ -46,6 +54,34 @@ export function applyDayRollover(
   const rolled = rollOver(state.activity, toDateKey(now));
   if (rolled.change === 'none') return { state, streakChange: 'none' };
   return { state: { ...state, activity: rolled.activity }, streakChange: rolled.change };
+}
+
+/** Changes the daily goal. Today counts toward the streak at once if it already meets the goal. */
+export function setDailyGoal(state: ProgressState, dailyGoal: number, now: Date): XpOutcome {
+  const goal = Math.max(1, Math.round(dailyGoal));
+  const applied = applyDailyGoal(state.activity, toDateKey(now), goal);
+  const unchanged = goal === state.dailyGoal && applied.activity === state.activity;
+  return {
+    state: unchanged ? state : { ...state, dailyGoal: goal, activity: applied.activity },
+    xp: 0,
+    goalJustMet: applied.goalJustMet,
+    streakChange: applied.change,
+  };
+}
+
+/** Saves the onboarding answers: why the learner is here and their daily goal. */
+export function completeOnboarding(
+  state: ProgressState,
+  input: { goal: LearnerGoal; dailyGoal: number; now: Date },
+): ProgressState {
+  const withGoal = setDailyGoal(state, input.dailyGoal, input.now).state;
+  return {
+    ...withGoal,
+    profile: {
+      goal: input.goal,
+      onboardedAt: state.profile.onboardedAt ?? input.now.toISOString(),
+    },
+  };
 }
 
 export interface LessonOutcome extends XpOutcome {

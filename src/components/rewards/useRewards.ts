@@ -6,6 +6,7 @@ import {
   completeMission,
   finishCheckpoint,
   passMissionTask,
+  setDailyGoal,
   type XpOutcome,
 } from '../../game/rewards';
 import { toDateKey, type DateKey } from '../../game/streak';
@@ -47,6 +48,10 @@ export function useRewards() {
     awardXp(amount: number) {
       const at = now();
       return save(awardXp(store.getSnapshot(), amount, at), toDateKey(at));
+    },
+    setDailyGoal(dailyGoal: number) {
+      const at = now();
+      return save(setDailyGoal(store.getSnapshot(), dailyGoal, at), toDateKey(at));
     },
     finishCheckpoint(unit: Unit, correctByQuestion: Readonly<Record<string, boolean>>) {
       const at = now();

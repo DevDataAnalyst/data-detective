@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useEffectEvent, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { buttonStyles } from '../components/buttonStyles';
+import { useOnline } from '../components/hooks';
 import { BoltIcon, CheckIcon, LockIcon, SearchIcon } from '../components/icons';
 import { RichText } from '../components/RichText';
 import { useRewards } from '../components/rewards/useRewards';
@@ -86,6 +87,15 @@ export default function MissionWorkspace({ mission, createRuntime }: MissionWork
   const [feedback, setFeedback] = useState<Record<string, ShownFeedback>>({});
   const [runningTaskId, setRunningTaskId] = useState<string | null>(null);
   const [announcement, setAnnouncement] = useState('');
+
+  // Loading fails without a connection, so try again as soon as the connection is back.
+  const online = useOnline();
+  const retryIfFailed = useEffectEvent(() => {
+    if (runtimeState.phase === 'failed') runtime.retry();
+  });
+  useEffect(() => {
+    if (online) retryIfFailed();
+  }, [online]);
 
   // Keep what Python worked out about the dataset, for the summary screen.
   const facts = runtimeState.summary;
@@ -210,12 +220,10 @@ export default function MissionWorkspace({ mission, createRuntime }: MissionWork
             <span className="truncate">{mission.title}</span>
           </p>
           <RuntimeStatusPill phase={runtimeState.phase} />
-          <p
-            className="hidden items-center gap-1 rounded-full bg-xp-50 px-2.5 py-1 text-sm font-bold text-xp-700 sm:flex"
-            aria-label={`${progress.activity.totalXp} XP in total`}
-          >
+          <p className="hidden items-center gap-1 rounded-full bg-xp-50 px-2.5 py-1 text-sm font-bold text-xp-700 sm:flex">
             <BoltIcon aria-hidden="true" />
             <span aria-hidden="true">{progress.activity.totalXp} XP</span>
+            <span className="sr-only">{progress.activity.totalXp} XP in total</span>
           </p>
         </div>
       </header>
@@ -272,7 +280,7 @@ export default function MissionWorkspace({ mission, createRuntime }: MissionWork
           </details>
         </details>
 
-        <RuntimeBanner state={runtimeState} onRetry={() => runtime.retry()} />
+        <RuntimeBanner state={runtimeState} online={online} onRetry={() => runtime.retry()} />
 
         <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[17rem_minmax(0,1fr)] lg:items-start">
           <div className="min-w-0 space-y-2 lg:sticky lg:top-18">

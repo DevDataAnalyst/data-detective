@@ -11,11 +11,13 @@ const STAGES: Record<LoadStage, { step: number; text: string; percent: number }>
 
 interface RuntimeBannerProps {
   state: RuntimeState;
+  /** False while the browser has no connection. */
+  online: boolean;
   onRetry: () => void;
 }
 
 /** Explains what Python is doing while it is not ready to run code. */
-export function RuntimeBanner({ state, onRetry }: RuntimeBannerProps) {
+export function RuntimeBanner({ state, online, onRetry }: RuntimeBannerProps) {
   if (state.phase === 'failed') {
     return (
       <div
@@ -26,7 +28,9 @@ export function RuntimeBanner({ state, onRetry }: RuntimeBannerProps) {
         <div className="min-w-0 flex-1">
           <p className="font-bold">Python couldn’t load</p>
           <p className="text-sm">
-            Check your internet connection and try again. Your code is saved on this device.
+            {online
+              ? 'Check your internet connection and try again. Your code is saved on this device.'
+              : 'You’re offline. Python will try again when you reconnect. Your code is saved on this device.'}
           </p>
           {state.error && <p className="mt-1 font-mono text-xs break-words">{state.error}</p>}
         </div>

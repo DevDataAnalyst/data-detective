@@ -45,11 +45,11 @@ describe('XP, daily goal and streaks in the app', () => {
     expect(store.getSnapshot().activity.totalXp).toBe(15);
 
     await user.click(screen.getByRole('button', { name: 'Back to path' }));
-    expect(screen.getByTestId('xp-counter')).toHaveAccessibleName('15 XP in total');
+    expect(screen.getByTestId('xp-counter')).toHaveTextContent('15 XP in total');
     expect(screen.getByTestId('daily-goal-text')).toHaveTextContent(
       '15 of 20 XP today. 5 XP to go.',
     );
-    expect(screen.getByTestId('streak-counter')).toHaveAccessibleName(
+    expect(screen.getByTestId('streak-counter')).toHaveTextContent(
       '0 day streak, today’s goal not met yet',
     );
   });
@@ -86,7 +86,7 @@ describe('XP, daily goal and streaks in the app', () => {
     vi.setSystemTime(march(12));
     renderApp({ store });
 
-    expect(screen.getByTestId('streak-counter')).toHaveAccessibleName(
+    expect(screen.getByTestId('streak-counter')).toHaveTextContent(
       '2 day streak, today’s goal not met yet',
     );
     expect(store.getSnapshot().activity.freezesHeld).toBe(0);
@@ -99,7 +99,7 @@ describe('XP, daily goal and streaks in the app', () => {
     );
     vi.setSystemTime(march(12));
     renderApp({ store });
-    expect(screen.getByTestId('streak-counter')).toHaveAccessibleName(
+    expect(screen.getByTestId('streak-counter')).toHaveTextContent(
       '0 day streak, today’s goal not met yet',
     );
     expect(store.getSnapshot().activity.currentStreak).toBe(0);

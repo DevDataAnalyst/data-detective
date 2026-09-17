@@ -9,6 +9,13 @@ export type DateKey = string;
 export type StreakChange = 'none' | 'started' | 'extended' | 'frozen' | 'reset';
 
 export const DEFAULT_DAILY_GOAL = 20;
+
+/** The daily goals a learner can pick, in XP per day. */
+export const DAILY_GOAL_CHOICES = [
+  { id: 'casual', xp: 10 },
+  { id: 'regular', xp: 20 },
+  { id: 'serious', xp: 40 },
+] as const;
 export const HISTORY_DAYS = 30;
 export const MAX_FREEZES = 1;
 
@@ -136,22 +143,56 @@ export function recordXp(
 
   const goalJustMet = before < dailyGoal && after >= dailyGoal;
   if (goalJustMet && next.lastStreakDay !== today) {
-    const continues =
-      next.currentStreak > 0 &&
-      next.lastStreakDay !== null &&
-      daysBetween(next.lastStreakDay, today) === 1;
-    const currentStreak = continues ? next.currentStreak + 1 : 1;
-    next = {
-      ...next,
-      currentStreak,
-      longestStreak: Math.max(next.longestStreak, currentStreak),
-      lastStreakDay: today,
-      goalMetDays: [...next.goalMetDays, today],
-    };
-    change = continues ? 'extended' : 'started';
+    const credited = creditToday(next, today);
+    next = credited.activity;
+    change = credited.change;
   }
 
   return { activity: pruneHistory(next, today), goalJustMet, change };
+}
+
+/** Counts today toward the streak. Only call once the goal is met and today is not yet counted. */
+function creditToday(
+  activity: ActivityState,
+  today: DateKey,
+): { activity: ActivityState; change: StreakChange } {
+  const continues =
+    activity.currentStreak > 0 &&
+    activity.lastStreakDay !== null &&
+    daysBetween(activity.lastStreakDay, today) === 1;
+  const currentStreak = continues ? activity.currentStreak + 1 : 1;
+  return {
+    activity: {
+      ...activity,
+      currentStreak,
+      longestStreak: Math.max(activity.longestStreak, currentStreak),
+      lastStreakDay: today,
+      goalMetDays: [...activity.goalMetDays, today],
+    },
+    change: continues ? 'extended' : 'started',
+  };
+}
+
+/**
+ * Applies a new daily goal to today. If today's XP already meets it (for example after lowering
+ * the goal), today counts toward the streak straight away. Raising the goal never undoes a day.
+ */
+export function applyDailyGoal(
+  activity: ActivityState,
+  today: DateKey,
+  dailyGoal: number,
+): XpRecorded {
+  const rolled = rollOver(activity, today);
+  const xpToday = rolled.activity.xpByDay[today] ?? 0;
+  if (xpToday === 0 || xpToday < dailyGoal || rolled.activity.lastStreakDay === today) {
+    return { activity: rolled.activity, goalJustMet: false, change: rolled.change };
+  }
+  const credited = creditToday(rolled.activity, today);
+  return {
+    activity: pruneHistory(credited.activity, today),
+    goalJustMet: true,
+    change: credited.change,
+  };
 }
 
 /** Gives the learner a streak freeze, up to the maximum they can hold. */

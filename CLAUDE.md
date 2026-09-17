@@ -186,6 +186,27 @@ Run from the project root. Needs Node 22.22 or newer.
   `src/storage/clock.ts`; tests fake `Date` with `vi.setSystemTime`.
 - `src/test/answerQuestion.ts` has `answerCorrectly` and `answerIncorrectly` for any question type.
 
+## Onboarding, accessibility and error states
+
+- First visit goes to `/welcome`: three screens (welcome, why they are here, daily goal), then
+  straight into lesson 1. `isOnboarded` in `src/game/progress.ts` treats anyone with earlier
+  progress as done, so the flow never interrupts a returning learner. `renderApp` in tests marks
+  onboarding done unless `onboarded: false`.
+- Daily goals are `DAILY_GOAL_CHOICES` (10, 20, 40 XP). `setDailyGoal` re-checks today, so
+  lowering the goal below XP already earned counts that day toward the streak at once. The goal
+  can be changed again on the profile page.
+- `src/test/accessibility.test.tsx` runs axe-core over every screen and state (onboarding, path
+  and popovers, lesson, checkpoint questions of each type and results, mission workspace, both
+  summaries, profile, notices, 404). It hides `.hidden` elements so it audits the phone layout.
+  jsdom cannot measure contrast, so colours are checked by hand against the tokens: text needs
+  4.5:1, so use `streak-700` on white and `streak-800` on `streak-100`, never `streak-600`.
+- Colour is never the only signal: icons and text carry status on the path, task list, feedback
+  panels and charts; the active bottom-nav tab also has a bar; the streak chip adds a tick.
+- `RootLayout` shows two notices: progress not being saved (storage blocked, or a save that
+  failed) and offline. The mission retries loading Python by itself when the connection returns.
+- The mission route is code split. Keep CodeMirror and Pyodide out of the initial bundle: the
+  lesson layer must never download them.
+
 ## Build steps
 
 - [x] 1. Scaffold
@@ -196,6 +217,6 @@ Run from the project root. Needs Node 22.22 or newer.
 - [x] 6. Mission workspace
 - [x] 7. Mission grading
 - [x] 8. Test-out checkpoint
-- [ ] 9. Polish
+- [x] 9. Polish
 - [ ] 10. Validation instrumentation
 - [ ] 11. QA and deploy

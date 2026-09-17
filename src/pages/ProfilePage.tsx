@@ -3,9 +3,10 @@ import { buttonStyles } from '../components/buttonStyles';
 import { DailyXpChart } from '../components/charts/DailyXpChart';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { BoltIcon, FlameIcon, SnowflakeIcon, StarIcon } from '../components/icons';
+import { useRewards } from '../components/rewards/useRewards';
 import { unit1 } from '../content/unit1';
 import { completedLessonIds, markLessonCompleted } from '../game/progress';
-import { dailyStatus, recentDays } from '../game/streak';
+import { DAILY_GOAL_CHOICES, dailyStatus, recentDays } from '../game/streak';
 import { devDayOffset, setDevDayOffset, useToday } from '../storage/clock';
 import { useProgress, useProgressStore } from '../storage/progressContext';
 
@@ -42,6 +43,8 @@ export function ProfilePage() {
         />
       </dl>
 
+      <DailyGoalSetting dailyGoal={progress.dailyGoal} />
+
       <section
         aria-labelledby="xp-history-title"
         className="rounded-2xl bg-white p-4 ring-1 ring-slate-200"
@@ -71,9 +74,58 @@ export function ProfilePage() {
   );
 }
 
+const GOAL_NAMES: Record<string, string> = {
+  casual: 'Casual',
+  regular: 'Regular',
+  serious: 'Serious',
+};
+
+function DailyGoalSetting({ dailyGoal }: { dailyGoal: number }) {
+  const rewards = useRewards();
+  return (
+    <section
+      aria-labelledby="daily-goal-setting"
+      className="rounded-2xl bg-white p-4 ring-1 ring-slate-200"
+    >
+      <h2 id="daily-goal-setting" className="font-bold">
+        Daily goal
+      </h2>
+      <p className="text-sm text-slate-600">XP to earn each day to keep your streak going.</p>
+      <div
+        role="radiogroup"
+        aria-labelledby="daily-goal-setting"
+        className="mt-3 grid gap-2 sm:grid-cols-3"
+      >
+        {DAILY_GOAL_CHOICES.map((choice) => {
+          const checked = choice.xp === dailyGoal;
+          return (
+            <label
+              key={choice.id}
+              className={`flex min-h-12 cursor-pointer items-center gap-2.5 rounded-xl border-2 px-3 py-2 has-focus-visible:outline-3 has-focus-visible:outline-offset-2 has-focus-visible:outline-current-600 ${
+                checked ? 'border-current-600 bg-current-50' : 'border-slate-200 hover:bg-slate-50'
+              }`}
+            >
+              <input
+                type="radio"
+                name="profile-daily-goal"
+                checked={checked}
+                onChange={() => rewards.setDailyGoal(choice.xp)}
+                className="size-5 shrink-0 accent-current-600"
+              />
+              <span className="font-semibold text-slate-900">
+                {GOAL_NAMES[choice.id]} · {choice.xp} XP
+              </span>
+            </label>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 const TONES = {
   xp: 'bg-xp-50 text-xp-700',
-  streak: 'bg-streak-100 text-streak-600',
+  streak: 'bg-streak-100 text-streak-800',
   slate: 'bg-slate-100 text-slate-700',
   current: 'bg-current-50 text-current-700',
 } as const;

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { markTaskPassed, recordHintShown, recordTaskRun } from '../game/missionProgress';
 import { markLessonCompleted } from '../game/progress';
-import { finishCheckpoint } from '../game/rewards';
+import { completeOnboarding, finishCheckpoint } from '../game/rewards';
 import { unit1 } from '../content/unit1';
 import { createMemoryStore } from './keyValue';
 import { createProgressStore, parseStoredProgress, PROGRESS_STORAGE_KEY } from './progressStore';
@@ -43,16 +43,38 @@ describe('progress store', () => {
     expect(keyValue.getItem(PROGRESS_STORAGE_KEY)).toBeNull();
   });
 
-  it('keeps working in memory when saving fails', () => {
+  it('keeps working in memory when saving fails, and reports that progress is not saved', () => {
     const keyValue = createMemoryStore();
     keyValue.setItem = () => {
       throw new Error('QuotaExceededError');
     };
     const store = createProgressStore(keyValue);
+    expect(store.persistent).toBe(true);
     expect(() =>
       store.update((state) => markLessonCompleted(state, 'a', new Date())),
     ).not.toThrow();
     expect(store.getSnapshot().lessons.a).toBeDefined();
+    expect(store.persistent).toBe(false);
+  });
+
+  it('saves the onboarding profile and ignores unknown goals', () => {
+    const keyValue = createMemoryStore();
+    const store = createProgressStore(keyValue);
+    store.update((state) =>
+      completeOnboarding(state, {
+        goal: 'ml_engineer',
+        dailyGoal: 10,
+        now: new Date('2026-03-10T10:00:00Z'),
+      }),
+    );
+    expect(createProgressStore(keyValue).getSnapshot()).toMatchObject({
+      profile: { goal: 'ml_engineer', onboardedAt: '2026-03-10T10:00:00.000Z' },
+      dailyGoal: 10,
+    });
+    expect(
+      parseStoredProgress(JSON.stringify({ version: 1, progress: { profile: { goal: 'pilot' } } }))
+        .profile,
+    ).toEqual({ goal: null, onboardedAt: null });
   });
 
   it('saves mission progress, including passes, hints and completion', () => {

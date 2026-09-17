@@ -1,62 +1,20 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { act, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { createMemoryRouter, RouterProvider } from 'react-router';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { lateDeliveryMystery } from '../content/mission1';
 import { markTaskPassed, missionProgress, selectTask, taskProgress } from '../game/missionProgress';
-import { MissionSummaryPage } from '../pages/MissionSummaryPage';
 import { createMemoryStore } from '../storage/keyValue';
-import { ProgressProvider } from '../storage/ProgressProvider';
-import { createProgressStore, type ProgressStore } from '../storage/progressStore';
-import MissionWorkspace from './MissionWorkspace';
-import type {
-  CheckResult,
-  DatasetSummary,
-  FromWorker,
-  RunResult,
-  ToWorker,
-} from './python/protocol';
-import { PythonRuntime, type WorkerLike } from './python/pythonRuntime';
+import { createProgressStore } from '../storage/progressStore';
+import {
+  DATASET_SUMMARY,
+  NO_OUTPUT,
+  pythonReady,
+  renderWorkspace,
+  runActiveTask,
+} from '../test/renderWorkspace';
 
-const SUMMARY: DatasetSummary = {
-  orders: 600,
-  missingDeliveryTimes: 18,
-  cities: 5,
-  outliers: 13,
-  misleadingCity: 'Hyderabad',
-  slowestCity: 'Kolkata',
-};
-
-const OK: RunResult = { stdout: '', rich: [], error: null };
-
-class FakeWorker implements WorkerLike {
-  onmessage: ((event: MessageEvent<FromWorker>) => void) | null = null;
-  onerror: ((event: ErrorEvent) => void) | null = null;
-  readonly sent: ToWorker[] = [];
-
-  postMessage(message: ToWorker) {
-    this.sent.push(message);
-  }
-
-  terminate() {}
-
-  emit(message: FromWorker) {
-    this.onmessage?.({ data: message } as MessageEvent<FromWorker>);
-  }
-
-  lastRun() {
-    return this.sent.filter((message) => message.type === 'run').at(-1) as
-      Extract<ToWorker, { type: 'run' }> | undefined;
-  }
-
-  finishLastRun(result: RunResult, check: CheckResult | null = null) {
-    const run = this.lastRun();
-    if (!run) throw new Error('Nothing is running');
-    this.emit({ type: 'run-started', id: run.id });
-    this.emit({ type: 'run-result', id: run.id, result, check });
-  }
-}
-
+const SUMMARY = DATASET_SUMMARY;
+const OK = NO_OUTPUT;
 const MISSION = lateDeliveryMystery.id;
 const REQUIRED_CODE_TASKS = [
   'load-data',
@@ -66,56 +24,32 @@ const REQUIRED_CODE_TASKS = [
   'without-outliers',
 ];
 
-function renderWorkspace(store: ProgressStore = createProgressStore(createMemoryStore())) {
-  const workers: FakeWorker[] = [];
-  const router = createMemoryRouter(
-    [
-      {
-        path: '/mission',
-        element: (
-          <MissionWorkspace
-            mission={lateDeliveryMystery}
-            createRuntime={(options) =>
-              new PythonRuntime({
-                ...options,
-                createWorker: () => {
-                  const worker = new FakeWorker();
-                  workers.push(worker);
-                  return worker;
-                },
-              })
-            }
-          />
-        ),
-      },
-      { path: '/mission/summary', element: <MissionSummaryPage /> },
-      { path: '/', element: <p>Path</p> },
-    ],
-    { initialEntries: ['/mission'] },
-  );
-  render(
-    <ProgressProvider store={store}>
-      <RouterProvider router={router} />
-    </ProgressProvider>,
-  );
-  return { workers, store, router };
-}
-
-async function pythonReady(workers: FakeWorker[]) {
-  await waitFor(() => expect(workers).toHaveLength(1));
-  workers[0].emit({ type: 'ready', loadMs: 10, summary: SUMMARY });
-  return workers[0];
-}
-
-async function runActiveTask(user: ReturnType<typeof userEvent.setup>, worker: FakeWorker) {
-  const runsBefore = worker.sent.filter((message) => message.type === 'run').length;
-  await user.click(await screen.findByRole('button', { name: 'Run' }));
-  await waitFor(() =>
-    expect(worker.sent.filter((message) => message.type === 'run')).toHaveLength(runsBefore + 1),
-  );
-}
-
 describe('MissionWorkspace', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('offers a retry when Python fails to load, and retries by itself after reconnecting', async () => {
+    const onLine = vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false);
+    const user = userEvent.setup();
+    const { workers } = renderWorkspace();
+    await waitFor(() => expect(workers).toHaveLength(1));
+    act(() => workers[0].emit({ type: 'init-failed', message: 'Failed to fetch' }));
+
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent('Python couldn’t load');
+    expect(alert).toHaveTextContent('You’re offline. Python will try again when you reconnect.');
+
+    onLine.mockReturnValue(true);
+    act(() => void window.dispatchEvent(new Event('online')));
+    await waitFor(() => expect(workers).toHaveLength(2));
+    expect(screen.getByText('Setting up Python in your browser')).toBeInTheDocument();
+
+    act(() => workers[1].emit({ type: 'init-failed', message: 'Failed to fetch' }));
+    await user.click(await screen.findByRole('button', { name: 'Try again' }));
+    expect(workers).toHaveLength(3);
+  });
+
   it('shows loading progress, then lets the learner run code once Python is ready', async () => {
     const { workers } = renderWorkspace();
 
