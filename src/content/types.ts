@@ -112,8 +112,138 @@ export interface TapOutlierQuestion extends QuestionBase {
   outlierIndices: number[];
 }
 
+/**
+ * A message from a character in the story, such as a manager on chat or a client by email.
+ * Supports **bold** and blank-line paragraph breaks.
+ */
+export interface StoryMessage {
+  /** Who sent it, e.g. "Ritika". */
+  from: string;
+  /** Their role, e.g. "Founder, Kahani". */
+  role: string;
+  channel: 'chat' | 'email';
+  /** Email subject line. Only for email. */
+  subject?: string;
+  text: string;
+}
+
+/** Why a candidate question cannot be answered well. */
+export type TriageFlaw = 'data_not_available' | 'too_vague' | 'wrong_metric';
+
+export interface TriageCandidate {
+  question: string;
+  /** Why this question fails. Leave it out for the one question that can be answered. */
+  flaw?: TriageFlaw;
+  /** One sentence shown after answering: why it works, or why it fails. */
+  note: string;
+}
+
+/** A vague ask arrives. Which of three questions can the data you have actually answer? */
+export interface InboxTriageQuestion extends QuestionBase {
+  type: 'inbox_triage';
+  message: StoryMessage;
+  /** The data the analyst has to work with, e.g. the columns of a table. */
+  data: { caption: string; columns: string[] };
+  /** Exactly three. */
+  candidates: TriageCandidate[];
+  answerableIndex: number;
+}
+
+/** A value axis, as drawn. A bar chart's axis that starts above zero is truncated. */
+export interface ChartAxis {
+  min: number;
+  max: number;
+  label: string;
+  prefix?: string;
+  suffix?: string;
+}
+
+export interface ChartSeries {
+  name: string;
+  /** One value per label. */
+  values: number[];
+  /** `right` draws the series against the right-hand axis, as in a dual-axis chart. */
+  axis?: 'left' | 'right';
+}
+
+/** A small bar or line chart, drawn as SVG. */
+export interface ClaimChart {
+  kind: 'bar' | 'line';
+  title: string;
+  /** One label per point, e.g. months. Keep them short so they fit on a phone. */
+  labels: string[];
+  series: ChartSeries[];
+  axis: ChartAxis;
+  rightAxis?: ChartAxis;
+  /**
+   * Shows only the points from `from` to `to` (inclusive indices), hiding the rest. The honest
+   * version drawn after answering shows every point.
+   */
+  window?: { from: number; to: number };
+}
+
+/** Ways a chart misleads. Validation checks the chart's data really does it. */
+export type ChartTrick = 'truncated_axis' | 'cherry_picked_range' | 'dual_axis';
+
+/** Someone makes a claim with a chart. What is wrong with it? */
+export interface SpotTheLieQuestion extends QuestionBase {
+  type: 'spot_the_lie';
+  claim: { by: string; text: string };
+  chart: ClaimChart;
+  /** What is really wrong with the chart. */
+  trick: ChartTrick;
+  options: string[];
+  correctIndex: number;
+}
+
+export interface Witness {
+  name: string;
+  /** The cause this witness reads into the evidence. */
+  claim: string;
+}
+
+/**
+ * Correlation vs causation. Two witnesses read opposite causes into the same correlation; the
+ * learner finds the lurking variable that explains it. With a `table`, it is a confounder hunt.
+ */
+export interface CourtroomQuestion extends QuestionBase {
+  type: 'courtroom';
+  /** The correlation both witnesses agree on. */
+  evidence: string;
+  witnesses: [Witness, Witness];
+  /** An exhibit: data that hides the third variable. */
+  table?: DataTable;
+  /** Two or three possible lurking variables. Each note says why it is or is not the answer. */
+  suspects: Array<{ text: string; note: string }>;
+  confounderIndex: number;
+}
+
+/** Pick the numerator and denominator that answer a business question. */
+export interface BuildMetricQuestion extends QuestionBase {
+  type: 'build_metric';
+  /** The business question, e.g. "What share of visitors buy something?" */
+  goal: string;
+  /** What the finished metric is called, e.g. "Conversion rate". */
+  metricName: string;
+  /** Cards to place on top or bottom. Some are distractors. `value` shows the result. */
+  cards: Array<{ label: string; value?: number }>;
+  numeratorIndex: number;
+  denominatorIndex: number;
+  /** Show the result as a percentage. */
+  percent?: boolean;
+  /** Written before the result, e.g. "₹". */
+  prefix?: string;
+}
+
 export type Question =
-  MultipleChoiceQuestion | NumericEstimateQuestion | PredictRevealQuestion | TapOutlierQuestion;
+  | MultipleChoiceQuestion
+  | NumericEstimateQuestion
+  | PredictRevealQuestion
+  | TapOutlierQuestion
+  | InboxTriageQuestion
+  | SpotTheLieQuestion
+  | CourtroomQuestion
+  | BuildMetricQuestion;
 
 export type QuestionType = Question['type'];
 

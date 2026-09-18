@@ -1,7 +1,21 @@
 import { act, fireEvent, screen } from '@testing-library/react';
 import type { UserEvent } from '@testing-library/user-event';
 import { expect } from 'vitest';
-import type { Question } from '../content/types';
+import type { BuildMetricQuestion, Question } from '../content/types';
+
+/** Places cards in the metric's top and bottom boxes: focus a card, press Space. */
+async function placeMetricCards(
+  user: UserEvent,
+  question: BuildMetricQuestion,
+  top: number,
+  bottom: number,
+) {
+  for (const index of [top, bottom]) {
+    const card = screen.getByRole('button', { name: question.cards[index].label });
+    act(() => card.focus());
+    await user.keyboard(' ');
+  }
+}
 
 /** Answers the question on screen correctly, using the keyboard wherever a learner could. */
 export async function answerCorrectly(user: UserEvent, question: Question) {
@@ -32,6 +46,18 @@ export async function answerCorrectly(user: UserEvent, question: Question) {
       }
       break;
     }
+    case 'inbox_triage':
+      await user.keyboard(String(question.answerableIndex + 1));
+      break;
+    case 'spot_the_lie':
+      await user.keyboard(String(question.correctIndex + 1));
+      break;
+    case 'courtroom':
+      await user.keyboard(String(question.confounderIndex + 1));
+      break;
+    case 'build_metric':
+      await placeMetricCards(user, question, question.numeratorIndex, question.denominatorIndex);
+      break;
   }
 }
 
@@ -63,6 +89,21 @@ export async function answerIncorrectly(user: UserEvent, question: Question) {
       await user.keyboard(' ');
       break;
     }
+    case 'inbox_triage':
+      await user.keyboard(
+        String(((question.answerableIndex + 1) % question.candidates.length) + 1),
+      );
+      break;
+    case 'spot_the_lie':
+      await user.keyboard(String(((question.correctIndex + 1) % question.options.length) + 1));
+      break;
+    case 'courtroom':
+      await user.keyboard(String(((question.confounderIndex + 1) % question.suspects.length) + 1));
+      break;
+    case 'build_metric':
+      // Upside down: the denominator on top.
+      await placeMetricCards(user, question, question.denominatorIndex, question.numeratorIndex);
+      break;
   }
 }
 

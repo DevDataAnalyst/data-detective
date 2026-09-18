@@ -59,6 +59,12 @@ const TEXT_PAIRS: Array<[string, string]> = [
   ),
   ['slate-900', 'slate-100'],
   ['slate-700', 'slate-100'],
+  // Claims, chat bubbles, revealed option notes and the honest chart note.
+  ['slate-900', 'streak-100'],
+  ['slate-800', 'current-50'],
+  ['slate-700', 'current-50'],
+  ['slate-700', 'correct-50'],
+  ['slate-700', 'incorrect-50'],
   ...['correct-ink-700', 'correct-ink-800', 'correct-ink-900'].flatMap(
     (text): Array<[string, string]> => [
       [text, 'correct-50'],

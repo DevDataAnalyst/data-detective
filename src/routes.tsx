@@ -11,6 +11,17 @@ import { PathPage } from './pages/PathPage';
 import { PlaytestPage } from './pages/PlaytestPage';
 import { ProfilePage } from './pages/ProfilePage';
 
+// Development only: stripped from production builds along with its placeholder questions.
+const devRoutes: RouteObject[] = import.meta.env.DEV
+  ? [
+      {
+        path: 'dev/question-preview',
+        lazy: () =>
+          import('./pages/QuestionPreviewPage').then((module) => ({ Component: module.default })),
+      },
+    ]
+  : [];
+
 export const routes: RouteObject[] = [
   {
     element: <RootLayout />,
@@ -30,6 +41,7 @@ export const routes: RouteObject[] = [
       { path: 'checkpoint', element: <CheckpointPage /> },
       { path: 'mission', element: <MissionPage /> },
       { path: 'mission/summary', element: <MissionSummaryPage /> },
+      ...devRoutes,
     ],
   },
 ];

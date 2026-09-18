@@ -103,6 +103,25 @@ Run from the project root. Needs Node 22.22 or newer.
   goes for population vs sample standard deviation.
 - Statistics helpers live in `src/game/stats.ts`.
 
+## Challenge question types
+
+- Four types frame questions as analyst work: `inbox_triage` (a vague ask as a chat or email
+  `StoryMessage`, plus three candidate questions; exactly one is answerable, the others name a
+  `flaw`), `spot_the_lie` (a `ClaimChart` drawn as SVG plus the `trick` it plays), `courtroom`
+  (two witnesses read opposite causes into one correlation; the learner picks the lurking
+  variable, optionally from a `table` exhibit) and `build_metric` (numerator and denominator
+  cards, some of them distractors).
+- Their rules live in `src/content/validateChallenges.ts`. A chart's trick is recomputed from its
+  data in `src/game/charts.ts` (`chartTricks`): a truncated bar axis must exaggerate differences
+  at least 1.5×, a `window` must hide points that change the story, a dual axis needs two scales.
+  One trick per chart. After answering, `honestChart` draws the fair version.
+- `ChoiceCards` is the shared pick-one list (number keys, reveal states, a note per option); the
+  three pick-one types and multiple choice all use it. `BuildMetric` supports dragging, tapping and
+  the keyboard: a card fills the next empty box, a filled box gives its card back, and focus moves
+  to the finished fraction so Enter checks.
+- `/dev/question-preview` (development builds only) plays the placeholder questions in
+  `src/dev/previewQuestions.ts` through the real lesson player.
+
 ## Lesson player
 
 - `src/game/lessonSession.ts` is the reducer (wrong answers re-queue at the end); `src/game/grading.ts`

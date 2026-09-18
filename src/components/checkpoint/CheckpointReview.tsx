@@ -1,4 +1,4 @@
-import { fillTemplate } from '../../content/template';
+import { fillQuestionText } from '../../content/template';
 import type { Checkpoint, Lesson } from '../../content/types';
 import type { CheckpointAnswerRecord } from '../../game/checkpoint';
 import { CheckIcon, LightbulbIcon } from '../icons';
@@ -51,7 +51,7 @@ export function CheckpointReview({ checkpoint, lessons, answers }: CheckpointRev
               </p>
               {correct ? (
                 <h3 className="font-semibold text-slate-900">
-                  {fillTemplate(question.prompt, question.dataset)}
+                  {fillQuestionText(question, question.prompt)}
                 </h3>
               ) : (
                 <>
@@ -66,7 +66,7 @@ export function CheckpointReview({ checkpoint, lessons, answers }: CheckpointRev
                     headingLevel="h3"
                   />
                   <p className="rounded-xl bg-surface p-3 leading-relaxed text-slate-800 ring-1 ring-incorrect-200">
-                    {fillTemplate(question.explanation, question.dataset)}
+                    {fillQuestionText(question, question.explanation)}
                   </p>
                 </>
               )}

@@ -14,6 +14,10 @@ const QUESTION_TYPE_NAMES: Record<string, string> = {
   numeric_estimate: 'Numeric estimate',
   predict_reveal: 'Predict and reveal',
   tap_outlier: 'Tap the outlier',
+  inbox_triage: 'Inbox triage',
+  spot_the_lie: 'Spot the lie',
+  courtroom: 'Courtroom',
+  build_metric: 'Build the metric',
 };
 
 function taskTitle(taskId: string): string {

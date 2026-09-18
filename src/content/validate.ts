@@ -11,10 +11,22 @@ import {
   type Statistic,
   type StatisticOptions,
 } from '../game/stats';
-import { templateTokens } from './template';
+import { questionDataset, templateTokens } from './template';
+import {
+  validateBuildMetric,
+  validateCourtroom,
+  validateInboxTriage,
+  validateSpotTheLie,
+} from './validateChallenges';
+import {
+  countWords,
+  formatIssues,
+  issue,
+  validateTable,
+  type ValidationIssue,
+} from './validationCore';
 import type {
   Checkpoint,
-  DataTable,
   Lesson,
   Mission,
   MultipleChoiceQuestion,
@@ -27,10 +39,7 @@ import type {
   Unit,
 } from './types';
 
-export interface ValidationIssue {
-  path: string;
-  message: string;
-}
+export { countWords, formatIssues, type ValidationIssue };
 
 /** Facts about a mission's dataset that summary text may quote, e.g. `{outliers}`. */
 export const MISSION_FACTS = [
@@ -75,13 +84,6 @@ const REVEAL_STATISTICS: Record<RevealVisual, readonly Statistic[]> = {
   sd_band: ['std_dev'],
 };
 
-export function countWords(text: string): number {
-  return text
-    .replace(/\*\*/g, '')
-    .split(/\s+/)
-    .filter((word) => /[\p{L}\p{N}]/u.test(word)).length;
-}
-
 /** An option whose answer is a number, e.g. "₹11,000" or "4.5 GB" (not "Half scored above 62"). */
 export function isNumericOption(text: string): boolean {
   return /^\s*₹?\s*-?\d/.test(text);
@@ -93,14 +95,6 @@ export function parseLeadingNumber(text: string): number | null {
   if (!match) return null;
   const value = Number(match[0].replace(/,/g, ''));
   return Number.isFinite(value) ? value : null;
-}
-
-export function formatIssues(issues: readonly ValidationIssue[]): string {
-  return issues.map((found) => `${found.path}: ${found.message}`).join('\n');
-}
-
-function issue(path: string, message: string): ValidationIssue {
-  return { path, message };
 }
 
 function show(value: number): string {
@@ -145,32 +139,11 @@ function validateDataset(dataset: NumberDataset, path: string): ValidationIssue[
   return issues;
 }
 
-function validateTable(table: DataTable, path: string): ValidationIssue[] {
-  const issues: ValidationIssue[] = [];
-  if (table.columns.length === 0) issues.push(issue(path, 'has no columns'));
-  if (table.rows.length === 0) issues.push(issue(path, 'has no rows'));
-  table.rows.forEach((row, index) => {
-    if (row.length !== table.columns.length) {
-      issues.push(
-        issue(
-          `${path}.rows[${index}]`,
-          `has ${row.length} cells for ${table.columns.length} columns`,
-        ),
-      );
-    }
-  });
-  return issues;
-}
-
-function singleDataset(question: Question): NumberDataset | undefined {
-  return question.dataset;
-}
-
 function validateTemplates(question: Question, path: string): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   for (const field of ['prompt', 'explanation'] as const) {
     for (const token of templateTokens(question[field])) {
-      const dataset = singleDataset(question);
+      const dataset = questionDataset(question);
       if (!dataset) {
         issues.push(issue(`${path}.${field}`, `${token.raw} needs the question to have a dataset`));
         continue;
@@ -513,6 +486,14 @@ export function validateQuestion(question: Question, path: string): ValidationIs
       return [...issues, ...validatePredictReveal(question, path)];
     case 'tap_outlier':
       return [...issues, ...validateTapOutlier(question, path)];
+    case 'inbox_triage':
+      return [...issues, ...validateInboxTriage(question, path)];
+    case 'spot_the_lie':
+      return [...issues, ...validateSpotTheLie(question, path)];
+    case 'courtroom':
+      return [...issues, ...validateCourtroom(question, path)];
+    case 'build_metric':
+      return [...issues, ...validateBuildMetric(question, path)];
   }
 }
 

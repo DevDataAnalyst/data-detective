@@ -4,6 +4,7 @@ import axe from 'axe-core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { lateDeliveryMystery } from '../content/mission1';
 import { unit1 } from '../content/unit1';
+import { PREVIEW_QUESTIONS } from '../dev/previewQuestions';
 import { markTaskPassed, selectTask } from '../game/missionProgress';
 import { finishCheckpoint } from '../game/rewards';
 import { createMemoryStore } from '../storage/keyValue';
@@ -206,6 +207,29 @@ describe('accessibility audit (axe)', () => {
     await user.click(screen.getByRole('button', { name: 'Dark mode' }));
     expect(document.documentElement.dataset.theme).toBe('dark');
     await expectAccessible('path in dark mode');
+  });
+
+  it('challenge questions of every type, with feedback and reveals', async () => {
+    const user = userEvent.setup();
+    for (const [type, button] of [
+      ['inbox_triage', /inbox triage/i],
+      ['spot_the_lie', /spot the lie/i],
+      ['courtroom', /courtroom/i],
+      ['build_metric', /build the metric/i],
+    ] as const) {
+      const view = renderApp({ path: '/dev/question-preview' });
+      await user.click(await screen.findByRole('button', { name: button }));
+      await user.keyboard('{Enter}');
+      const question = PREVIEW_QUESTIONS.find((candidate) => candidate.type === type);
+      if (!question) throw new Error(`No ${type} placeholder`);
+      await expectAccessible(`${type} question`);
+      await answerIncorrectly(user, question);
+      await expectAccessible(`${type} answered`);
+      await user.keyboard('{Enter}');
+      await screen.findByRole('button', { name: /continue/i });
+      await expectAccessible(`${type} feedback`);
+      view.unmount();
+    }
   });
 
   it('page not found', async () => {

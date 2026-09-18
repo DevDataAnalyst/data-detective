@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from 'react';
 import { useEvents } from '../../storage/eventsContext';
-import { fillTemplate } from '../../content/template';
+import { fillQuestionText } from '../../content/template';
 import type { Lesson } from '../../content/types';
 import type { LessonXpAward } from '../../game/xp';
 import { gradeAnswer, isAnswerReady, type Answer } from '../../game/grading';
@@ -284,7 +284,7 @@ export function LessonPlayer({
           key={attemptKey}
           correct={session.lastAnswerCorrect === true}
           headline={feedbackHeadline(session.lastAnswerCorrect === true, attemptKey)}
-          explanation={fillTemplate(question.explanation, question.dataset)}
+          explanation={fillQuestionText(question, question.explanation)}
           note={
             session.lastAnswerCorrect
               ? undefined

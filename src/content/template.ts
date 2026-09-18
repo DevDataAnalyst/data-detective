@@ -1,5 +1,5 @@
 import { computeStatistic, isStatistic } from '../game/stats';
-import type { NumberDataset } from './types';
+import type { NumberDataset, Question } from './types';
 
 const TOKEN_PATTERN = /\{([a-z_0-9]+)(?::(\d))?\}/g;
 
@@ -41,4 +41,14 @@ export function fillTemplate(text: string, dataset?: NumberDataset): string {
     const value = computeStatistic(name, dataset.values);
     return formatNumber(value, decimals === undefined ? 2 : Number(decimals));
   });
+}
+
+/** The dataset a question's placeholders are filled from, if it has one. */
+export function questionDataset(question: Question): NumberDataset | undefined {
+  return 'dataset' in question ? question.dataset : undefined;
+}
+
+/** Fills the placeholders in one of a question's templated fields, such as its prompt. */
+export function fillQuestionText(question: Question, text: string): string {
+  return fillTemplate(text, questionDataset(question));
 }

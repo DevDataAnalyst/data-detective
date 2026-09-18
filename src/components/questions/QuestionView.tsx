@@ -1,10 +1,14 @@
 import type { Ref } from 'react';
-import { fillTemplate } from '../../content/template';
+import { fillQuestionText } from '../../content/template';
 import type { Question } from '../../content/types';
 import type { Answer } from '../../game/grading';
+import { BuildMetric } from './BuildMetric';
+import { Courtroom } from './Courtroom';
+import { InboxTriage } from './InboxTriage';
 import { MultipleChoice } from './MultipleChoice';
 import { NumericEstimate } from './NumericEstimate';
 import { PredictReveal } from './PredictReveal';
+import { SpotTheLie } from './SpotTheLie';
 import { TapOutlier } from './TapOutlier';
 
 interface QuestionViewProps {
@@ -37,7 +41,7 @@ export function QuestionView({
           Heading === 'h2' ? 'text-xl sm:text-2xl' : 'text-lg'
         }`}
       >
-        {fillTemplate(question.prompt, question.dataset)}
+        {fillQuestionText(question, question.prompt)}
       </Heading>
       {renderBody(question, answer, shared)}
     </div>
@@ -80,6 +84,38 @@ function renderBody(
           {...shared}
           question={question}
           answer={answer?.type === 'tap_outlier' ? answer : null}
+        />
+      );
+    case 'inbox_triage':
+      return (
+        <InboxTriage
+          {...shared}
+          question={question}
+          answer={answer?.type === 'inbox_triage' ? answer : null}
+        />
+      );
+    case 'spot_the_lie':
+      return (
+        <SpotTheLie
+          {...shared}
+          question={question}
+          answer={answer?.type === 'spot_the_lie' ? answer : null}
+        />
+      );
+    case 'courtroom':
+      return (
+        <Courtroom
+          {...shared}
+          question={question}
+          answer={answer?.type === 'courtroom' ? answer : null}
+        />
+      );
+    case 'build_metric':
+      return (
+        <BuildMetric
+          {...shared}
+          question={question}
+          answer={answer?.type === 'build_metric' ? answer : null}
         />
       );
   }

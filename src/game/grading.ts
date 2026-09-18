@@ -20,8 +20,37 @@ export interface TapOutlierAnswer {
   selectedIndices: number[];
 }
 
+export interface InboxTriageAnswer {
+  type: 'inbox_triage';
+  selectedIndex: number;
+}
+
+export interface SpotTheLieAnswer {
+  type: 'spot_the_lie';
+  selectedIndex: number;
+}
+
+export interface CourtroomAnswer {
+  type: 'courtroom';
+  selectedIndex: number;
+}
+
+/** Card indices placed on top and bottom of the fraction. */
+export interface BuildMetricAnswer {
+  type: 'build_metric';
+  numerator: number | null;
+  denominator: number | null;
+}
+
 export type Answer =
-  MultipleChoiceAnswer | NumericEstimateAnswer | PredictRevealAnswer | TapOutlierAnswer;
+  | MultipleChoiceAnswer
+  | NumericEstimateAnswer
+  | PredictRevealAnswer
+  | TapOutlierAnswer
+  | InboxTriageAnswer
+  | SpotTheLieAnswer
+  | CourtroomAnswer
+  | BuildMetricAnswer;
 
 /** Guards against floating point noise when comparing with a tolerance. */
 const EPSILON = 1e-9;
@@ -35,7 +64,12 @@ export function isAnswerReady(answer: Answer | null): answer is Answer {
   if (!answer) return false;
   switch (answer.type) {
     case 'multiple_choice':
+    case 'inbox_triage':
+    case 'spot_the_lie':
+    case 'courtroom':
       return Number.isInteger(answer.selectedIndex) && answer.selectedIndex >= 0;
+    case 'build_metric':
+      return answer.numerator !== null && answer.denominator !== null;
     case 'numeric_estimate':
     case 'predict_reveal':
       return Number.isFinite(answer.value);
@@ -59,6 +93,21 @@ export function gradeAnswer(question: Question, answer: Answer): boolean {
     return (
       selected.size === question.outlierIndices.length &&
       question.outlierIndices.every((index) => selected.has(index))
+    );
+  }
+  if (question.type === 'inbox_triage' && answer.type === 'inbox_triage') {
+    return answer.selectedIndex === question.answerableIndex;
+  }
+  if (question.type === 'spot_the_lie' && answer.type === 'spot_the_lie') {
+    return answer.selectedIndex === question.correctIndex;
+  }
+  if (question.type === 'courtroom' && answer.type === 'courtroom') {
+    return answer.selectedIndex === question.confounderIndex;
+  }
+  if (question.type === 'build_metric' && answer.type === 'build_metric') {
+    return (
+      answer.numerator === question.numeratorIndex &&
+      answer.denominator === question.denominatorIndex
     );
   }
   return false;

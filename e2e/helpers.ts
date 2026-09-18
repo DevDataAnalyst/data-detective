@@ -39,6 +39,25 @@ export async function answerCorrectly(page: Page, question: Question) {
       for (const index of question.outlierIndices) await dots.nth(index).click();
       break;
     }
+    case 'inbox_triage':
+    case 'spot_the_lie':
+    case 'courtroom': {
+      const index =
+        question.type === 'inbox_triage'
+          ? question.answerableIndex
+          : question.type === 'courtroom'
+            ? question.confounderIndex
+            : question.correctIndex;
+      await page.keyboard.press(String(index + 1));
+      await expect(page.getByRole('radio').nth(index)).toBeChecked();
+      break;
+    }
+    case 'build_metric':
+      // Tapping a card fills the next empty box: the top first, then the bottom.
+      for (const index of [question.numeratorIndex, question.denominatorIndex]) {
+        await page.getByRole('button', { name: question.cards[index].label, exact: true }).click();
+      }
+      break;
   }
 }
 

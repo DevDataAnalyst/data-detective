@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fillTemplate } from './template';
+import { fillQuestionText } from './template';
 import type {
   MultipleChoiceQuestion,
   NumericEstimateQuestion,
@@ -76,7 +76,7 @@ describe('Unit 1 content', () => {
   it('fills every placeholder in prompts and explanations', () => {
     for (const question of allQuestions) {
       for (const text of [question.prompt, question.explanation]) {
-        expect(fillTemplate(text, question.dataset)).not.toMatch(/\{[a-z_0-9:]+\}/);
+        expect(fillQuestionText(question, text)).not.toMatch(/\{[a-z_0-9:]+\}/);
       }
     }
   });

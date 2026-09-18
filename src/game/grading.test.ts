@@ -3,8 +3,10 @@ import type {
   MultipleChoiceQuestion,
   NumericEstimateQuestion,
   PredictRevealQuestion,
+  Question,
   TapOutlierQuestion,
 } from '../content/types';
+import { PREVIEW_QUESTIONS } from '../dev/previewQuestions';
 import { gradeAnswer, isAnswerReady, parseLearnerNumber } from './grading';
 
 const multipleChoice: MultipleChoiceQuestion = {
@@ -103,5 +105,44 @@ describe('parseLearnerNumber', () => {
     expect(parseLearnerNumber('.5')).toBe(0.5);
     expect(parseLearnerNumber('')).toBeNull();
     expect(parseLearnerNumber('about thirty')).toBeNull();
+  });
+});
+
+describe('challenge question grading', () => {
+  const find = <T extends Question['type']>(type: T) =>
+    PREVIEW_QUESTIONS.find((question) => question.type === type) as Extract<Question, { type: T }>;
+
+  it('grades inbox triage, spot the lie and courtroom by the picked option', () => {
+    const triage = find('inbox_triage');
+    expect(
+      gradeAnswer(triage, { type: 'inbox_triage', selectedIndex: triage.answerableIndex }),
+    ).toBe(true);
+    expect(
+      gradeAnswer(triage, { type: 'inbox_triage', selectedIndex: triage.answerableIndex + 1 }),
+    ).toBe(false);
+
+    const lie = find('spot_the_lie');
+    expect(gradeAnswer(lie, { type: 'spot_the_lie', selectedIndex: lie.correctIndex })).toBe(true);
+    expect(gradeAnswer(lie, { type: 'courtroom', selectedIndex: lie.correctIndex })).toBe(false);
+
+    const court = find('courtroom');
+    expect(gradeAnswer(court, { type: 'courtroom', selectedIndex: court.confounderIndex })).toBe(
+      true,
+    );
+    expect(gradeAnswer(court, { type: 'courtroom', selectedIndex: 2 })).toBe(false);
+  });
+
+  it('needs the metric’s top and bottom both right, and the right way up', () => {
+    const metric = find('build_metric');
+    const { numeratorIndex: top, denominatorIndex: bottom } = metric;
+    expect(gradeAnswer(metric, { type: 'build_metric', numerator: top, denominator: bottom })).toBe(
+      true,
+    );
+    expect(gradeAnswer(metric, { type: 'build_metric', numerator: bottom, denominator: top })).toBe(
+      false,
+    );
+    expect(isAnswerReady({ type: 'build_metric', numerator: top, denominator: null })).toBe(false);
+    expect(isAnswerReady({ type: 'build_metric', numerator: top, denominator: bottom })).toBe(true);
+    expect(isAnswerReady({ type: 'courtroom', selectedIndex: 0 })).toBe(true);
   });
 });
