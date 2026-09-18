@@ -11,6 +11,13 @@ export const XP_RULES = {
   missionBase: 100,
   stretchTask: 15,
   stretchMax: 30,
+  bossPerCorrect: 3,
+  bossAccuracyBonus: 5,
+  bossStrongAccuracy: 0.8,
+  /** The accuracy bonus needs at least this many answers, so one lucky answer does not earn it. */
+  bossMinAnsweredForBonus: 5,
+  /** A guard for longer rounds: 12 questions can earn at most 41. */
+  bossMax: 45,
 } as const;
 
 /** Bonus for first-attempt accuracy: 100% earns +5, 80% or more +3, otherwise nothing. */
@@ -88,4 +95,36 @@ export function missionXpSummary(input: {
     stretch += stretchTaskXp(index);
   }
   return { base, stretch, total: base + stretch };
+}
+
+export type BossXpAward =
+  | { kind: 'bonus'; base: number; accuracyBonus: number; total: number }
+  /** The boss bonus is paid once per unit per day; replays that day are practice. */
+  | { kind: 'already_earned_today'; total: 0 };
+
+/**
+ * Boss battle XP: 3 per correct answer, plus 5 for answering at least 80% right over 5 or more
+ * answers (never more than 45). Paid for the first round of the day in each unit.
+ */
+export function bossBattleXp(input: {
+  correct: number;
+  answered: number;
+  alreadyEarnedToday: boolean;
+}): BossXpAward {
+  if (input.alreadyEarnedToday) return { kind: 'already_earned_today', total: 0 };
+  const correct = Math.max(0, Math.floor(input.correct));
+  const answered = Math.max(correct, Math.floor(input.answered));
+  const base = correct * XP_RULES.bossPerCorrect;
+  const accuracyBonus =
+    answered >= XP_RULES.bossMinAnsweredForBonus &&
+    correct / answered >= XP_RULES.bossStrongAccuracy
+      ? XP_RULES.bossAccuracyBonus
+      : 0;
+  const total = Math.min(XP_RULES.bossMax, base + accuracyBonus);
+  return {
+    kind: 'bonus',
+    base: Math.min(base, total),
+    accuracyBonus: total - Math.min(base, total),
+    total,
+  };
 }

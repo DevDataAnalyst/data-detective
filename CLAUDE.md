@@ -210,6 +210,24 @@ Run from the project root. Needs Node 22.22 or newer.
   `src/storage/clock.ts`; tests fake `Date` with `vi.setSystemTime`.
 - `src/test/answerQuestion.ts` has `answerCorrectly` and `answerIncorrectly` for any question type.
 
+## Boss battle
+
+- Every unit ends with a timed round before its mission (`/units/:unitId/boss`). It opens with
+  the mission and never blocks it. Rules are pure, in `src/game/bossBattle.ts`: the pool is every
+  question answered right at least once in the unit (`masteredQuestionIds`: questions of lessons
+  played to the end, plus checkpoint questions answered right, saved as `correctQuestionIds`);
+  `selectBossQuestions` takes up to 12, seeded and mixed by type; the session reducer starts the
+  clock, moves on after every answer (no re-queue) and ends when time runs out or all are
+  answered; `scoreBoss` gives correct, answered and accuracy.
+- XP is `bossBattleXp` in `src/game/xp.ts`: 3 per right answer, +5 for 80% accuracy over 5 or
+  more answers, paid for the first round of the day in each unit (later rounds are practice).
+  `finishBossBattle` in `src/game/rewards.ts` also keeps plays and the best score.
+- The clock is `Date.now()` checked four times a second, so tests fake `Date` and move it with
+  `vi.setSystemTime`. The countdown is always a number (`role="timer"`); only the draining bar
+  animates, and not under reduced motion. Screen readers hear 30 and 10 seconds left. Learners can
+  pick 2 minutes instead of 60 seconds for the same XP.
+- Boss answers are logged with `source: 'boss'` and never count as first tries.
+
 ## Onboarding, accessibility and error states
 
 - First visit goes to `/welcome`: three screens (welcome, why they are here, daily goal), then

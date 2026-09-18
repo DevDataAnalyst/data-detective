@@ -1,5 +1,6 @@
 import type { RouteObject } from 'react-router';
 import { AppShell } from './components/AppShell';
+import { BossBattlePage } from './pages/BossBattlePage';
 import { RootLayout } from './components/RootLayout';
 import { CheckpointPage } from './pages/CheckpointPage';
 import { LessonPage } from './pages/LessonPage';
@@ -39,6 +40,7 @@ export const routes: RouteObject[] = [
       { path: 'welcome', element: <OnboardingPage /> },
       { path: 'lesson/:lessonId', element: <LessonPage /> },
       { path: 'checkpoint', element: <CheckpointPage /> },
+      { path: 'units/:unitId/boss', element: <BossBattlePage /> },
       { path: 'mission', element: <MissionPage /> },
       { path: 'mission/summary', element: <MissionSummaryPage /> },
       ...devRoutes,

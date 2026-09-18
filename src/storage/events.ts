@@ -22,8 +22,8 @@ export type PlaytestEventBody =
       type: 'question_answered';
       questionId: string;
       questionType: QuestionType;
-      /** The lesson it came from, or the checkpoint. */
-      source: 'lesson' | 'checkpoint';
+      /** Where it was asked: a lesson, the checkpoint or a boss battle. */
+      source: 'lesson' | 'checkpoint' | 'boss';
       lessonId: string | null;
       /** False when the question came back after a wrong answer. */
       firstAttempt: boolean;
@@ -42,6 +42,17 @@ export type PlaytestEventBody =
       ms: number;
     }
   | { type: 'checkpoint_abandoned'; checkpointId: string; answered: number; total: number }
+  | { type: 'boss_started'; unitId: string; questions: number; durationMs: number }
+  | {
+      type: 'boss_finished';
+      unitId: string;
+      correct: number;
+      answered: number;
+      total: number;
+      endReason: 'time_up' | 'all_answered';
+      ms: number;
+    }
+  | { type: 'boss_abandoned'; unitId: string; answered: number; total: number }
   | { type: 'mission_opened'; missionId: string }
   | { type: 'pyodide_loaded'; ms: number }
   | { type: 'pyodide_failed'; message: string }

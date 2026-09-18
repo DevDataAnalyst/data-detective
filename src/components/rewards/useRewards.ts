@@ -4,6 +4,7 @@ import {
   awardXp,
   completeLesson,
   completeMission,
+  finishBossBattle,
   finishCheckpoint,
   passMissionTask,
   setDailyGoal,
@@ -66,6 +67,11 @@ export function useRewards() {
     finishCheckpoint(unit: Unit, correctByQuestion: Readonly<Record<string, boolean>>) {
       const at = now();
       const outcome = finishCheckpoint(store.getSnapshot(), { unit, correctByQuestion, now: at });
+      return save(outcome, toDateKey(at));
+    },
+    finishBossBattle(unitId: string, correct: number, answered: number) {
+      const at = now();
+      const outcome = finishBossBattle(store.getSnapshot(), { unitId, correct, answered, now: at });
       return save(outcome, toDateKey(at));
     },
     passMissionTask(mission: Mission, taskId: string) {

@@ -10,6 +10,7 @@ import { missionProgress } from '../game/missionProgress';
 import { missionState, missionTaskCounts } from '../game/missionRules';
 import { checkpointAvailability } from '../game/checkpoint';
 import {
+  bossProgress,
   checkpointProgress,
   completedLessonIds,
   hasPassedCheckpoint,
@@ -45,6 +46,7 @@ export function PathPage() {
   );
   const showTestOut = !checkpointPassed && completedCount < unit.lessons.length;
   const savedMission = mission ? missionProgress(progress, mission.id) : null;
+  const savedBoss = bossProgress(progress, unit.id);
   const counts = mission && savedMission ? missionTaskCounts(mission, savedMission) : null;
 
   if (!isOnboarded(progress)) return <Navigate to="/welcome" replace />;
@@ -148,6 +150,11 @@ export function PathPage() {
         unit={unit}
         completed={completed}
         testedOut={testedOutLessonIds(progress)}
+        boss={{
+          state: !missionUnlocked ? 'locked' : savedBoss.plays > 0 ? 'played' : 'available',
+          bestCorrect: savedBoss.bestCorrect,
+          bonusEarnedToday: savedBoss.lastXpDay === today,
+        }}
         mission={{
           title: mission?.title ?? 'Mission',
           xp: XP_RULES.missionBase,

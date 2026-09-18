@@ -88,6 +88,7 @@ describe('checkpoint retake wait', () => {
       passed: false,
       missedLessonIds: ['the-mean'],
     },
+    correctQuestionIds: [],
   };
   const minutesLater = (minutes: number) => new Date(failedAt.getTime() + minutes * 60_000);
 
@@ -208,7 +209,11 @@ describe('finishing the checkpoint', () => {
         passed: true,
         missedLessonIds: ['median-and-mode'],
       },
+      correctQuestionIds: checkpoint.items
+        .map((item) => item.question.id)
+        .filter((questionId) => resultsMissing(4)[questionId]),
     });
+    expect(checkpointProgress(outcome.state, checkpoint.id).correctQuestionIds).toHaveLength(9);
     expect(outcome.state.activity.totalXp).toBe(40);
 
     const again = finishCheckpoint(outcome.state, {

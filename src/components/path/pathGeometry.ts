@@ -3,8 +3,11 @@
 export const PATH_LAYOUT = {
   width: 320,
   lessonSize: 76,
+  bossSize: 88,
   missionSize: 104,
   rowHeight: 156,
+  /** The boss row is taller: its node is bigger and it has a score badge. */
+  bossRowHeight: 184,
   swing: 70,
   /** Room above the first node for the "Start" bubble. */
   top: 44,
@@ -21,23 +24,31 @@ export interface NodePosition {
   size: number;
 }
 
+/** Lesson nodes wind down the column; the boss battle and then the mission sit in the middle. */
 export function pathPositions(lessonCount: number): {
   lessons: NodePosition[];
+  boss: NodePosition;
   mission: NodePosition;
   height: number;
 } {
-  const { width, lessonSize, missionSize, rowHeight, swing, top, bottom } = PATH_LAYOUT;
+  const { width, lessonSize, bossSize, missionSize, rowHeight, bossRowHeight, swing, top, bottom } =
+    PATH_LAYOUT;
   const lessons = Array.from({ length: lessonCount }, (_, index) => ({
     cx: width / 2 + SWING_PATTERN[index % SWING_PATTERN.length] * swing,
     cy: top + lessonSize / 2 + index * rowHeight,
     size: lessonSize,
   }));
+  const boss = {
+    cx: width / 2,
+    cy: top + lessonCount * rowHeight + bossSize / 2,
+    size: bossSize,
+  };
   const mission = {
     cx: width / 2,
-    cy: top + lessonCount * rowHeight + missionSize / 2,
+    cy: top + lessonCount * rowHeight + bossRowHeight + missionSize / 2,
     size: missionSize,
   };
-  return { lessons, mission, height: mission.cy + missionSize / 2 + bottom };
+  return { lessons, boss, mission, height: mission.cy + missionSize / 2 + bottom };
 }
 
 /** A smooth S-curve between two node centres. */

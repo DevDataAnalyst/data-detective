@@ -138,9 +138,25 @@ function parseCheckpoints(value: unknown): Record<string, CheckpointProgress> {
       passedAt: typeof raw.passedAt === 'string' ? raw.passedAt : null,
       attempts: Math.max(0, finiteNumber(raw.attempts, 0)),
       lastAttempt: parseAttempt(raw.lastAttempt),
+      correctQuestionIds: stringList(raw.correctQuestionIds),
     };
   }
   return checkpoints;
+}
+
+function parseBossBattles(value: unknown): ProgressState['bossBattles'] {
+  if (!isRecord(value)) return {};
+  const battles: ProgressState['bossBattles'] = {};
+  for (const [unitId, raw] of Object.entries(value)) {
+    if (!isRecord(raw)) continue;
+    battles[unitId] = {
+      plays: Math.max(0, finiteNumber(raw.plays, 0)),
+      bestCorrect: Math.max(0, finiteNumber(raw.bestCorrect, 0)),
+      lastPlayedAt: typeof raw.lastPlayedAt === 'string' ? raw.lastPlayedAt : null,
+      lastXpDay: typeof raw.lastXpDay === 'string' ? raw.lastXpDay : null,
+    };
+  }
+  return battles;
 }
 
 /**
@@ -184,6 +200,7 @@ export function parseStoredProgress(raw: string | null): ProgressState {
     dailyGoal: finiteNumber(stored.dailyGoal, initial.dailyGoal),
     missions: parseMissions(stored.missions),
     checkpoints: parseCheckpoints(stored.checkpoints),
+    bossBattles: parseBossBattles(stored.bossBattles),
   };
 }
 

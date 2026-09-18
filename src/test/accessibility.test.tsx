@@ -6,6 +6,7 @@ import { lateDeliveryMystery } from '../content/mission1';
 import { unit1 } from '../content/unit1';
 import { PREVIEW_QUESTIONS } from '../dev/previewQuestions';
 import { markTaskPassed, selectTask } from '../game/missionProgress';
+import { markLessonCompleted } from '../game/progress';
 import { finishCheckpoint } from '../game/rewards';
 import { createMemoryStore } from '../storage/keyValue';
 import { createProgressStore } from '../storage/progressStore';
@@ -229,6 +230,32 @@ describe('accessibility audit (axe)', () => {
       await screen.findByRole('button', { name: /continue/i });
       await expectAccessible(`${type} feedback`);
       view.unmount();
+    }
+  });
+
+  it('boss battle: intro, a question mid-round and the results', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2026, 2, 10, 9, 0));
+    try {
+      const user = userEvent.setup();
+      const store = createProgressStore(createMemoryStore());
+      store.update((state) =>
+        unit1.lessons.reduce(
+          (next, lesson) => markLessonCompleted(next, lesson.id, new Date(2026, 2, 9)),
+          state,
+        ),
+      );
+      renderApp({ path: `/units/${unit1.id}/boss`, store });
+      await screen.findByRole('heading', { name: 'Beat the clock' });
+      await expectAccessible('boss intro');
+      await user.click(screen.getByRole('button', { name: 'Start the clock' }));
+      await screen.findByRole('timer');
+      await expectAccessible('boss question');
+      act(() => vi.setSystemTime(new Date(2026, 2, 10, 9, 2)));
+      await screen.findByRole('heading', { name: 'Time’s up!' });
+      await expectAccessible('boss results');
+    } finally {
+      vi.useRealTimers();
     }
   });
 

@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
   accuracyBonus,
+  bossBattleXp,
   checkpointXp,
   lessonXp,
   missionTaskXp,
   missionXpSummary,
   stretchTaskXp,
+  XP_RULES,
 } from './xp';
 
 describe('lesson XP', () => {
@@ -61,5 +63,33 @@ describe('checkpoint and mission XP', () => {
     expect(
       missionXpSummary({ requiredTasksPassed: 2, requiredTaskCount: 5, stretchTasksPassed: 3 }),
     ).toEqual({ base: 40, stretch: 30, total: 70 });
+  });
+});
+
+describe('boss battle XP', () => {
+  it('pays 3 XP per correct answer', () => {
+    expect(bossBattleXp({ correct: 4, answered: 7, alreadyEarnedToday: false })).toEqual({
+      kind: 'bonus',
+      base: 12,
+      accuracyBonus: 0,
+      total: 12,
+    });
+  });
+
+  it('adds 5 XP for 80% or better over at least five answers', () => {
+    expect(bossBattleXp({ correct: 4, answered: 5, alreadyEarnedToday: false }).total).toBe(17);
+    expect(bossBattleXp({ correct: 4, answered: 4, alreadyEarnedToday: false }).total).toBe(12);
+    expect(bossBattleXp({ correct: 12, answered: 12, alreadyEarnedToday: false }).total).toBe(41);
+  });
+
+  it('never pays more than the cap, and nothing twice in a day', () => {
+    expect(bossBattleXp({ correct: 20, answered: 20, alreadyEarnedToday: false }).total).toBe(
+      XP_RULES.bossMax,
+    );
+    expect(bossBattleXp({ correct: 9, answered: 9, alreadyEarnedToday: true })).toEqual({
+      kind: 'already_earned_today',
+      total: 0,
+    });
+    expect(bossBattleXp({ correct: 0, answered: 0, alreadyEarnedToday: false }).total).toBe(0);
   });
 });

@@ -86,6 +86,41 @@ describe('path page', () => {
     ).toHaveAttribute('href', '/mission');
   });
 
+  it('puts the boss battle before the mission, and points to it once the lessons are done', async () => {
+    const user = userEvent.setup();
+    const locked = renderApp();
+    expect(lessonNode(/boss battle, locked/i)).toBeInTheDocument();
+    locked.unmount();
+
+    const store = createProgressStore(createMemoryStore());
+    store.update((state) =>
+      unit1.lessons.reduce(
+        (next, lesson) => markLessonCompleted(next, lesson.id, new Date()),
+        state,
+      ),
+    );
+    renderApp({ store });
+    const boss = lessonNode(/boss battle, ready to start/i);
+    expect(within(boss).getByText('Next')).toBeInTheDocument();
+    await user.click(boss);
+    const popover = screen.getByRole('dialog', { name: 'Beat the clock' });
+    expect(within(popover).getByRole('link', { name: 'Start the boss battle' })).toHaveAttribute(
+      'href',
+      `/units/${unit1.id}/boss`,
+    );
+
+    store.update((state) => ({
+      ...state,
+      bossBattles: {
+        [unit1.id]: { plays: 1, bestCorrect: 9, lastPlayedAt: null, lastXpDay: null },
+      },
+    }));
+    expect(
+      await screen.findByRole('button', { name: /boss battle, best score 9 right/i }),
+    ).toBeVisible();
+    expect(within(lessonNode(/^mission:/i)).getByText('Next')).toBeInTheDocument();
+  });
+
   it('shows mission progress, then completion, on the mission node', async () => {
     const user = userEvent.setup();
     const store = createProgressStore(createMemoryStore());

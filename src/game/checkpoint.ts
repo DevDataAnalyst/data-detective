@@ -21,10 +21,12 @@ export interface CheckpointProgress {
   passedAt: string | null;
   attempts: number;
   lastAttempt: CheckpointAttempt | null;
+  /** Questions answered right in any attempt, for the boss battle. */
+  correctQuestionIds: string[];
 }
 
 export function emptyCheckpointProgress(): CheckpointProgress {
-  return { passedAt: null, attempts: 0, lastAttempt: null };
+  return { passedAt: null, attempts: 0, lastAttempt: null, correctQuestionIds: [] };
 }
 
 /** The fewest right answers that pass, e.g. 8 of 10 for a pass mark of 0.8. */

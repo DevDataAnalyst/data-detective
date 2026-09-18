@@ -142,7 +142,9 @@ describe('progress store', () => {
       }),
     );
     expect(odd.lessons.a).toEqual({ completedAt: 'x' });
-    expect(odd.checkpoints).toEqual({ c: { passedAt: null, attempts: 0, lastAttempt: null } });
+    expect(odd.checkpoints).toEqual({
+      c: { passedAt: null, attempts: 0, lastAttempt: null, correctQuestionIds: [] },
+    });
   });
 
   it('ignores corrupt or unexpected saved data', () => {

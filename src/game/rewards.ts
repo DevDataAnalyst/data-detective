@@ -12,6 +12,7 @@ import {
 } from './missionProgress';
 import { codeTasksDone, requiredCodeTasks } from './missionRules';
 import {
+  bossProgress,
   checkpointProgress,
   markLessonCompleted,
   markLessonsTestedOut,
@@ -26,7 +27,15 @@ import {
   toDateKey,
   type StreakChange,
 } from './streak';
-import { checkpointXp, lessonXp, missionTaskXp, stretchTaskXp, type LessonXpAward } from './xp';
+import {
+  bossBattleXp,
+  checkpointXp,
+  lessonXp,
+  missionTaskXp,
+  stretchTaskXp,
+  type BossXpAward,
+  type LessonXpAward,
+} from './xp';
 
 export interface XpOutcome {
   state: ProgressState;
@@ -224,6 +233,9 @@ export function finishCheckpoint(
     missedLessonIds: score.missedLessonIds,
   };
 
+  const rightNow = checkpoint.items
+    .map((item) => item.question.id)
+    .filter((questionId) => input.correctByQuestion[questionId] === true);
   let next: ProgressState = {
     ...state,
     checkpoints: {
@@ -232,6 +244,7 @@ export function finishCheckpoint(
         passedAt: previous.passedAt ?? (score.passed ? attempt.at : null),
         attempts: previous.attempts + 1,
         lastAttempt: attempt,
+        correctQuestionIds: [...new Set([...previous.correctQuestionIds, ...rightNow])],
       },
     },
   };
@@ -246,4 +259,47 @@ export function finishCheckpoint(
       ? awardXp(next, xp, now)
       : { state: next, xp: 0, goalJustMet: false, streakChange: 'none' };
   return { ...outcome, score, firstPass, testedOutLessonIds };
+}
+
+export interface BossOutcome extends XpOutcome {
+  award: BossXpAward;
+  /** True when this round beat the unit's best score. */
+  newBest: boolean;
+  previousBest: number;
+}
+
+/** Records a finished boss round: the play, the best score and the day's XP bonus. */
+export function finishBossBattle(
+  state: ProgressState,
+  input: { unitId: string; correct: number; answered: number; now: Date },
+): BossOutcome {
+  const today = toDateKey(input.now);
+  const previous = bossProgress(state, input.unitId);
+  const award = bossBattleXp({
+    correct: input.correct,
+    answered: input.answered,
+    alreadyEarnedToday: previous.lastXpDay === today,
+  });
+  const next: ProgressState = {
+    ...state,
+    bossBattles: {
+      ...state.bossBattles,
+      [input.unitId]: {
+        plays: previous.plays + 1,
+        bestCorrect: Math.max(previous.bestCorrect, input.correct),
+        lastPlayedAt: input.now.toISOString(),
+        lastXpDay: award.kind === 'bonus' ? today : previous.lastXpDay,
+      },
+    },
+  };
+  const outcome =
+    award.total > 0
+      ? awardXp(next, award.total, input.now)
+      : { state: next, xp: 0, goalJustMet: false, streakChange: 'none' as const };
+  return {
+    ...outcome,
+    award,
+    newBest: previous.plays > 0 && input.correct > previous.bestCorrect,
+    previousBest: previous.bestCorrect,
+  };
 }

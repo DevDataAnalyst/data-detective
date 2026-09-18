@@ -20,6 +20,16 @@ export interface LearnerProfile {
   onboardedAt: string | null;
 }
 
+/** A unit's boss battle record. */
+export interface BossProgress {
+  plays: number;
+  /** Most correct answers in one round. */
+  bestCorrect: number;
+  lastPlayedAt: string | null;
+  /** The day the boss XP bonus was last paid, so it is paid once a day. */
+  lastXpDay: DateKey | null;
+}
+
 export interface ProgressState {
   profile: LearnerProfile;
   lessons: Record<string, LessonProgress>;
@@ -29,6 +39,8 @@ export interface ProgressState {
   dailyGoal: number;
   missions: Record<string, MissionProgress>;
   checkpoints: Record<string, CheckpointProgress>;
+  /** Boss battle records by unit id. */
+  bossBattles: Record<string, BossProgress>;
 }
 
 export function createInitialProgress(): ProgressState {
@@ -40,6 +52,7 @@ export function createInitialProgress(): ProgressState {
     dailyGoal: DEFAULT_DAILY_GOAL,
     missions: {},
     checkpoints: {},
+    bossBattles: {},
   };
 }
 
@@ -97,4 +110,12 @@ export function checkpointProgress(state: ProgressState, checkpointId: string): 
 
 export function hasPassedCheckpoint(state: ProgressState, checkpointId: string): boolean {
   return checkpointProgress(state, checkpointId).passedAt !== null;
+}
+
+export function emptyBossProgress(): BossProgress {
+  return { plays: 0, bestCorrect: 0, lastPlayedAt: null, lastXpDay: null };
+}
+
+export function bossProgress(state: ProgressState, unitId: string): BossProgress {
+  return state.bossBattles[unitId] ?? emptyBossProgress();
 }

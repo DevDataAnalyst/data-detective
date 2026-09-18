@@ -5,7 +5,9 @@ import type { MissionState } from '../../game/missionRules';
 import { lessonStatuses, nextLessonId, type LessonStatus } from '../../game/unlocks';
 import { MISSION_SUMMARY_PATH } from '../../mission/missionHelpers';
 import { buttonStyles } from '../buttonStyles';
-import { BoltIcon, CheckIcon, LockIcon, SearchIcon, StarIcon } from '../icons';
+import { BOSS_RULES } from '../../game/bossBattle';
+import { XP_RULES } from '../../game/xp';
+import { BoltIcon, CheckIcon, LockIcon, SearchIcon, StarIcon, TrophyIcon } from '../icons';
 import { NodePopover } from './NodePopover';
 import { connectorPath, PATH_LAYOUT, pathPositions, type NodePosition } from './pathGeometry';
 
@@ -17,15 +19,30 @@ export interface PathMission {
   codeTaskCount: number;
 }
 
+export interface PathBoss {
+  /** Locked until the mission opens; played once there is a best score. */
+  state: 'locked' | 'available' | 'played';
+  bestCorrect: number;
+  /** Whether today's boss XP bonus has already been paid. */
+  bonusEarnedToday: boolean;
+}
+
 interface PathMapProps {
   unit: Unit;
   completed: ReadonlySet<string>;
   /** Completed lessons that were marked done by passing the checkpoint. */
   testedOut: ReadonlySet<string>;
+  boss: PathBoss;
   mission: PathMission;
 }
 
+const BOSS_NODE = 'boss';
 const MISSION_NODE = 'mission';
+/** The most a boss round can pay: every question right, plus the accuracy bonus. */
+const BOSS_TOP_XP = Math.min(
+  XP_RULES.bossMax,
+  BOSS_RULES.maxQuestions * XP_RULES.bossPerCorrect + XP_RULES.bossAccuracyBonus,
+);
 
 const STATUS_TEXT: Record<LessonStatus, string> = {
   completed: 'completed',
@@ -52,7 +69,13 @@ function missionStateText({ state, codeTasksPassed, codeTaskCount }: PathMission
   }
 }
 
-export function PathMap({ unit, completed, testedOut, mission: missionInfo }: PathMapProps) {
+export function PathMap({
+  unit,
+  completed,
+  testedOut,
+  boss: bossInfo,
+  mission: missionInfo,
+}: PathMapProps) {
   const baseId = useId();
   const [openNode, setOpenNode] = useState<string | null>(null);
 
@@ -61,11 +84,17 @@ export function PathMap({ unit, completed, testedOut, mission: missionInfo }: Pa
   const statuses = lessonStatuses(lessonIds, completed);
   const missionUnlocked = missionState !== 'locked';
   const missionDone = missionState === 'completed';
+  const bossUnlocked = bossInfo.state !== 'locked';
   const upNext =
-    nextLessonId(lessonIds, completed) ?? (missionUnlocked && !missionDone ? MISSION_NODE : null);
-  const { lessons: positions, mission, height } = pathPositions(unit.lessons.length);
-  const allPositions = [...positions, mission];
-  const reached = [...statuses.map((status) => status !== 'locked'), missionUnlocked];
+    nextLessonId(lessonIds, completed) ??
+    (bossInfo.state === 'available' && !missionDone
+      ? BOSS_NODE
+      : missionUnlocked && !missionDone
+        ? MISSION_NODE
+        : null);
+  const { lessons: positions, boss, mission, height } = pathPositions(unit.lessons.length);
+  const allPositions = [...positions, boss, mission];
+  const reached = [...statuses.map((status) => status !== 'locked'), bossUnlocked, missionUnlocked];
 
   const toggle = (nodeId: string) => setOpenNode((open) => (open === nodeId ? null : nodeId));
   const closePopover = () => setOpenNode(null);
@@ -191,6 +220,54 @@ export function PathMap({ unit, completed, testedOut, mission: missionInfo }: Pa
           );
         })}
 
+        <li className="absolute w-48" style={{ left: boss.cx - 96, top: boss.cy - boss.size / 2 }}>
+          <button
+            type="button"
+            data-path-node={BOSS_NODE}
+            aria-label={`Boss battle, ${
+              bossInfo.state === 'locked'
+                ? 'locked'
+                : bossInfo.state === 'played'
+                  ? `best score ${bossInfo.bestCorrect} right`
+                  : 'ready to start'
+            }`}
+            aria-expanded={openNode === BOSS_NODE}
+            aria-controls={openNode === BOSS_NODE ? popoverId : undefined}
+            onClick={() => toggle(BOSS_NODE)}
+            className="group relative flex w-full flex-col items-center gap-2 rounded-2xl pb-1 focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-current-600"
+          >
+            {upNext === BOSS_NODE && <UpNextBubble label="Next" />}
+            <span className="relative flex size-[88px] items-center justify-center">
+              {bossInfo.state === 'available' && (
+                <span
+                  aria-hidden="true"
+                  className="absolute inset-0 rounded-full bg-streak-500/35 motion-safe:animate-ping-soft motion-reduce:hidden"
+                />
+              )}
+              <span
+                aria-hidden="true"
+                className={`relative flex size-full items-center justify-center rounded-full text-4xl transition-transform group-active:translate-y-1 ${
+                  bossUnlocked
+                    ? 'bg-streak-600 text-white shadow-[0_7px_0_var(--color-streak-800)]'
+                    : 'bg-locked-200 text-locked-500 shadow-[0_7px_0_var(--color-locked-300)]'
+                }`}
+              >
+                {bossUnlocked ? <TrophyIcon /> : <LockIcon />}
+              </span>
+            </span>
+            <span className="rounded-lg bg-slate-50 px-2 py-0.5 text-center leading-tight">
+              <span className="block text-xs font-bold tracking-wide text-streak-ink-700 uppercase">
+                Boss battle
+              </span>
+              <span className="block text-sm font-semibold text-slate-800">
+                {bossInfo.state === 'played'
+                  ? `Best: ${bossInfo.bestCorrect} right`
+                  : `${BOSS_RULES.durationMs / 1000}-second round`}
+              </span>
+            </span>
+          </button>
+        </li>
+
         <li
           className="absolute w-60"
           style={{ left: mission.cx - 120, top: mission.cy - mission.size / 2 }}
@@ -259,7 +336,46 @@ export function PathMap({ unit, completed, testedOut, mission: missionInfo }: Pa
         </li>
       </ol>
 
-      {openNode && openNode !== MISSION_NODE && renderLessonPopover(openNode)}
+      {openNode &&
+        openNode !== MISSION_NODE &&
+        openNode !== BOSS_NODE &&
+        renderLessonPopover(openNode)}
+
+      {openNode === BOSS_NODE && (
+        <NodePopover key={BOSS_NODE} {...popoverFor(boss)}>
+          <p className="text-xs font-bold tracking-wide text-streak-ink-700 uppercase">
+            Boss battle · up to {BOSS_TOP_XP} XP
+          </p>
+          <h2 id={popoverTitleId} className="mt-0.5 text-lg font-bold text-slate-900">
+            Beat the clock
+          </h2>
+          {bossInfo.state === 'locked' ? (
+            <p className="mt-2 flex items-start gap-2 text-slate-700">
+              <LockIcon className="mt-0.5 shrink-0 text-locked-500" aria-hidden="true" />
+              <span>
+                Finish all {unit.lessons.length} lessons, or pass the test-out checkpoint, to take
+                on the boss.
+              </span>
+            </p>
+          ) : (
+            <>
+              <p className="mt-1 text-slate-700">
+                {BOSS_RULES.durationMs / 1000} seconds of mixed questions you have got right before
+                in this unit.
+                {bossInfo.state === 'played' && ` Your best: ${bossInfo.bestCorrect} right.`}
+              </p>
+              {bossInfo.bonusEarnedToday && (
+                <p className="mt-1 text-sm text-slate-600">
+                  Today’s XP bonus is earned. Play again for practice.
+                </p>
+              )}
+              <Link to={`/units/${unit.id}/boss`} className={`mt-3 w-full ${buttonStyles.primary}`}>
+                {bossInfo.state === 'played' ? 'Play again' : 'Start the boss battle'}
+              </Link>
+            </>
+          )}
+        </NodePopover>
+      )}
 
       {openNode === MISSION_NODE && (
         <NodePopover key={MISSION_NODE} {...popoverFor(mission)}>
