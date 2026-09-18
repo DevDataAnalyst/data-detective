@@ -2,6 +2,7 @@
 
 A prototype of a gamified web app for learning data skills. It tests one idea: that short
 Duolingo-style lessons and a real hands-on mission belong together.
+Try it here : https://data-detective-omega.vercel.app/
 
 **Unit 1: Data Detective** teaches descriptive statistics in seven 3–5 minute lessons, then hands
 the learner a case: _The Late Delivery Mystery_. In the mission they write real Python (pandas) in
