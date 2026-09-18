@@ -1,9 +1,14 @@
 @import 'tailwindcss';
 
 /*
- * Design tokens. Semantic colours are named for what they mean in the game, so components say
- * `bg-correct-100` rather than `bg-green-100`. Incorrect is amber on purpose: wrong answers are a
- * normal part of learning, not an error.
+ * Design tokens.
+ *
+ * The brand palette is Professor Ponku's (design/mascot/): teal, coral, brown, espresso, sky and
+ * cream. The app's scales are built from it: teal for actions, coral for streaks, brown for XP,
+ * and cream to espresso for backgrounds and text. Semantic colours are named for what they mean in
+ * the game, so components say `bg-correct-100` rather than `bg-green-100`. Correct stays green and
+ * incorrect stays amber: their meaning matters more than the brand, and wrong answers are a normal
+ * part of learning, not an error.
  */
 @theme {
   --font-sans:
@@ -12,6 +17,26 @@
   --font-mono:
     ui-monospace, 'Cascadia Code', 'SF Mono', 'Roboto Mono', Menlo, Consolas, 'Liberation Mono',
     monospace;
+
+  /* Professor Ponku's palette, sampled from the character sheet. The official brand colours. */
+  --color-ponku-teal: #18acac;
+  --color-ponku-coral: #f97d65;
+  --color-ponku-brown: #ae734e;
+  --color-ponku-espresso: #40291e;
+  --color-ponku-sky: #bdd7e5;
+  --color-ponku-cream: #feecdc;
+
+  /* Warm neutrals from cream to espresso. They replace Tailwind's slate, so slate-* is on brand. */
+  --color-slate-50: #feecdc;
+  --color-slate-100: #f6dfc9;
+  --color-slate-200: #eed8c4;
+  --color-slate-300: #dfc3aa;
+  --color-slate-400: #bb9a80;
+  --color-slate-500: #7c5d49;
+  --color-slate-600: #6a4e3c;
+  --color-slate-700: #56402f;
+  --color-slate-800: #4a3326;
+  --color-slate-900: #40291e;
 
   --color-correct-50: #f0fdf4;
   --color-correct-100: #dcfce7;
@@ -31,33 +56,36 @@
   --color-incorrect-800: #92400e;
   --color-incorrect-900: #78350f;
 
-  --color-locked-100: #f1f5f9;
-  --color-locked-200: #e2e8f0;
-  --color-locked-300: #cbd5e1;
-  --color-locked-400: #94a3b8;
-  --color-locked-500: #64748b;
-  --color-locked-600: #475569;
+  --color-locked-100: #f5e9dc;
+  --color-locked-200: #eadbcc;
+  --color-locked-300: #dccab8;
+  --color-locked-400: #b8a08c;
+  --color-locked-500: #7c6553;
+  --color-locked-600: #5e4a3c;
 
-  --color-current-50: #eff6ff;
-  --color-current-100: #dbeafe;
-  --color-current-200: #bfdbfe;
-  --color-current-500: #3b82f6;
-  --color-current-600: #2563eb;
-  --color-current-700: #1d4ed8;
-  --color-current-800: #1e40af;
+  /* Teal: actions, links, focus and the lesson that is up next. 600 carries white text. */
+  --color-current-50: #eefafa;
+  --color-current-100: #d3f2f1;
+  --color-current-200: #a6e4e2;
+  --color-current-500: #18acac;
+  --color-current-600: #0e7d7e;
+  --color-current-700: #0b6667;
+  --color-current-800: #0a5152;
 
-  --color-xp-50: #f5f3ff;
-  --color-xp-100: #ede9fe;
-  --color-xp-200: #ddd6fe;
-  --color-xp-500: #8b5cf6;
-  --color-xp-600: #7c3aed;
-  --color-xp-700: #6d28d9;
+  /* Brown, from Ponku's hat: XP. */
+  --color-xp-50: #fbf4ee;
+  --color-xp-100: #f4e6da;
+  --color-xp-200: #e7cfbb;
+  --color-xp-500: #ae734e;
+  --color-xp-600: #93603f;
+  --color-xp-700: #774c31;
 
-  --color-streak-100: #ffedd5;
-  --color-streak-500: #f97316;
-  --color-streak-600: #ea580c;
-  --color-streak-700: #c2410c;
-  --color-streak-800: #9a3412;
+  /* Coral: streaks and the daily goal. */
+  --color-streak-100: #ffe5df;
+  --color-streak-500: #f97d65;
+  --color-streak-600: #e85d44;
+  --color-streak-700: #c2412b;
+  --color-streak-800: #9c3222;
 
   /*
    * Ink: the 700–900 shades again, but only for text and labels. Dark mode lightens ink and
@@ -69,17 +97,17 @@
   --color-incorrect-ink-700: #b45309;
   --color-incorrect-ink-800: #92400e;
   --color-incorrect-ink-900: #78350f;
-  --color-current-ink-700: #1d4ed8;
-  --color-current-ink-800: #1e40af;
-  --color-xp-ink-700: #6d28d9;
-  --color-streak-ink-700: #c2410c;
-  --color-streak-ink-800: #9a3412;
+  --color-current-ink-700: #0b6a6b;
+  --color-current-ink-800: #09504f;
+  --color-xp-ink-700: #734a2f;
+  --color-streak-ink-700: #c2412b;
+  --color-streak-ink-800: #8f2d1f;
 
   /* Colours outside the scales: cards, code blocks and the dialog backdrop. */
   --color-surface: #ffffff;
-  --color-code: #0f172a;
-  --color-code-ink: #f1f5f9;
-  --color-scrim: #0f172a;
+  --color-code: #2b1d15;
+  --color-code-ink: #fbf2e8;
+  --color-scrim: #2b1d15;
 
   /* Python syntax colours in the editor, each at least 4.5:1 on the editor background. */
   --color-syntax-keyword: #7c3aed;
@@ -178,28 +206,28 @@
 :root[data-theme='dark'] {
   color-scheme: dark;
 
-  --color-surface: #111a2e;
-  --color-code: #060b16;
-  --color-code-ink: #e2e8f0;
+  --color-surface: #231a14;
+  --color-code: #0f0b08;
+  --color-code-ink: #efe6dc;
   --color-scrim: #000000;
 
-  --color-slate-50: #0b1120;
-  --color-slate-100: #1c2740;
-  --color-slate-200: #2c3a55;
-  --color-slate-300: #3d4c68;
-  --color-slate-400: #5f6f8b;
-  --color-slate-500: #94a3b8;
-  --color-slate-600: #aab6c8;
-  --color-slate-700: #cbd5e1;
-  --color-slate-800: #e2e8f0;
-  --color-slate-900: #f1f5f9;
+  --color-slate-50: #17110d;
+  --color-slate-100: #2e231b;
+  --color-slate-200: #3d2f25;
+  --color-slate-300: #52402f;
+  --color-slate-400: #76624f;
+  --color-slate-500: #bba592;
+  --color-slate-600: #cfbcaa;
+  --color-slate-700: #e0d0c0;
+  --color-slate-800: #efe3d6;
+  --color-slate-900: #fbf2e8;
 
-  --color-locked-100: #1c2740;
-  --color-locked-200: #2c3a55;
-  --color-locked-300: #1f2a40;
-  --color-locked-400: #5f6f8b;
-  --color-locked-500: #94a3b8;
-  --color-locked-600: #cbd5e1;
+  --color-locked-100: #2e231b;
+  --color-locked-200: #3d2f25;
+  --color-locked-300: #2a1f18;
+  --color-locked-400: #76624f;
+  --color-locked-500: #bba592;
+  --color-locked-600: #e0d0c0;
 
   --color-correct-50: #0a2616;
   --color-correct-100: #0f3320;
@@ -207,13 +235,13 @@
   --color-incorrect-50: #2b1d06;
   --color-incorrect-100: #3d2908;
   --color-incorrect-200: #5c3d0c;
-  --color-current-50: #0f1f3d;
-  --color-current-100: #172c54;
-  --color-current-200: #1e3a70;
-  --color-xp-50: #1c1433;
-  --color-xp-100: #2a1d4d;
-  --color-xp-200: #3b2a6b;
-  --color-streak-100: #3b1f0c;
+  --color-current-50: #0d2627;
+  --color-current-100: #113435;
+  --color-current-200: #174849;
+  --color-xp-50: #2a1d15;
+  --color-xp-100: #36261b;
+  --color-xp-200: #4b3525;
+  --color-streak-100: #3a1c16;
 
   --color-correct-ink-700: #4ade80;
   --color-correct-ink-800: #86efac;
@@ -221,11 +249,11 @@
   --color-incorrect-ink-700: #fbbf24;
   --color-incorrect-ink-800: #fcd34d;
   --color-incorrect-ink-900: #fde68a;
-  --color-current-ink-700: #93c5fd;
-  --color-current-ink-800: #bfdbfe;
-  --color-xp-ink-700: #c4b5fd;
-  --color-streak-ink-700: #fdba74;
-  --color-streak-ink-800: #fed7aa;
+  --color-current-ink-700: #5ed3d1;
+  --color-current-ink-800: #9fe6e4;
+  --color-xp-ink-700: #e5b690;
+  --color-streak-ink-700: #ff9f8c;
+  --color-streak-ink-800: #ffc4b8;
 
   --color-syntax-keyword: #c4b5fd;
   --color-syntax-string: #5eead4;
@@ -259,5 +287,12 @@
       transition-duration: 0.01ms !important;
       scroll-behavior: auto !important;
     }
+  }
+}
+
+@layer components {
+  /* Ponku's espresso outline and limbs vanish on dark backgrounds, so dark mode adds a soft edge. */
+  [data-theme='dark'] .mascot {
+    filter: drop-shadow(0 0 1px rgb(255 244 232 / 0.75)) drop-shadow(0 0 8px rgb(189 215 229 / 0.2));
   }
 }

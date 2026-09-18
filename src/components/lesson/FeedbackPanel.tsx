@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef } from 'react';
 import { buttonStyles } from '../buttonStyles';
 import { CheckIcon, LightbulbIcon } from '../icons';
+import { Mascot } from '../Mascot';
 
 interface FeedbackPanelProps {
   correct: boolean;
@@ -37,26 +38,35 @@ export function FeedbackPanel({
       }`}
     >
       <div className="mx-auto max-h-[60dvh] max-w-2xl overflow-y-auto px-4 pt-4 pb-4">
-        <h2
-          id={headlineId}
-          className={`flex items-center gap-2 text-xl font-bold ${
-            correct ? 'text-correct-ink-800' : 'text-incorrect-ink-800'
-          }`}
-        >
-          <span
-            aria-hidden="true"
-            className={`flex size-8 items-center justify-center rounded-full text-white ${
-              correct ? 'bg-correct-700' : 'bg-incorrect-700'
-            }`}
-          >
-            {correct ? <CheckIcon /> : <LightbulbIcon />}
-          </span>
-          {headline}
-        </h2>
-        <p id={explanationId} className="mt-2 text-base leading-relaxed text-slate-800">
-          {explanation}
-        </p>
-        {note && <p className="mt-2 text-sm font-medium text-slate-600">{note}</p>}
+        <div className="flex items-start gap-3">
+          <div className="min-w-0 flex-1">
+            <h2
+              id={headlineId}
+              className={`flex items-center gap-2 text-xl font-bold ${
+                correct ? 'text-correct-ink-800' : 'text-incorrect-ink-800'
+              }`}
+            >
+              <span
+                aria-hidden="true"
+                className={`flex size-8 items-center justify-center rounded-full text-white ${
+                  correct ? 'bg-correct-700' : 'bg-incorrect-700'
+                }`}
+              >
+                {correct ? <CheckIcon /> : <LightbulbIcon />}
+              </span>
+              {headline}
+            </h2>
+            <p id={explanationId} className="mt-2 text-base leading-relaxed text-slate-800">
+              {explanation}
+            </p>
+            {note && <p className="mt-2 text-sm font-medium text-slate-600">{note}</p>}
+          </div>
+          <Mascot
+            pose={correct ? 'thumbs-up' : 'thinking'}
+            eager
+            className="h-16 w-auto shrink-0 sm:h-24"
+          />
+        </div>
         <button
           ref={continueRef}
           type="button"

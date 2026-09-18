@@ -9,7 +9,7 @@ import {
 } from '../components/checkpoint/CheckpointResults';
 import { describeMinutes } from '../components/checkpoint/checkpointCopy';
 import { TopicsToReview } from '../components/checkpoint/TopicsToReview';
-import { ClockIcon, StarIcon } from '../components/icons';
+import { Mascot } from '../components/Mascot';
 import { useRewards } from '../components/rewards/useRewards';
 import { unit1 } from '../content/unit1';
 import {
@@ -73,13 +73,7 @@ export function CheckpointPage() {
     return (
       <CheckpointScreen>
         <section className="space-y-4 rounded-3xl bg-surface px-4 py-6 text-center ring-1 ring-slate-200">
-          <ScreenTitle
-            icon={
-              <span className="mx-auto flex size-20 items-center justify-center rounded-full bg-correct-100 text-5xl text-correct-ink-700">
-                <StarIcon aria-hidden="true" />
-              </span>
-            }
-          >
+          <ScreenTitle icon={<Mascot pose="thumbs-up" eager className="mx-auto h-28 w-auto" />}>
             You already tested out
           </ScreenTitle>
           <p className="text-slate-700">
@@ -109,13 +103,7 @@ export function CheckpointPage() {
     return (
       <CheckpointScreen>
         <section className="space-y-4 rounded-3xl bg-surface px-4 py-6 text-center ring-1 ring-slate-200">
-          <ScreenTitle
-            icon={
-              <span className="mx-auto flex size-20 items-center justify-center rounded-full bg-current-100 text-5xl text-current-ink-700">
-                <ClockIcon aria-hidden="true" />
-              </span>
-            }
-          >
+          <ScreenTitle icon={<Mascot pose="sleeping" eager className="mx-auto h-28 w-auto" />}>
             Review first, then try again
           </ScreenTitle>
           <p className="text-lg text-slate-700">

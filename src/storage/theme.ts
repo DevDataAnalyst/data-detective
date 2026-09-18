@@ -11,7 +11,7 @@ export type ThemePreference = (typeof THEME_PREFERENCES)[number];
 export type Theme = 'light' | 'dark';
 
 /** The browser bar colour for each theme, matching the app's top bar. */
-export const THEME_COLORS: Record<Theme, string> = { light: '#ffffff', dark: '#111a2e' };
+export const THEME_COLORS: Record<Theme, string> = { light: '#ffffff', dark: '#231a14' };
 
 export function parseThemePreference(value: string | null): ThemePreference {
   return THEME_PREFERENCES.includes(value as ThemePreference)

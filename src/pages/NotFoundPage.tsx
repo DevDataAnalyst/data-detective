@@ -1,8 +1,10 @@
 import { Link } from 'react-router';
+import { Mascot } from '../components/Mascot';
 
 export function NotFoundPage() {
   return (
     <section className="space-y-3">
+      <Mascot pose="thinking" eager className="h-28 w-auto" />
       <h1 className="text-2xl font-bold">We couldn’t find that page</h1>
       <p className="text-slate-600">The link might be old or mistyped.</p>
       <Link

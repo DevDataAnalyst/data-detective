@@ -2,6 +2,7 @@ import { Link, Navigate } from 'react-router';
 import { buttonStyles } from '../components/buttonStyles';
 import { DailyGoalRing } from '../components/DailyGoalRing';
 import { FlameIcon, SnowflakeIcon } from '../components/icons';
+import { Mascot } from '../components/Mascot';
 import { PathMap } from '../components/path/PathMap';
 import { findMission } from '../content/missions';
 import { unit1 } from '../content/unit1';
@@ -51,9 +52,14 @@ export function PathPage() {
   return (
     <div className="space-y-5">
       <header className="rounded-3xl bg-current-600 p-5 text-white shadow-[0_6px_0_var(--color-current-800)]">
-        <p className="text-sm font-bold tracking-wide uppercase">Unit 1</p>
-        <h1 className="text-2xl font-bold">{unit.title}</h1>
-        <p className="mt-1 text-white/90">{unit.description}</p>
+        <div className="flex items-start gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-bold tracking-wide uppercase">Unit 1</p>
+            <h1 className="text-2xl font-bold">{unit.title}</h1>
+            <p className="mt-1 text-white">{unit.description}</p>
+          </div>
+          <Mascot pose="waving" eager className="-mt-1 -mr-1 h-20 w-auto shrink-0 sm:h-28" />
+        </div>
         <div className="mt-4 flex items-center gap-3">
           <div
             role="progressbar"
@@ -76,33 +82,45 @@ export function PathPage() {
 
       <section
         aria-labelledby="daily-goal-title"
-        className="flex items-center gap-4 rounded-2xl bg-surface p-4 ring-1 ring-slate-200"
+        className="space-y-3 rounded-2xl bg-surface p-4 ring-1 ring-slate-200"
       >
-        <DailyGoalRing xpToday={status.xpToday} dailyGoal={status.dailyGoal} />
-        <div className="min-w-0 flex-1">
-          <h2 id="daily-goal-title" className="font-bold text-slate-900">
-            Daily goal
-          </h2>
-          <p className="text-sm text-slate-600" data-testid="daily-goal-text">
-            {status.goalMetToday
-              ? `Done for today: ${status.xpToday} of ${status.dailyGoal} XP.`
-              : `${status.xpToday} of ${status.dailyGoal} XP today. ${status.xpToGoal} XP to go.`}
-          </p>
-          <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-semibold">
-            <span
-              className={`flex items-center gap-1 ${status.goalMetToday ? 'text-streak-ink-700' : 'text-slate-600'}`}
-            >
-              <FlameIcon aria-hidden="true" />
-              {status.streak} day streak
-            </span>
-            {status.freezesHeld > 0 && (
-              <span className="flex items-center gap-1 text-current-ink-700">
-                <SnowflakeIcon aria-hidden="true" />
-                Streak freeze ready
+        <div className="flex items-center gap-4">
+          <DailyGoalRing xpToday={status.xpToday} dailyGoal={status.dailyGoal} />
+          <div className="min-w-0 flex-1">
+            <h2 id="daily-goal-title" className="font-bold text-slate-900">
+              Daily goal
+            </h2>
+            <p className="text-sm text-slate-600" data-testid="daily-goal-text">
+              {status.goalMetToday
+                ? `Done for today: ${status.xpToday} of ${status.dailyGoal} XP.`
+                : `${status.xpToday} of ${status.dailyGoal} XP today. ${status.xpToGoal} XP to go.`}
+            </p>
+            <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-semibold">
+              <span
+                className={`flex items-center gap-1 ${status.goalMetToday ? 'text-streak-ink-700' : 'text-slate-600'}`}
+              >
+                <FlameIcon aria-hidden="true" />
+                {status.streak} day streak
               </span>
-            )}
-          </p>
+              {status.freezesHeld > 0 && (
+                <span className="flex items-center gap-1 text-current-ink-700">
+                  <SnowflakeIcon aria-hidden="true" />
+                  Streak freeze ready
+                </span>
+              )}
+            </p>
+          </div>
         </div>
+        {!status.goalMetToday && status.streak > 0 && (
+          <p
+            data-testid="streak-nudge"
+            className="flex items-center gap-3 rounded-xl bg-streak-100 py-1.5 pr-3 pl-2 text-sm font-semibold text-streak-ink-800"
+          >
+            <Mascot pose="sleeping" className="h-12 w-auto shrink-0" />
+            Your {status.streak}-day streak is snoozing. Earn {status.xpToGoal} more XP today to
+            keep it going.
+          </p>
+        )}
       </section>
 
       {showTestOut && (

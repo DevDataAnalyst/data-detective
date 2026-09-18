@@ -24,7 +24,7 @@ export function TopBar() {
           to="/"
           className="flex min-h-11 items-center gap-2 rounded-lg font-bold tracking-tight text-slate-900"
         >
-          <img src="/favicon.svg" alt="" width={28} height={28} />
+          <img src="/favicon.png" alt="" width={32} height={32} className="mascot" />
           {/* On the narrowest phones the logo alone makes room for the counters and the toggle. */}
           <span className="max-[380px]:sr-only">Data Detective</span>
         </Link>

@@ -2,6 +2,7 @@ import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { buttonStyles } from '../components/buttonStyles';
 import { useOnline } from '../components/hooks';
+import { Mascot } from '../components/Mascot';
 import { BoltIcon, CheckIcon, LockIcon, SearchIcon } from '../components/icons';
 import { RichText } from '../components/RichText';
 import { useRewards } from '../components/rewards/useRewards';
@@ -315,10 +316,10 @@ export default function MissionWorkspace({ mission, createRuntime }: MissionWork
               ▾
             </span>
           </summary>
-          <RichText
-            text={mission.brief}
-            className="mt-2 space-y-2 leading-relaxed text-slate-700"
-          />
+          <div className="mt-2 flow-root">
+            <Mascot pose="notes" className="float-right mb-1 ml-3 h-24 w-auto sm:h-32" />
+            <RichText text={mission.brief} className="space-y-2 leading-relaxed text-slate-700" />
+          </div>
           <details className="mt-3 rounded-xl bg-slate-50 p-3">
             <summary className="min-h-11 cursor-pointer content-center font-semibold text-slate-800">
               About the data: <code className="font-mono">{mission.dataset.fileName}</code>

@@ -15,6 +15,10 @@ write a recommendation for an operations manager.
   levels of hints, and a portfolio summary at the end.
 - Light and dark mode: it follows the device by default, with a toggle in the top bar and a
   choice on the profile page.
+- Professor Ponku, the mascot, turns up at the moments that matter: waving hello, thinking
+  through a hint, a thumbs up for a right answer, celebrating a finished lesson or mission, and
+  napping when a streak needs attention. The app's colours come from the mascot's palette. The
+  art, palette and brand guide are in [design/mascot](design/mascot/README.md).
 - Everything is stored on the learner's device. There is no backend, no account and no analytics
   service.
 

@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState, type ReactNode, type Ref } from 're
 import { useNavigate } from 'react-router';
 import { buttonStyles } from '../components/buttonStyles';
 import { FlameIcon, SearchIcon, StarIcon } from '../components/icons';
+import { Mascot } from '../components/Mascot';
 import { unit1 } from '../content/unit1';
 import type { LearnerGoal } from '../game/progress';
 import { completeOnboarding } from '../game/rewards';
@@ -103,7 +104,7 @@ export function OnboardingPage() {
       <main className="mx-auto w-full max-w-lg flex-1 px-4 pt-4 pb-32">
         {step === 1 && (
           <section aria-labelledby="welcome-title" className="space-y-6 pt-4">
-            <img src="/favicon.svg" alt="" width={72} height={72} />
+            <Mascot pose="waving" eager className="h-36 w-auto" />
             <div className="space-y-3">
               <h1
                 ref={heading}
@@ -114,8 +115,8 @@ export function OnboardingPage() {
                 Welcome to Data Detective
               </h1>
               <p className="text-lg leading-relaxed text-slate-700">
-                Learn the statistics behind data work in short lessons. Then use Python to crack a
-                case hidden in messy data.
+                I’m Professor Ponku. In short lessons, I’ll show you the statistics behind data
+                work. Then we’ll use Python to crack a case hidden in messy data.
               </p>
             </div>
             <ul className="space-y-3">

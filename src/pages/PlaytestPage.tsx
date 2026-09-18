@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { buttonStyles } from '../components/buttonStyles';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { CopyIcon, DownloadIcon } from '../components/icons';
+import { Mascot } from '../components/Mascot';
 import { lateDeliveryMystery } from '../content/missions';
 import { unit1 } from '../content/unit1';
 import { formatMs, playtestSummaryText, summarizePlaytest } from '../game/playtest';
@@ -72,6 +73,15 @@ export function PlaytestPage() {
           note at the end of the mission.
         </p>
       </header>
+
+      {summary.events === 0 && (
+        <div className="flex items-center gap-4 rounded-2xl bg-surface p-4 ring-1 ring-slate-200">
+          <Mascot pose="thinking" className="h-20 w-auto shrink-0" />
+          <p className="text-slate-700">
+            Nothing recorded yet. Play a lesson, then come back to see what the numbers say.
+          </p>
+        </div>
+      )}
 
       <div className="flex flex-wrap items-center gap-3">
         <button type="button" onClick={exportData} className={buttonStyles.primary}>

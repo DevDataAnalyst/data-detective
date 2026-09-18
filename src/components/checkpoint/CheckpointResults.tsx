@@ -6,7 +6,8 @@ import type { CheckpointOutcome } from '../../game/rewards';
 import type { LessonStatus } from '../../game/unlocks';
 import { buttonStyles } from '../buttonStyles';
 import { usePrefersReducedMotion, useCountUp } from '../hooks';
-import { BoltIcon, ClockIcon, StarIcon, TargetIcon } from '../icons';
+import { BoltIcon, ClockIcon } from '../icons';
+import { Mascot } from '../Mascot';
 import { CheckpointReview } from './CheckpointReview';
 import { TopicsToReview } from './TopicsToReview';
 
@@ -76,9 +77,11 @@ export function CheckpointResults({
         <section className="space-y-4 rounded-3xl bg-surface px-4 py-6 text-center ring-1 ring-slate-200">
           <ScreenTitle
             icon={
-              <span className="mx-auto flex size-20 items-center justify-center rounded-full bg-correct-100 text-5xl text-correct-ink-700 motion-safe:animate-pop-in">
-                <StarIcon aria-hidden="true" />
-              </span>
+              <Mascot
+                pose="celebrating"
+                eager
+                className="mx-auto h-32 w-auto motion-safe:animate-pop-in"
+              />
             }
           >
             You tested out
@@ -114,13 +117,7 @@ export function CheckpointResults({
   return (
     <CheckpointScreen>
       <section className="space-y-4 rounded-3xl bg-surface px-4 py-6 text-center ring-1 ring-slate-200">
-        <ScreenTitle
-          icon={
-            <span className="mx-auto flex size-20 items-center justify-center rounded-full bg-current-100 text-5xl text-current-ink-700">
-              <TargetIcon aria-hidden="true" />
-            </span>
-          }
-        >
+        <ScreenTitle icon={<Mascot pose="thinking" eager className="mx-auto h-28 w-auto" />}>
           Not quite this time
         </ScreenTitle>
         <p className="text-lg text-slate-700">

@@ -212,6 +212,23 @@ Run from the project root. Needs Node 22.22 or newer.
 - The mission route is code split. Keep CodeMirror and Pyodide out of the initial bundle: the
   lesson layer must never download them.
 
+## Brand: Professor Ponku
+
+- The mascot is Professor Ponku; the art and the brand guide are in `design/mascot/` (full-size
+  transparent PNGs, the original sheet, and `cut-poses.py`, which made them).
+- The official palette is Ponku's: `ponku-teal`, `ponku-coral`, `ponku-brown`, `ponku-espresso`,
+  `ponku-sky` and `ponku-cream` in `src/index.css`. The app's scales are built from it: `current`
+  is teal, `streak` coral, `xp` brown, and `slate` is redefined as warm neutrals from cream (page)
+  to espresso (text). `correct` and `incorrect` stay green and amber on purpose.
+- Show Ponku with `<Mascot pose="…" className="h-24 w-auto" />` (`src/components/Mascot.tsx`).
+  It is decorative (`alt=""`: the text beside it carries the meaning), lazy unless `eager`, and
+  sized by a height class. Each pose belongs to a moment: waving to welcome, thinking for hints,
+  intros, wrong answers and empty states, thumbs up for right answers, celebrating when something
+  is finished, notes and report in the mission, sleeping for streak reminders. Keep to one Ponku
+  per screen area so it stays a treat, not wallpaper.
+- The `mascot` class gives Ponku a soft light edge in dark mode, where the espresso outline would
+  otherwise disappear. The favicon and top bar logo are Ponku's face (`public/favicon.png`).
+
 ## Dark mode
 
 - `data-theme="dark"` on `<html>` switches every theme token at once (`:root[data-theme='dark']`

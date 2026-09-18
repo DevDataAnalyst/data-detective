@@ -28,6 +28,7 @@ import { handlesEnterNatively, usePrefersReducedMotion } from '../hooks';
 import { CloseIcon } from '../icons';
 import { QuestionView } from '../questions/QuestionView';
 import { RichText } from '../RichText';
+import { Mascot } from '../Mascot';
 import { feedbackHeadline } from './feedbackCopy';
 import { FeedbackPanel } from './FeedbackPanel';
 import { LessonSummary } from './LessonSummary';
@@ -184,12 +185,17 @@ export function LessonPlayer({
       >
         {session.phase === 'intro' && (
           <section aria-labelledby="lesson-intro-title" className="space-y-5 pt-2">
-            <p className="text-sm font-bold tracking-wide text-current-ink-700 uppercase">
-              Lesson {lessonNumber} · about {lesson.estimatedMinutes} min
-            </p>
-            <h1 id="lesson-intro-title" className="text-3xl font-bold text-slate-900">
-              {lesson.title}
-            </h1>
+            <div className="flex items-start gap-3">
+              <div className="min-w-0 flex-1 space-y-1">
+                <p className="text-sm font-bold tracking-wide text-current-ink-700 uppercase">
+                  Lesson {lessonNumber} · about {lesson.estimatedMinutes} min
+                </p>
+                <h1 id="lesson-intro-title" className="text-3xl font-bold text-slate-900">
+                  {lesson.title}
+                </h1>
+              </div>
+              <Mascot pose="thinking" eager className="h-24 w-auto shrink-0" />
+            </div>
             <RichText
               text={lesson.intro}
               className="space-y-3 text-lg leading-relaxed text-slate-700"

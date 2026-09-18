@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef } from 'react';
 import { buttonStyles } from '../../components/buttonStyles';
-import { LightbulbIcon } from '../../components/icons';
+import { Mascot } from '../../components/Mascot';
 import { RichText } from '../../components/RichText';
 import type { CodeTaskHints } from '../../content/types';
 import { HINT_LEVELS } from '../missionHelpers';
@@ -38,7 +38,7 @@ export function HintPanel({ hints, shown, onShow }: HintPanelProps) {
       className="space-y-3 rounded-2xl bg-streak-100/40 p-3 ring-1 ring-streak-100 sm:p-4"
     >
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-        <LightbulbIcon className="shrink-0 text-xl text-streak-600" aria-hidden="true" />
+        <Mascot pose="thinking" className="h-12 w-auto shrink-0" />
         <div className="min-w-0 flex-1">
           <h3 id={titleId} className="font-bold text-slate-900">
             {levels === 0 ? 'Stuck?' : 'Hints'}

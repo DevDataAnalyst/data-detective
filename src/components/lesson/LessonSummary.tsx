@@ -1,6 +1,6 @@
 import type { LessonXpAward } from '../../game/xp';
 import { useCountUp, usePrefersReducedMotion } from '../hooks';
-import { StarIcon } from '../icons';
+import { Mascot } from '../Mascot';
 import { formatDuration, summaryMessage } from './feedbackCopy';
 
 interface LessonSummaryProps {
@@ -30,9 +30,7 @@ export function LessonSummary({ lessonTitle, accuracy, durationMs, award }: Less
 
   return (
     <section aria-labelledby="summary-title" className="space-y-6 pt-6 text-center">
-      <div className="mx-auto flex size-20 items-center justify-center rounded-full bg-correct-100 text-correct-ink-700 motion-safe:animate-pop-in">
-        <StarIcon className="text-5xl" aria-hidden="true" />
-      </div>
+      <Mascot pose="celebrating" eager className="mx-auto h-32 w-auto motion-safe:animate-pop-in" />
       <div>
         <h1 id="summary-title" className="text-3xl font-bold text-slate-900">
           Lesson complete

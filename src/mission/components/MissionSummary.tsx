@@ -2,7 +2,8 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import { buttonStyles } from '../../components/buttonStyles';
 import { useCountUp, usePrefersReducedMotion } from '../../components/hooks';
-import { CheckIcon, CopyIcon, SearchIcon, SnowflakeIcon } from '../../components/icons';
+import { CheckIcon, CopyIcon, SnowflakeIcon } from '../../components/icons';
+import { Mascot } from '../../components/Mascot';
 import type { Mission, WrittenTask } from '../../content/types';
 import type { MissionProgress } from '../../game/missionProgress';
 import { missionTaskCounts } from '../../game/missionRules';
@@ -88,9 +89,11 @@ export function MissionSummary({
               ))}
             </div>
           )}
-          <span className="mx-auto flex size-20 items-center justify-center rounded-full bg-linear-to-br from-xp-500 to-xp-700 text-4xl text-white shadow-[0_6px_0_var(--color-xp-700)] motion-safe:animate-pop-in">
-            <SearchIcon aria-hidden="true" />
-          </span>
+          <Mascot
+            pose="celebrating"
+            eager
+            className="relative mx-auto h-32 w-auto motion-safe:animate-pop-in"
+          />
           <h1
             ref={heading}
             tabIndex={-1}
@@ -261,14 +264,17 @@ function PortfolioSummary({ lines }: { lines: string[] }) {
       aria-labelledby={titleId}
       className="space-y-3 rounded-2xl bg-surface p-4 ring-1 ring-slate-200"
     >
-      <div>
-        <h2 id={titleId} className="text-lg font-bold text-slate-900">
-          Portfolio summary
-        </h2>
-        <p className="text-slate-600">
-          A starting point for your resume or LinkedIn. Edit it so it matches your own words and the
-          work you did.
-        </p>
+      <div className="flex items-start gap-3">
+        <div className="min-w-0 flex-1">
+          <h2 id={titleId} className="text-lg font-bold text-slate-900">
+            Portfolio summary
+          </h2>
+          <p className="text-slate-600">
+            A starting point for your resume or LinkedIn. Edit it so it matches your own words and
+            the work you did.
+          </p>
+        </div>
+        <Mascot pose="report" className="h-20 w-auto shrink-0" />
       </div>
       <div
         data-testid="portfolio-summary"
