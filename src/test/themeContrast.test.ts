@@ -58,7 +58,12 @@ const TEXT_PAIRS: Array<[string, string]> = [
     ],
   ),
   ['slate-900', 'slate-100'],
+  ['slate-800', 'slate-100'],
   ['slate-700', 'slate-100'],
+  // The daily challenge's result heading sits straight on the page, and its closing note on teal.
+  ['correct-ink-800', 'slate-50'],
+  ['incorrect-ink-800', 'slate-50'],
+  ['slate-900', 'current-50'],
   // Claims, chat bubbles, revealed option notes and the honest chart note.
   ['slate-900', 'streak-100'],
   ['slate-800', 'current-50'],
