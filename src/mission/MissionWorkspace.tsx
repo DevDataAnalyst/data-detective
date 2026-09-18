@@ -55,8 +55,12 @@ interface MissionWorkspaceProps {
   createRuntime?: (options: PythonRuntimeOptions) => PythonRuntime;
 }
 
+/**
+ * Content URLs such as `data/deliveries.csv` are relative to the app's root, not to the page:
+ * missions live at /units/…/mission, where a page-relative URL would fetch the app instead.
+ */
 function absoluteUrl(path: string): string {
-  return new URL(path, document.baseURI).href;
+  return new URL(path, new URL(import.meta.env.BASE_URL, window.location.origin)).href;
 }
 
 function announceFeedback(outcome: RunOutcome, feedback: TaskFeedback | null, xp: number): string {

@@ -187,6 +187,9 @@ Run from the project root. Needs Node 22.22 or newer.
   up to 3 minutes and do not count toward the 10 seconds. A timeout ends the worker, starts a new
   one and replays each task's last working code, as does every page load.
 - The workspace is lazy-loaded from `MissionPage`, so lessons never download CodeMirror.
+- A mission's `dataset.url` (such as `data/churn.csv`) is relative to the app's root. The
+  workspace resolves it against `import.meta.env.BASE_URL`, never the page: missions live at
+  `/units/…/mission`, where a page-relative URL fetches `index.html` instead of the data.
 - Tests use a fake worker (see `MissionWorkspace.test.tsx`). `src/test/setup.ts` polyfills the
   Range geometry CodeMirror needs in jsdom.
 - When editing files through shell heredocs, backslashes can be swallowed. Prefer the Edit tool
@@ -331,8 +334,10 @@ Run from the project root. Needs Node 22.22 or newer.
 - `journey.spec.ts` is the whole path: onboarding, lesson 1, testing out, and the first three
   mission tasks with correct code. `responsive.spec.ts` checks 360, 768 and 1280px for horizontal
   overflow and saves screenshots. `daily.spec.ts` covers the daily challenge and its share card.
-  `python-load.spec.ts` measures how long Python takes to load, on this connection and on a Slow
-  4G profile, and only runs with `RUN_SLOW_NETWORK=1`.
+  `missions.spec.ts` opens every unit's mission at its real address, loads its dataset in real
+  Pyodide and passes its first code task: the fake worker in unit tests cannot catch a dataset
+  that fails to load. `python-load.spec.ts` measures how long Python takes to load, on this
+  connection and on a Slow 4G profile, and only runs with `RUN_SLOW_NETWORK=1`.
 - Playwright reuses a server already on port 4173 without rebuilding. If a test cannot find
   something new, stop any leftover `vite preview` so it builds afresh.
 - Helpers in `e2e/helpers.ts` answer any question type and write code into CodeMirror (typing it,

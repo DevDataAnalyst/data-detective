@@ -74,6 +74,20 @@ describe('MissionWorkspace', () => {
     expect(screen.queryByText('Setting up Python in your browser')).not.toBeInTheDocument();
   });
 
+  it('downloads the dataset from the app root, whatever page the mission is on', async () => {
+    // As in the browser: the page's own URL is the mission's, several folders deep.
+    window.history.pushState({}, '', '/units/unit-1-data-detective/mission');
+    try {
+      const { workers } = renderWorkspace();
+      await waitFor(() => expect(workers).toHaveLength(1));
+      expect(workers[0].sent[0]).toMatchObject({
+        datasetUrl: `${window.location.origin}/data/deliveries.csv`,
+      });
+    } finally {
+      window.history.pushState({}, '', '/');
+    }
+  });
+
   it('runs code and shows printed output, tables and task status', async () => {
     const user = userEvent.setup();
     const { workers, store } = renderWorkspace();
