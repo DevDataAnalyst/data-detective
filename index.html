@@ -10,6 +10,24 @@
       content="Learn to describe data with short lessons, then solve a real data mission in Python."
     />
     <title>Data Detective · learning prototype</title>
+    <script>
+      // Apply the saved theme before the first paint, so dark mode never flashes white. The same
+      // rule lives in src/storage/theme.ts, which takes over once the app loads.
+      (function () {
+        try {
+          var saved = localStorage.getItem('data-detective:theme');
+          var dark =
+            saved === 'dark' ||
+            (saved !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+          if (dark) {
+            document.querySelector('meta[name="theme-color"]').setAttribute('content', '#111a2e');
+          }
+        } catch (error) {
+          // Storage or media queries unavailable: stay light until the app decides.
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

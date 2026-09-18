@@ -3,7 +3,7 @@ import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirro
 import { python } from '@codemirror/lang-python';
 import {
   bracketMatching,
-  defaultHighlightStyle,
+  HighlightStyle,
   indentOnInput,
   syntaxHighlighting,
 } from '@codemirror/language';
@@ -16,6 +16,7 @@ import {
   keymap,
   lineNumbers,
 } from '@codemirror/view';
+import { tags } from '@lezer/highlight';
 import { useEffect, useEffectEvent, useRef } from 'react';
 
 interface CodeEditorProps {
@@ -27,10 +28,15 @@ interface CodeEditorProps {
   onRun: () => void;
 }
 
+/**
+ * Colours come from the app's theme tokens (src/index.css), so the editor follows light and dark
+ * mode without being rebuilt.
+ */
 const theme = EditorView.theme({
   '&': {
     fontSize: '15px',
-    backgroundColor: '#ffffff',
+    color: 'var(--color-slate-900)',
+    backgroundColor: 'var(--color-surface)',
     borderRadius: '0.75rem',
   },
   '.cm-scroller': {
@@ -39,19 +45,48 @@ const theme = EditorView.theme({
     minHeight: '12rem',
     maxHeight: '28rem',
   },
-  '.cm-content': { padding: '0.75rem 0' },
+  '.cm-content': { padding: '0.75rem 0', caretColor: 'var(--color-slate-900)' },
+  '.cm-cursor, .cm-dropCursor': { borderLeftColor: 'var(--color-slate-900)' },
+  '&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground, .cm-selectionBackground, .cm-content ::selection':
+    { backgroundColor: 'var(--color-current-100)' },
   '.cm-gutters': {
-    backgroundColor: '#f8fafc',
-    color: '#64748b',
+    backgroundColor: 'var(--color-slate-50)',
+    color: 'var(--color-slate-500)',
     border: 'none',
-    borderRight: '1px solid #e2e8f0',
+    borderRight: '1px solid var(--color-slate-200)',
     borderTopLeftRadius: '0.75rem',
     borderBottomLeftRadius: '0.75rem',
   },
-  '.cm-activeLine': { backgroundColor: '#eff6ff' },
-  '.cm-activeLineGutter': { backgroundColor: '#dbeafe', color: '#1e40af' },
-  '&.cm-focused': { outline: '3px solid #2563eb', outlineOffset: '2px' },
+  '.cm-activeLine': { backgroundColor: 'var(--color-current-50)' },
+  '.cm-activeLineGutter': {
+    backgroundColor: 'var(--color-current-100)',
+    color: 'var(--color-current-ink-800)',
+  },
+  '&.cm-focused': { outline: '3px solid var(--color-current-600)', outlineOffset: '2px' },
 });
+
+/** Python syntax colours, from the theme so they read well on light and dark backgrounds. */
+const highlightStyle = HighlightStyle.define([
+  {
+    tag: [
+      tags.keyword,
+      tags.controlKeyword,
+      tags.operatorKeyword,
+      tags.definitionKeyword,
+      tags.moduleKeyword,
+    ],
+    color: 'var(--color-syntax-keyword)',
+  },
+  { tag: [tags.string, tags.special(tags.string)], color: 'var(--color-syntax-string)' },
+  { tag: [tags.number, tags.bool, tags.null, tags.atom], color: 'var(--color-syntax-number)' },
+  {
+    tag: [tags.function(tags.variableName), tags.function(tags.propertyName)],
+    color: 'var(--color-syntax-function)',
+  },
+  { tag: [tags.className, tags.typeName], color: 'var(--color-syntax-type)' },
+  { tag: tags.comment, color: 'var(--color-syntax-comment)', fontStyle: 'italic' },
+  { tag: tags.invalid, color: 'var(--color-incorrect-ink-800)' },
+]);
 
 /** A CodeMirror 6 Python editor. */
 export function CodeEditor({ initialCode, label, onChange, onRun }: CodeEditorProps) {
@@ -74,7 +109,7 @@ export function CodeEditor({ initialCode, label, onChange, onRun }: CodeEditorPr
           bracketMatching(),
           closeBrackets(),
           highlightActiveLine(),
-          syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
+          syntaxHighlighting(highlightStyle),
           python(),
           Prec.highest(
             keymap.of([

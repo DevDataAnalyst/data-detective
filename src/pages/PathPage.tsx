@@ -76,7 +76,7 @@ export function PathPage() {
 
       <section
         aria-labelledby="daily-goal-title"
-        className="flex items-center gap-4 rounded-2xl bg-white p-4 ring-1 ring-slate-200"
+        className="flex items-center gap-4 rounded-2xl bg-surface p-4 ring-1 ring-slate-200"
       >
         <DailyGoalRing xpToday={status.xpToday} dailyGoal={status.dailyGoal} />
         <div className="min-w-0 flex-1">
@@ -90,13 +90,13 @@ export function PathPage() {
           </p>
           <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-semibold">
             <span
-              className={`flex items-center gap-1 ${status.goalMetToday ? 'text-streak-700' : 'text-slate-600'}`}
+              className={`flex items-center gap-1 ${status.goalMetToday ? 'text-streak-ink-700' : 'text-slate-600'}`}
             >
               <FlameIcon aria-hidden="true" />
               {status.streak} day streak
             </span>
             {status.freezesHeld > 0 && (
-              <span className="flex items-center gap-1 text-current-700">
+              <span className="flex items-center gap-1 text-current-ink-700">
                 <SnowflakeIcon aria-hidden="true" />
                 Streak freeze ready
               </span>
@@ -108,7 +108,7 @@ export function PathPage() {
       {showTestOut && (
         <section
           aria-labelledby="test-out-title"
-          className="flex flex-wrap items-center gap-3 rounded-2xl bg-white p-4 ring-1 ring-slate-200"
+          className="flex flex-wrap items-center gap-3 rounded-2xl bg-surface p-4 ring-1 ring-slate-200"
         >
           <div className="min-w-0 flex-1">
             <h2 id="test-out-title" className="font-bold text-slate-900">

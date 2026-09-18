@@ -200,6 +200,14 @@ describe('accessibility audit (axe)', () => {
     await expectAccessible('playtest data');
   });
 
+  it('dark mode, from the top bar toggle', async () => {
+    const user = userEvent.setup();
+    renderApp();
+    await user.click(screen.getByRole('button', { name: 'Dark mode' }));
+    expect(document.documentElement.dataset.theme).toBe('dark');
+    await expectAccessible('path in dark mode');
+  });
+
   it('page not found', async () => {
     renderApp({ path: '/no-such-page' });
     await screen.findByRole('heading', { name: 'We couldn’t find that page' });

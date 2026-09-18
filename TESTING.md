@@ -1,6 +1,6 @@
 # Tester script
 
-Copy this into an email or message to testers. Replace `<LINK>` with the deployed URL.
+Copy this into an email or message to testers.
 
 ---
 
@@ -8,7 +8,7 @@ Copy this into an email or message to testers. Replace `<LINK>` with the deploye
 
 Hi — I'm testing a prototype that teaches data skills, and I'd like your honest reaction.
 
-**Link:** `<LINK>`
+**Link:** https://data-detective-omega.vercel.app/
 Works on a phone or a laptop. Nothing to install, no sign-up, no account. Everything stays in
 your browser.
 

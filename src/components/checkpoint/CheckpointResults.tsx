@@ -14,11 +14,11 @@ import { TopicsToReview } from './TopicsToReview';
 export function CheckpointScreen({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-dvh bg-slate-50">
-      <header className="border-b border-slate-200 bg-white">
+      <header className="border-b border-slate-200 bg-surface">
         <div className="mx-auto flex h-14 max-w-2xl items-center px-4">
           <Link
             to="/"
-            className="inline-flex min-h-11 items-center rounded-lg px-2 text-sm font-semibold text-current-700 hover:bg-current-50"
+            className="inline-flex min-h-11 items-center rounded-lg px-2 text-sm font-semibold text-current-ink-700 hover:bg-current-50"
           >
             ← Path
           </Link>
@@ -73,10 +73,10 @@ export function CheckpointResults({
   if (score.passed) {
     return (
       <CheckpointScreen>
-        <section className="space-y-4 rounded-3xl bg-white px-4 py-6 text-center ring-1 ring-slate-200">
+        <section className="space-y-4 rounded-3xl bg-surface px-4 py-6 text-center ring-1 ring-slate-200">
           <ScreenTitle
             icon={
-              <span className="mx-auto flex size-20 items-center justify-center rounded-full bg-correct-100 text-5xl text-correct-700 motion-safe:animate-pop-in">
+              <span className="mx-auto flex size-20 items-center justify-center rounded-full bg-correct-100 text-5xl text-correct-ink-700 motion-safe:animate-pop-in">
                 <StarIcon aria-hidden="true" />
               </span>
             }
@@ -87,7 +87,7 @@ export function CheckpointResults({
             {score.correct} of {score.total} right. You needed {score.needed}.
           </p>
           {outcome.xp > 0 && (
-            <p className="inline-flex items-center gap-1 rounded-full bg-xp-100 px-3 py-1 text-lg font-bold text-xp-700 tabular-nums">
+            <p className="inline-flex items-center gap-1 rounded-full bg-xp-100 px-3 py-1 text-lg font-bold text-xp-ink-700 tabular-nums">
               <BoltIcon aria-hidden="true" />
               <span aria-hidden="true">+{shownXp} XP</span>
               <span className="sr-only">{outcome.xp} XP earned</span>
@@ -113,10 +113,10 @@ export function CheckpointResults({
 
   return (
     <CheckpointScreen>
-      <section className="space-y-4 rounded-3xl bg-white px-4 py-6 text-center ring-1 ring-slate-200">
+      <section className="space-y-4 rounded-3xl bg-surface px-4 py-6 text-center ring-1 ring-slate-200">
         <ScreenTitle
           icon={
-            <span className="mx-auto flex size-20 items-center justify-center rounded-full bg-current-100 text-5xl text-current-700">
+            <span className="mx-auto flex size-20 items-center justify-center rounded-full bg-current-100 text-5xl text-current-ink-700">
               <TargetIcon aria-hidden="true" />
             </span>
           }

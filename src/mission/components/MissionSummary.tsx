@@ -61,11 +61,11 @@ export function MissionSummary({
 
   return (
     <div className="min-h-dvh bg-slate-50">
-      <header className="border-b border-slate-200 bg-white">
+      <header className="border-b border-slate-200 bg-surface">
         <div className="mx-auto flex h-14 max-w-2xl items-center px-4">
           <Link
             to="/"
-            className="inline-flex min-h-11 items-center rounded-lg px-2 text-sm font-semibold text-current-700 hover:bg-current-50"
+            className="inline-flex min-h-11 items-center rounded-lg px-2 text-sm font-semibold text-current-ink-700 hover:bg-current-50"
           >
             ← Path
           </Link>
@@ -73,7 +73,7 @@ export function MissionSummary({
       </header>
 
       <main className="mx-auto max-w-2xl space-y-5 px-4 py-6">
-        <section className="relative overflow-hidden rounded-3xl bg-white px-4 py-6 text-center ring-1 ring-slate-200">
+        <section className="relative overflow-hidden rounded-3xl bg-surface px-4 py-6 text-center ring-1 ring-slate-200">
           {celebrate && (
             <div
               aria-hidden="true"
@@ -99,7 +99,7 @@ export function MissionSummary({
             Mission complete
           </h1>
           <p className="mt-1 text-lg text-slate-600">You solved “{mission.title}”.</p>
-          <p className="mt-3 inline-flex items-center gap-1 rounded-full bg-xp-100 px-3 py-1 text-lg font-bold text-xp-700 tabular-nums">
+          <p className="mt-3 inline-flex items-center gap-1 rounded-full bg-xp-100 px-3 py-1 text-lg font-bold text-xp-ink-700 tabular-nums">
             <span aria-hidden="true">+{shownXp} XP</span>
             <span className="sr-only">{xp.total} XP earned in this mission</span>
           </p>
@@ -107,7 +107,7 @@ export function MissionSummary({
 
         <section
           aria-labelledby="what-you-did"
-          className="space-y-3 rounded-2xl bg-white p-4 ring-1 ring-slate-200"
+          className="space-y-3 rounded-2xl bg-surface p-4 ring-1 ring-slate-200"
         >
           <h2 id="what-you-did" className="text-lg font-bold text-slate-900">
             What you did
@@ -117,7 +117,7 @@ export function MissionSummary({
               <li key={line} className="flex items-start gap-2 text-slate-800">
                 <span
                   aria-hidden="true"
-                  className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-correct-100 text-xs text-correct-800"
+                  className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-correct-100 text-xs text-correct-ink-800"
                 >
                   <CheckIcon />
                 </span>
@@ -130,7 +130,7 @@ export function MissionSummary({
         <div className="grid gap-5 sm:grid-cols-2">
           <section
             aria-labelledby="xp-breakdown"
-            className="space-y-3 rounded-2xl bg-white p-4 ring-1 ring-slate-200"
+            className="space-y-3 rounded-2xl bg-surface p-4 ring-1 ring-slate-200"
           >
             <h2 id="xp-breakdown" className="text-lg font-bold text-slate-900">
               XP breakdown
@@ -148,7 +148,7 @@ export function MissionSummary({
               </div>
               <div className="flex justify-between gap-3 border-t border-slate-200 pt-2">
                 <dt className="font-bold text-slate-900">Total</dt>
-                <dd className="font-bold text-xp-700">{xp.total} XP</dd>
+                <dd className="font-bold text-xp-ink-700">{xp.total} XP</dd>
               </div>
             </dl>
             {stretchLeft > 0 && stretchXpLeft > 0 && (
@@ -167,7 +167,7 @@ export function MissionSummary({
               id="streak-freeze"
               className="flex items-center gap-2 text-lg font-bold text-slate-900"
             >
-              <SnowflakeIcon className="text-current-700" aria-hidden="true" />
+              <SnowflakeIcon className="text-current-ink-700" aria-hidden="true" />
               {progress.freezeGranted ? 'Streak freeze earned' : 'Streak freeze'}
             </h2>
             <p className="text-slate-700">
@@ -259,7 +259,7 @@ function PortfolioSummary({ lines }: { lines: string[] }) {
   return (
     <section
       aria-labelledby={titleId}
-      className="space-y-3 rounded-2xl bg-white p-4 ring-1 ring-slate-200"
+      className="space-y-3 rounded-2xl bg-surface p-4 ring-1 ring-slate-200"
     >
       <div>
         <h2 id={titleId} className="text-lg font-bold text-slate-900">

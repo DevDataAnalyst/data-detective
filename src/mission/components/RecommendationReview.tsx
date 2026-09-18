@@ -18,7 +18,7 @@ export function RecommendationReview({
   const ticked = new Set(selfReview);
   return (
     <div className="grid gap-3 md:grid-cols-2">
-      <div className="space-y-3 rounded-2xl bg-white p-4 ring-1 ring-slate-200">
+      <div className="space-y-3 rounded-2xl bg-surface p-4 ring-1 ring-slate-200">
         <Heading className="font-bold text-slate-900">Your recommendation</Heading>
         <p className="leading-relaxed whitespace-pre-wrap text-slate-800">{recommendation}</p>
         <div>
@@ -33,7 +33,7 @@ export function RecommendationReview({
                     className={`mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full text-xs ${
                       done
                         ? 'bg-correct-700 text-white'
-                        : 'bg-white text-slate-400 ring-1 ring-slate-300'
+                        : 'bg-surface text-slate-400 ring-1 ring-slate-300'
                     }`}
                   >
                     {done && <CheckIcon />}

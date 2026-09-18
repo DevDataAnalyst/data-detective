@@ -59,7 +59,10 @@ export function RootLayout() {
 
 function Notice({ children, onDismiss }: { children: ReactNode; onDismiss?: () => void }) {
   return (
-    <div role="status" className="border-b border-incorrect-200 bg-incorrect-50 text-incorrect-900">
+    <div
+      role="status"
+      className="border-b border-incorrect-200 bg-incorrect-50 text-incorrect-ink-900"
+    >
       <div className="mx-auto flex max-w-3xl items-start gap-3 px-4 py-2.5 text-sm">
         <AlertIcon className="mt-0.5 shrink-0 text-lg" aria-hidden="true" />
         <p className="min-w-0 flex-1">{children}</p>

@@ -32,10 +32,10 @@ export function TaskFeedbackPanel({ feedback, next, summaryHref, hint }: TaskFee
           <CheckIcon />
         </span>
         <div className="min-w-0 flex-1 space-y-2">
-          <p className="flex flex-wrap items-center gap-x-2 font-bold text-correct-900">
+          <p className="flex flex-wrap items-center gap-x-2 font-bold text-correct-ink-900">
             Task passed
             {feedback.xp > 0 && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-xp-100 px-2 py-0.5 text-sm text-xp-700">
+              <span className="inline-flex items-center gap-1 rounded-full bg-xp-100 px-2 py-0.5 text-sm text-xp-ink-700">
                 <BoltIcon aria-hidden="true" />+{feedback.xp} XP
               </span>
             )}
@@ -67,9 +67,9 @@ export function TaskFeedbackPanel({ feedback, next, summaryHref, hint }: TaskFee
       aria-label="Task check"
       className="flex gap-3 rounded-2xl border-2 border-incorrect-200 bg-incorrect-50 p-3 sm:p-4"
     >
-      <AlertIcon className="mt-0.5 shrink-0 text-2xl text-incorrect-700" aria-hidden="true" />
+      <AlertIcon className="mt-0.5 shrink-0 text-2xl text-incorrect-ink-700" aria-hidden="true" />
       <div className="min-w-0 flex-1 space-y-2">
-        <p className="font-bold text-incorrect-900">Not quite yet</p>
+        <p className="font-bold text-incorrect-ink-900">Not quite yet</p>
         <p className="text-slate-800">
           <InlineText text={feedback.message} />
         </p>

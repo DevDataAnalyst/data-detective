@@ -7,6 +7,7 @@ import { createEventLog } from '../storage/events';
 import { createMemoryStore, type KeyValueStore } from '../storage/keyValue';
 import { ProgressProvider } from '../storage/ProgressProvider';
 import { createProgressStore, type ProgressStore } from '../storage/progressStore';
+import { createThemeStore } from '../storage/theme';
 
 interface RenderAppOptions {
   path?: string;
@@ -14,20 +15,29 @@ interface RenderAppOptions {
   store?: ProgressStore;
   /** Set false to see onboarding, as a first-time visitor would. */
   onboarded?: boolean;
+  /** Where the theme choice is saved, to test that it survives a refresh. */
+  themeStorage?: KeyValueStore;
 }
 
 /**
  * Renders the whole app at a path, with its own in-memory storage. The learner has finished
- * onboarding (keeping the default daily goal) unless `onboarded` is false.
+ * onboarding (keeping the default daily goal) unless `onboarded` is false. The theme is applied to
+ * the real `<html>`, as in the app; the test setup clears it after each test.
  */
 export function renderApp({
   path = '/',
   keyValue,
   store,
   onboarded = true,
+  themeStorage,
 }: RenderAppOptions = {}) {
   const progressStore = store ?? createProgressStore(keyValue ?? createMemoryStore());
   const events = createEventLog(createMemoryStore());
+  const theme = createThemeStore({
+    storage: themeStorage ?? createMemoryStore(),
+    media: null,
+    root: document.documentElement,
+  });
   if (onboarded && !isOnboarded(progressStore.getSnapshot())) {
     progressStore.update((state) =>
       completeOnboarding(state, {
@@ -39,9 +49,9 @@ export function renderApp({
   }
   const router = createMemoryRouter(routes, { initialEntries: [path] });
   const view = render(
-    <ProgressProvider store={progressStore} events={events}>
+    <ProgressProvider store={progressStore} events={events} theme={theme}>
       <RouterProvider router={router} />
     </ProgressProvider>,
   );
-  return { ...view, router, store: progressStore, events };
+  return { ...view, router, store: progressStore, events, theme };
 }

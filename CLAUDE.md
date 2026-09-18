@@ -80,6 +80,10 @@ Run from the project root. Needs Node 22.22 or newer.
 - Tailwind CSS v4: design tokens live in the `@theme` block in `src/index.css` (there is no
   `tailwind.config` file). Use the semantic colours: `correct`, `incorrect` (amber, never red),
   `locked`, `current`, `xp` and `streak`.
+- Colours must work in light and dark mode, which only remaps tokens (see "Dark mode" below):
+  cards and panels use `bg-surface`, never `bg-white`; text in a semantic colour uses the ink
+  steps (`text-current-ink-700`, `text-correct-ink-800`), never `text-current-700`; the plain
+  500–700 steps are for solid fills that carry white text, and for icons.
 - Tests sit next to the code they test as `*.test.ts(x)`. Import `describe`/`it`/`expect` from
   `vitest` explicitly (no globals).
 - TypeScript is pinned to 6.0.x because typescript-eslint does not support TypeScript 7 yet.
@@ -207,6 +211,22 @@ Run from the project root. Needs Node 22.22 or newer.
   failed) and offline. The mission retries loading Python by itself when the connection returns.
 - The mission route is code split. Keep CodeMirror and Pyodide out of the initial bundle: the
   lesson layer must never download them.
+
+## Dark mode
+
+- `data-theme="dark"` on `<html>` switches every theme token at once (`:root[data-theme='dark']`
+  in `src/index.css`): the slate neutrals and `surface` flip, the 50–200 tints darken, ink and
+  syntax colours lighten. Components have no `dark:` classes; the `dark:` variant exists for
+  one-offs. Code blocks use `bg-code text-code-ink` and stay dark in both themes; the dialog
+  backdrop uses `scrim`.
+- `src/storage/theme.ts` holds the choice: "system" (the default, follows the device and changes
+  with it), "light" or "dark", saved under `data-detective:theme`. `index.html` runs the same rule
+  before the first paint so dark mode never flashes white; keep the two in step.
+- The top bar has the toggle (`ThemeToggle`, a toggle button named "Dark mode"); the profile page
+  has the full choice, including "Match my device". The editor's colours are CSS variables, so
+  CodeMirror follows the theme without being rebuilt.
+- `src/test/themeContrast.test.ts` reads the tokens from `src/index.css` and checks the text and
+  icon pairs components use, in both themes. Add a pair there when you add a new combination.
 
 ## Playtest instrumentation
 

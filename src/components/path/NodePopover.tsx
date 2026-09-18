@@ -54,12 +54,12 @@ export function NodePopover({ id, top, arrowX, labelledBy, onClose, children }: 
       role="dialog"
       aria-labelledby={labelledBy}
       tabIndex={-1}
-      className="absolute z-20 rounded-2xl bg-white p-4 shadow-xl ring-1 ring-slate-200 outline-none motion-safe:animate-pop-in"
+      className="absolute z-20 rounded-2xl bg-surface p-4 shadow-xl ring-1 ring-slate-200 outline-none motion-safe:animate-pop-in"
       style={{ top, left, width: WIDTH }}
     >
       <span
         aria-hidden="true"
-        className="absolute -top-2 size-4 rotate-45 bg-white ring-1 ring-slate-200 [clip-path:polygon(0_0,100%_0,0_100%)]"
+        className="absolute -top-2 size-4 rotate-45 bg-surface ring-1 ring-slate-200 [clip-path:polygon(0_0,100%_0,0_100%)]"
         style={{ left: Math.min(WIDTH - 24, Math.max(8, arrowX - left - 8)) }}
       />
       {children}

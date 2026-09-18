@@ -65,7 +65,7 @@ export function HintPanel({ hints, shown, onShow }: HintPanelProps) {
                   hintRefs.current[index] = node;
                 }}
                 tabIndex={-1}
-                className="rounded-xl bg-white p-3 ring-1 ring-slate-200 outline-none focus-visible:ring-3 focus-visible:ring-current-600"
+                className="rounded-xl bg-surface p-3 ring-1 ring-slate-200 outline-none focus-visible:ring-3 focus-visible:ring-current-600"
               >
                 <p className="text-sm font-bold text-slate-700">{title}</p>
                 {index < 2 ? (
@@ -74,7 +74,7 @@ export function HintPanel({ hints, shown, onShow }: HintPanelProps) {
                     className="mt-1 space-y-1 text-slate-800"
                   />
                 ) : (
-                  <pre className="mt-2 overflow-x-auto rounded-lg bg-slate-900 p-3 font-mono text-sm leading-relaxed text-slate-100">
+                  <pre className="mt-2 overflow-x-auto rounded-lg bg-code p-3 font-mono text-sm leading-relaxed text-code-ink">
                     <code>{hints.example}</code>
                   </pre>
                 )}

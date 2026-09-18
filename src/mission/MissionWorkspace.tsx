@@ -258,11 +258,11 @@ export default function MissionWorkspace({ mission, createRuntime }: MissionWork
 
   return (
     <div className="flex min-h-dvh flex-col bg-slate-50">
-      <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
+      <header className="sticky top-0 z-20 border-b border-slate-200 bg-surface/95 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4">
           <Link
             to="/"
-            className="inline-flex min-h-11 items-center rounded-lg px-2 text-sm font-semibold text-current-700 hover:bg-current-50"
+            className="inline-flex min-h-11 items-center rounded-lg px-2 text-sm font-semibold text-current-ink-700 hover:bg-current-50"
           >
             ← Path
           </Link>
@@ -271,7 +271,7 @@ export default function MissionWorkspace({ mission, createRuntime }: MissionWork
             <span className="truncate">{mission.title}</span>
           </p>
           <RuntimeStatusPill phase={runtimeState.phase} />
-          <p className="hidden items-center gap-1 rounded-full bg-xp-50 px-2.5 py-1 text-sm font-bold text-xp-700 sm:flex">
+          <p className="hidden items-center gap-1 rounded-full bg-xp-50 px-2.5 py-1 text-sm font-bold text-xp-ink-700 sm:flex">
             <BoltIcon aria-hidden="true" />
             <span aria-hidden="true">{progress.activity.totalXp} XP</span>
             <span className="sr-only">{progress.activity.totalXp} XP in total</span>
@@ -290,7 +290,7 @@ export default function MissionWorkspace({ mission, createRuntime }: MissionWork
             >
               <CheckIcon />
             </span>
-            <p className="min-w-0 flex-1 font-semibold text-correct-900">
+            <p className="min-w-0 flex-1 font-semibold text-correct-ink-900">
               Mission complete.{' '}
               {counts.stretchPassed < counts.stretchTotal
                 ? 'The stretch tasks are still open if you want more practice.'
@@ -305,7 +305,10 @@ export default function MissionWorkspace({ mission, createRuntime }: MissionWork
           </div>
         )}
 
-        <details open={!completed} className="group rounded-2xl bg-white p-4 ring-1 ring-slate-200">
+        <details
+          open={!completed}
+          className="group rounded-2xl bg-surface p-4 ring-1 ring-slate-200"
+        >
           <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between font-bold text-slate-900">
             The case
             <span aria-hidden="true" className="text-slate-500 group-open:rotate-180">
@@ -361,10 +364,10 @@ export default function MissionWorkspace({ mission, createRuntime }: MissionWork
 
           <section
             aria-labelledby="task-title"
-            className="min-w-0 space-y-3 rounded-2xl bg-white p-4 ring-1 ring-slate-200"
+            className="min-w-0 space-y-3 rounded-2xl bg-surface p-4 ring-1 ring-slate-200"
           >
             <div>
-              <p className="text-sm font-bold text-current-700">
+              <p className="text-sm font-bold text-current-ink-700">
                 {activeTask.stretch ? 'Stretch task' : `Task ${activeLabel}`}
               </p>
               <h2 id="task-title" className="text-xl font-bold text-slate-900">

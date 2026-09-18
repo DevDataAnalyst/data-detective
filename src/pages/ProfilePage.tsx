@@ -10,6 +10,8 @@ import { completedLessonIds, markLessonCompleted } from '../game/progress';
 import { DAILY_GOAL_CHOICES, dailyStatus, recentDays } from '../game/streak';
 import { devDayOffset, setDevDayOffset, useToday } from '../storage/clock';
 import { useProgress, useProgressStore } from '../storage/progressContext';
+import type { ThemePreference } from '../storage/theme';
+import { useTheme } from '../storage/themeContext';
 
 export function ProfilePage() {
   const progress = useProgress();
@@ -45,10 +47,11 @@ export function ProfilePage() {
       </dl>
 
       <DailyGoalSetting dailyGoal={progress.dailyGoal} />
+      <AppearanceSetting />
 
       <section
         aria-labelledby="xp-history-title"
-        className="rounded-2xl bg-white p-4 ring-1 ring-slate-200"
+        className="rounded-2xl bg-surface p-4 ring-1 ring-slate-200"
       >
         <h2 id="xp-history-title" className="font-bold">
           Your last 14 days
@@ -63,14 +66,14 @@ export function ProfilePage() {
         />
       </section>
 
-      <section className="rounded-2xl bg-white p-4 ring-1 ring-slate-200">
+      <section className="rounded-2xl bg-surface p-4 ring-1 ring-slate-200">
         <h2 className="font-bold">Unit 1: {unit1.title}</h2>
         <p className="text-slate-600">
           {completedCount} of {unit1.lessons.length} lessons completed
         </p>
       </section>
 
-      <section className="rounded-2xl bg-white p-4 ring-1 ring-slate-200">
+      <section className="rounded-2xl bg-surface p-4 ring-1 ring-slate-200">
         <h2 className="font-bold">Playtest data</h2>
         <p className="text-sm text-slate-600">
           While this prototype is being tested, the app keeps a log of what you do on this device.
@@ -92,12 +95,59 @@ const GOAL_NAMES: Record<string, string> = {
   serious: 'Serious',
 };
 
+const APPEARANCE: ReadonlyArray<{ value: ThemePreference; label: string }> = [
+  { value: 'system', label: 'Match my device' },
+  { value: 'light', label: 'Light' },
+  { value: 'dark', label: 'Dark' },
+];
+
+function AppearanceSetting() {
+  const { preference, setPreference } = useTheme();
+  return (
+    <section
+      aria-labelledby="appearance-setting"
+      className="rounded-2xl bg-surface p-4 ring-1 ring-slate-200"
+    >
+      <h2 id="appearance-setting" className="font-bold">
+        Appearance
+      </h2>
+      <p className="text-sm text-slate-600">Dark mode is easier on the eyes at night.</p>
+      <div
+        role="radiogroup"
+        aria-labelledby="appearance-setting"
+        className="mt-3 grid gap-2 sm:grid-cols-3"
+      >
+        {APPEARANCE.map((option) => {
+          const checked = option.value === preference;
+          return (
+            <label
+              key={option.value}
+              className={`flex min-h-12 cursor-pointer items-center gap-2.5 rounded-xl border-2 px-3 py-2 has-focus-visible:outline-3 has-focus-visible:outline-offset-2 has-focus-visible:outline-current-600 ${
+                checked ? 'border-current-600 bg-current-50' : 'border-slate-200 hover:bg-slate-50'
+              }`}
+            >
+              <input
+                type="radio"
+                name="profile-appearance"
+                checked={checked}
+                onChange={() => setPreference(option.value)}
+                className="size-5 shrink-0 accent-current-600"
+              />
+              <span className="font-semibold text-slate-900">{option.label}</span>
+            </label>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 function DailyGoalSetting({ dailyGoal }: { dailyGoal: number }) {
   const rewards = useRewards();
   return (
     <section
       aria-labelledby="daily-goal-setting"
-      className="rounded-2xl bg-white p-4 ring-1 ring-slate-200"
+      className="rounded-2xl bg-surface p-4 ring-1 ring-slate-200"
     >
       <h2 id="daily-goal-setting" className="font-bold">
         Daily goal
@@ -136,10 +186,10 @@ function DailyGoalSetting({ dailyGoal }: { dailyGoal: number }) {
 }
 
 const TONES = {
-  xp: 'bg-xp-50 text-xp-700',
-  streak: 'bg-streak-100 text-streak-800',
+  xp: 'bg-xp-50 text-xp-ink-700',
+  streak: 'bg-streak-100 text-streak-ink-800',
   slate: 'bg-slate-100 text-slate-700',
-  current: 'bg-current-50 text-current-700',
+  current: 'bg-current-50 text-current-ink-700',
 } as const;
 
 function Stat({
@@ -154,7 +204,7 @@ function Stat({
   tone: keyof typeof TONES;
 }) {
   return (
-    <div className="flex flex-col-reverse gap-1 rounded-2xl bg-white p-4 ring-1 ring-slate-200">
+    <div className="flex flex-col-reverse gap-1 rounded-2xl bg-surface p-4 ring-1 ring-slate-200">
       <dt className="text-sm text-slate-600">{label}</dt>
       <dd className="flex items-center gap-2 text-xl font-bold text-slate-900 tabular-nums">
         <span

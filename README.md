@@ -12,8 +12,12 @@ write a recommendation for an operations manager.
 - Test out: a 10-question checkpoint that unlocks the mission for people who already know this.
 - Mission: Python and pandas running in the browser through Pyodide, with hidden checks, three
   levels of hints, and a portfolio summary at the end.
+- Light and dark mode: it follows the device by default, with a toggle in the top bar and a
+  choice on the profile page.
 - Everything is stored on the learner's device. There is no backend, no account and no analytics
   service.
+
+Live prototype: https://data-detective-omega.vercel.app/
 
 ## Run it locally
 

@@ -13,7 +13,7 @@ export function OutputPanel({ outcome, running, downloadingPackages = null }: Ou
   return (
     <section
       aria-labelledby="output-title"
-      className="rounded-2xl bg-white p-3 ring-1 ring-slate-200 sm:p-4"
+      className="rounded-2xl bg-surface p-3 ring-1 ring-slate-200 sm:p-4"
     >
       <h3
         id="output-title"
@@ -55,7 +55,7 @@ function renderBody(
   switch (outcome.kind) {
     case 'timed_out':
       return (
-        <div className="flex gap-3 rounded-xl border-2 border-incorrect-200 bg-incorrect-50 p-3 text-incorrect-900">
+        <div className="flex gap-3 rounded-xl border-2 border-incorrect-200 bg-incorrect-50 p-3 text-incorrect-ink-900">
           <ClockIcon className="mt-0.5 shrink-0 text-xl" aria-hidden="true" />
           <div>
             <p className="font-bold">
@@ -69,14 +69,14 @@ function renderBody(
         </div>
       );
     case 'unavailable':
-      return <p className="text-incorrect-800">{outcome.message}</p>;
+      return <p className="text-incorrect-ink-800">{outcome.message}</p>;
     case 'completed': {
       const { stdout, rich, error } = outcome.result;
       const empty = !stdout && rich.length === 0 && !error;
       return (
         <div className="space-y-3">
           {stdout && (
-            <pre className="max-h-80 overflow-auto rounded-xl bg-slate-900 p-3 font-mono text-sm leading-relaxed whitespace-pre text-slate-100">
+            <pre className="max-h-80 overflow-auto rounded-xl bg-code p-3 font-mono text-sm leading-relaxed whitespace-pre text-code-ink">
               {stdout}
             </pre>
           )}
@@ -151,7 +151,7 @@ function TableView({ table }: { table: TableOutput }) {
                 {row.map((cell, cellIndex) => (
                   <td
                     key={cellIndex}
-                    className={`px-3 py-1.5 text-right whitespace-nowrap ${cell === 'NaN' ? 'text-incorrect-800' : 'text-slate-900'}`}
+                    className={`px-3 py-1.5 text-right whitespace-nowrap ${cell === 'NaN' ? 'text-incorrect-ink-800' : 'text-slate-900'}`}
                   >
                     {cell}
                   </td>
@@ -173,7 +173,7 @@ function TableView({ table }: { table: TableOutput }) {
 function ErrorView({ error }: { error: PythonError }) {
   const hint = hintForError(error);
   return (
-    <div className="rounded-xl border-2 border-incorrect-200 bg-incorrect-50 p-3 text-incorrect-900">
+    <div className="rounded-xl border-2 border-incorrect-200 bg-incorrect-50 p-3 text-incorrect-ink-900">
       <p className="flex items-center gap-2 font-bold">
         <AlertIcon aria-hidden="true" />
         {error.type}
@@ -181,14 +181,14 @@ function ErrorView({ error }: { error: PythonError }) {
       </p>
       {error.message && <p className="mt-1 font-mono text-sm break-words">{error.message}</p>}
       {error.trace.length > 0 && (
-        <pre className="mt-2 overflow-auto rounded-lg bg-white/70 p-2 font-mono text-sm text-slate-800">
+        <pre className="mt-2 overflow-auto rounded-lg bg-surface/70 p-2 font-mono text-sm text-slate-800">
           {error.trace.map((frame) => `Line ${frame.line}: ${frame.code}`).join('\n')}
         </pre>
       )}
       {hint && (
         <p className="mt-2 flex gap-2 text-sm text-slate-800">
           <LightbulbIcon
-            className="mt-0.5 shrink-0 text-base text-incorrect-700"
+            className="mt-0.5 shrink-0 text-base text-incorrect-ink-700"
             aria-hidden="true"
           />
           <span>{hint}</span>

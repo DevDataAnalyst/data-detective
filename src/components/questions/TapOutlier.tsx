@@ -146,9 +146,8 @@ export function TapOutlier({
                     y={dot.cy - 15}
                     textAnchor="middle"
                     paintOrder="stroke"
-                    stroke="white"
                     strokeWidth={3}
-                    className="fill-correct-800 text-[11px] font-bold"
+                    className="stroke-surface fill-correct-ink-800 text-[11px] font-bold"
                     aria-hidden="true"
                   >
                     {formatNumber(dot.value)}
@@ -183,7 +182,7 @@ function DotMark({ state, cx, cy }: { state: DotState; cx: number; cy: number })
   switch (state) {
     case 'idle':
       return (
-        <circle cx={cx} cy={cy} r={9} className="fill-slate-500 stroke-white" strokeWidth={2} />
+        <circle cx={cx} cy={cy} r={9} className="fill-slate-500 stroke-surface" strokeWidth={2} />
       );
     case 'neutral':
       return <circle cx={cx} cy={cy} r={8} className="fill-slate-300" />;
@@ -199,7 +198,7 @@ function DotMark({ state, cx, cy }: { state: DotState; cx: number; cy: number })
           />
           <path
             d={`M ${cx - 5} ${cy} l 3.5 3.5 l 6.5 -7`}
-            className="fill-none stroke-white"
+            className="fill-none stroke-surface"
             strokeWidth={2.5}
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -212,7 +211,7 @@ function DotMark({ state, cx, cy }: { state: DotState; cx: number; cy: number })
           cx={cx}
           cy={cy}
           r={11}
-          className="fill-white stroke-correct-700"
+          className="fill-surface stroke-correct-700"
           strokeWidth={2.5}
           strokeDasharray="4 3"
         />
@@ -223,7 +222,7 @@ function DotMark({ state, cx, cy }: { state: DotState; cx: number; cy: number })
           <circle cx={cx} cy={cy} r={12} className="fill-incorrect-700" />
           <path
             d={`M ${cx - 4} ${cy - 4} l 8 8 M ${cx + 4} ${cy - 4} l -8 8`}
-            className="stroke-white"
+            className="stroke-surface"
             strokeWidth={2.5}
             strokeLinecap="round"
           />

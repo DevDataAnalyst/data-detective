@@ -59,6 +59,36 @@
   --color-streak-700: #c2410c;
   --color-streak-800: #9a3412;
 
+  /*
+   * Ink: the 700–900 shades again, but only for text and labels. Dark mode lightens ink and
+   * leaves the solid steps alone, so white text on a solid button keeps its contrast in both.
+   */
+  --color-correct-ink-700: #15803d;
+  --color-correct-ink-800: #166534;
+  --color-correct-ink-900: #14532d;
+  --color-incorrect-ink-700: #b45309;
+  --color-incorrect-ink-800: #92400e;
+  --color-incorrect-ink-900: #78350f;
+  --color-current-ink-700: #1d4ed8;
+  --color-current-ink-800: #1e40af;
+  --color-xp-ink-700: #6d28d9;
+  --color-streak-ink-700: #c2410c;
+  --color-streak-ink-800: #9a3412;
+
+  /* Colours outside the scales: cards, code blocks and the dialog backdrop. */
+  --color-surface: #ffffff;
+  --color-code: #0f172a;
+  --color-code-ink: #f1f5f9;
+  --color-scrim: #0f172a;
+
+  /* Python syntax colours in the editor, each at least 4.5:1 on the editor background. */
+  --color-syntax-keyword: #7c3aed;
+  --color-syntax-string: #0f766e;
+  --color-syntax-number: #1d4ed8;
+  --color-syntax-function: #a16207;
+  --color-syntax-type: #0e7490;
+  --color-syntax-comment: #5c6b82;
+
   --animate-slide-up: slide-up 260ms cubic-bezier(0.22, 1, 0.36, 1);
   --animate-pop-in: pop-in 520ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
   --animate-ping-soft: ping-soft 2.4s cubic-bezier(0, 0, 0.2, 1) infinite;
@@ -136,6 +166,73 @@
   to {
     transform: scaleX(1);
   }
+}
+
+/*
+ * Dark mode, switched by `data-theme="dark"` on <html> (see src/storage/theme.ts). Only tokens
+ * change, so components need no `dark:` classes: neutrals and tints flip, ink lightens, and the
+ * solid 500–700 steps that carry white text stay as they are. `dark:` still works for one-offs.
+ */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --color-surface: #111a2e;
+  --color-code: #060b16;
+  --color-code-ink: #e2e8f0;
+  --color-scrim: #000000;
+
+  --color-slate-50: #0b1120;
+  --color-slate-100: #1c2740;
+  --color-slate-200: #2c3a55;
+  --color-slate-300: #3d4c68;
+  --color-slate-400: #5f6f8b;
+  --color-slate-500: #94a3b8;
+  --color-slate-600: #aab6c8;
+  --color-slate-700: #cbd5e1;
+  --color-slate-800: #e2e8f0;
+  --color-slate-900: #f1f5f9;
+
+  --color-locked-100: #1c2740;
+  --color-locked-200: #2c3a55;
+  --color-locked-300: #1f2a40;
+  --color-locked-400: #5f6f8b;
+  --color-locked-500: #94a3b8;
+  --color-locked-600: #cbd5e1;
+
+  --color-correct-50: #0a2616;
+  --color-correct-100: #0f3320;
+  --color-correct-200: #14532d;
+  --color-incorrect-50: #2b1d06;
+  --color-incorrect-100: #3d2908;
+  --color-incorrect-200: #5c3d0c;
+  --color-current-50: #0f1f3d;
+  --color-current-100: #172c54;
+  --color-current-200: #1e3a70;
+  --color-xp-50: #1c1433;
+  --color-xp-100: #2a1d4d;
+  --color-xp-200: #3b2a6b;
+  --color-streak-100: #3b1f0c;
+
+  --color-correct-ink-700: #4ade80;
+  --color-correct-ink-800: #86efac;
+  --color-correct-ink-900: #bbf7d0;
+  --color-incorrect-ink-700: #fbbf24;
+  --color-incorrect-ink-800: #fcd34d;
+  --color-incorrect-ink-900: #fde68a;
+  --color-current-ink-700: #93c5fd;
+  --color-current-ink-800: #bfdbfe;
+  --color-xp-ink-700: #c4b5fd;
+  --color-streak-ink-700: #fdba74;
+  --color-streak-ink-800: #fed7aa;
+
+  --color-syntax-keyword: #c4b5fd;
+  --color-syntax-string: #5eead4;
+  --color-syntax-number: #93c5fd;
+  --color-syntax-function: #fde047;
+  --color-syntax-type: #67e8f9;
+  --color-syntax-comment: #94a3b8;
 }
 
 @layer base {

@@ -12,4 +12,6 @@ Range.prototype.getClientRects ??= () =>
 
 afterEach(() => {
   cleanup();
+  // renderApp applies the theme to the real <html>; start each test in light mode.
+  delete document.documentElement.dataset.theme;
 });

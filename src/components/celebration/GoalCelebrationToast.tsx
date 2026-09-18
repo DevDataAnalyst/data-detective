@@ -34,7 +34,7 @@ export function GoalCelebrationToast({
     <div className="pointer-events-none fixed inset-x-0 top-3 z-50 flex justify-center px-4">
       <div
         role="status"
-        className="pointer-events-auto relative flex w-full max-w-sm items-center gap-3 overflow-hidden rounded-2xl bg-white px-4 py-3 shadow-xl ring-2 ring-streak-500 motion-safe:animate-pop-in"
+        className="pointer-events-auto relative flex w-full max-w-sm items-center gap-3 overflow-hidden rounded-2xl bg-surface px-4 py-3 shadow-xl ring-2 ring-streak-500 motion-safe:animate-pop-in"
       >
         <div aria-hidden="true" className="absolute inset-x-0 top-0 h-full motion-reduce:hidden">
           {CONFETTI.map((piece) => (

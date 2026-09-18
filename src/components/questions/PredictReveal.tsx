@@ -44,9 +44,8 @@ function LaneLabel({
       y={LANE_Y[lane]}
       textAnchor={labelAnchor(x, layout)}
       paintOrder="stroke"
-      stroke="white"
       strokeWidth={4}
-      className={`text-[13px] font-bold ${className}`}
+      className={`stroke-surface text-[13px] font-bold ${className}`}
     >
       {children}
     </text>
@@ -129,7 +128,7 @@ function SpreadShapes({
             x={(predictedFrom + predictedTo) / 2}
             lane={0}
             layout={layout}
-            className="fill-xp-700"
+            className="fill-xp-ink-700"
           >
             {`You: ${formatValue(dataset, prediction ?? 0)}`}
           </LaneLabel>
@@ -173,7 +172,7 @@ function Markers({ layout, question, prediction, reveal, animate }: OverlayProps
             strokeWidth={2.5}
             strokeDasharray="5 4"
           />
-          <LaneLabel x={predictedX} lane={0} layout={layout} className="fill-xp-700">
+          <LaneLabel x={predictedX} lane={0} layout={layout} className="fill-xp-ink-700">
             {`You: ${formatValue(dataset, prediction)}`}
           </LaneLabel>
         </g>
@@ -245,7 +244,7 @@ export function PredictReveal({
           </label>
           <output
             htmlFor={sliderId}
-            className="shrink-0 text-xl font-bold whitespace-nowrap text-xp-700 tabular-nums"
+            className="shrink-0 text-xl font-bold whitespace-nowrap text-xp-ink-700 tabular-nums"
           >
             {prediction === null ? '–' : formatValue(dataset, prediction)}
           </output>

@@ -9,11 +9,11 @@ import type { QuestionProps } from './types';
 type OptionState = 'idle' | 'selected' | 'correct' | 'incorrect' | 'dimmed';
 
 const optionClasses: Record<OptionState, string> = {
-  idle: 'border-slate-300 bg-white hover:border-current-500 hover:bg-current-50',
-  selected: 'border-current-600 bg-current-50 text-current-800',
-  correct: 'border-correct-600 bg-correct-50 text-correct-900',
-  incorrect: 'border-incorrect-600 bg-incorrect-50 text-incorrect-900',
-  dimmed: 'border-slate-200 bg-white text-slate-500',
+  idle: 'border-slate-300 bg-surface hover:border-current-500 hover:bg-current-50',
+  selected: 'border-current-600 bg-current-50 text-current-ink-800',
+  correct: 'border-correct-600 bg-correct-50 text-correct-ink-900',
+  incorrect: 'border-incorrect-600 bg-incorrect-50 text-incorrect-ink-900',
+  dimmed: 'border-slate-200 bg-surface text-slate-500',
 };
 
 export function MultipleChoice({
@@ -87,13 +87,13 @@ export function MultipleChoice({
                 </span>
                 <span className="flex-1">{option}</span>
                 {state === 'correct' && (
-                  <span className="flex items-center gap-1 text-sm font-bold text-correct-800">
+                  <span className="flex items-center gap-1 text-sm font-bold text-correct-ink-800">
                     <CheckIcon className="text-lg" />
                     {isSelected ? 'Your answer' : 'Correct answer'}
                   </span>
                 )}
                 {state === 'incorrect' && (
-                  <span className="flex items-center gap-1 text-sm font-bold text-incorrect-800">
+                  <span className="flex items-center gap-1 text-sm font-bold text-incorrect-ink-800">
                     <CloseIcon className="text-lg" />
                     Your answer
                   </span>

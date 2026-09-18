@@ -114,7 +114,7 @@ export function SurveyNote({ question }: { question: string }) {
         rows={3}
         placeholder="Optional. Anything that felt confusing, boring or too hard."
         onChange={(event) => setNote(event.target.value)}
-        className="block w-full rounded-xl border-2 border-slate-300 bg-white p-3 text-base text-slate-900 focus:border-current-600 focus:outline-none"
+        className="block w-full rounded-xl border-2 border-slate-300 bg-surface p-3 text-base text-slate-900 focus:border-current-600 focus:outline-none"
       />
       <button
         type="button"

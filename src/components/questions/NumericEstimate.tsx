@@ -47,7 +47,7 @@ export function NumericEstimate({
               const value = parseLearnerNumber(event.target.value);
               onAnswer(value === null ? null : { type: 'numeric_estimate', value });
             }}
-            className="min-h-12 w-40 rounded-xl border-2 border-slate-300 bg-white px-3 text-lg font-semibold text-slate-900 tabular-nums focus:border-current-600 focus:outline-none read-only:bg-slate-50"
+            className="min-h-12 w-40 rounded-xl border-2 border-slate-300 bg-surface px-3 text-lg font-semibold text-slate-900 tabular-nums focus:border-current-600 focus:outline-none read-only:bg-slate-50"
           />
           {dataset.suffix && <span className="text-lg text-slate-600">{dataset.suffix}</span>}
         </div>

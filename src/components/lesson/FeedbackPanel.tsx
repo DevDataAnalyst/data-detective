@@ -40,7 +40,7 @@ export function FeedbackPanel({
         <h2
           id={headlineId}
           className={`flex items-center gap-2 text-xl font-bold ${
-            correct ? 'text-correct-800' : 'text-incorrect-800'
+            correct ? 'text-correct-ink-800' : 'text-incorrect-ink-800'
           }`}
         >
           <span

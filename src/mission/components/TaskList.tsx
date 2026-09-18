@@ -35,17 +35,17 @@ export function TaskList({ tasks, activeTaskId, statusOf, isLocked, onSelect }: 
                 aria-current={active ? 'step' : undefined}
                 className={`relative flex min-h-12 w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-sm font-semibold ring-1 transition-colors ${
                   active
-                    ? 'bg-current-50 text-current-800 ring-2 ring-current-600'
+                    ? 'bg-current-50 text-current-ink-800 ring-2 ring-current-600'
                     : locked
                       ? 'bg-slate-100 text-slate-600 ring-slate-200 hover:bg-slate-50'
-                      : 'bg-white text-slate-700 ring-slate-200 hover:bg-slate-50'
+                      : 'bg-surface text-slate-700 ring-slate-200 hover:bg-slate-50'
                 }`}
               >
                 <StatusMark status={status} label={label} locked={locked} />
                 <span className="whitespace-nowrap lg:whitespace-normal">
                   {task.title}
                   {task.stretch && (
-                    <span className="ml-1.5 rounded-full bg-xp-100 px-1.5 py-0.5 text-xs text-xp-700">
+                    <span className="ml-1.5 rounded-full bg-xp-100 px-1.5 py-0.5 text-xs text-xp-ink-700">
                       Stretch
                     </span>
                   )}
@@ -94,7 +94,7 @@ function StatusMark({
       aria-hidden="true"
       className={`flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
         status === 'attempted'
-          ? 'bg-current-100 text-current-800 ring-2 ring-current-600'
+          ? 'bg-current-100 text-current-ink-800 ring-2 ring-current-600'
           : 'bg-slate-100 text-slate-600 ring-1 ring-slate-300'
       }`}
     >

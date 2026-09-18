@@ -224,34 +224,34 @@ export function PathMap({ unit, completed, testedOut, mission: missionInfo }: Pa
               >
                 <SearchIcon />
                 {!missionUnlocked && (
-                  <span className="absolute -right-1 -bottom-1 flex size-9 items-center justify-center rounded-full bg-white text-xl text-locked-600 ring-2 ring-locked-200">
+                  <span className="absolute -right-1 -bottom-1 flex size-9 items-center justify-center rounded-full bg-surface text-xl text-locked-600 ring-2 ring-locked-200">
                     <LockIcon />
                   </span>
                 )}
                 {missionDone && (
-                  <span className="absolute -right-1 -bottom-1 flex size-9 items-center justify-center rounded-full bg-white text-xl text-correct-700 ring-2 ring-correct-200">
+                  <span className="absolute -right-1 -bottom-1 flex size-9 items-center justify-center rounded-full bg-surface text-xl text-correct-ink-700 ring-2 ring-correct-200">
                     <CheckIcon />
                   </span>
                 )}
               </span>
             </span>
             <span className="rounded-lg bg-slate-50 px-2 py-0.5 text-center leading-tight">
-              <span className="block text-xs font-bold tracking-wide text-xp-700 uppercase">
+              <span className="block text-xs font-bold tracking-wide text-xp-ink-700 uppercase">
                 Mission
               </span>
               <span className="block font-bold text-slate-900">{missionTitle}</span>
             </span>
             {missionState === 'in_progress' ? (
-              <span className="inline-flex items-center gap-1 rounded-full bg-xp-100 px-2.5 py-0.5 text-sm font-bold text-xp-700">
+              <span className="inline-flex items-center gap-1 rounded-full bg-xp-100 px-2.5 py-0.5 text-sm font-bold text-xp-ink-700">
                 {missionInfo.codeTasksPassed} of {missionInfo.codeTaskCount} tasks passed
               </span>
             ) : missionDone ? (
-              <span className="inline-flex items-center gap-1 rounded-full bg-correct-100 px-2.5 py-0.5 text-sm font-bold text-correct-800">
+              <span className="inline-flex items-center gap-1 rounded-full bg-correct-100 px-2.5 py-0.5 text-sm font-bold text-correct-ink-800">
                 <CheckIcon aria-hidden="true" />
                 Completed
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1 rounded-full bg-xp-100 px-2.5 py-0.5 text-sm font-bold text-xp-700">
+              <span className="inline-flex items-center gap-1 rounded-full bg-xp-100 px-2.5 py-0.5 text-sm font-bold text-xp-ink-700">
                 <BoltIcon aria-hidden="true" />+{missionXp} XP
               </span>
             )}
@@ -263,7 +263,7 @@ export function PathMap({ unit, completed, testedOut, mission: missionInfo }: Pa
 
       {openNode === MISSION_NODE && (
         <NodePopover key={MISSION_NODE} {...popoverFor(mission)}>
-          <p className="text-xs font-bold tracking-wide text-xp-700 uppercase">
+          <p className="text-xs font-bold tracking-wide text-xp-ink-700 uppercase">
             Mission · worth {missionXp} XP
           </p>
           <h2 id={popoverTitleId} className="mt-0.5 text-lg font-bold text-slate-900">
@@ -319,7 +319,7 @@ function UpNextBubble({ label }: { label: string }) {
   return (
     <span
       aria-hidden="true"
-      className="absolute -top-11 z-10 rounded-xl bg-white px-3 py-1 text-sm font-bold text-current-700 uppercase shadow-md ring-2 ring-current-200 motion-safe:animate-float"
+      className="absolute -top-11 z-10 rounded-xl bg-surface px-3 py-1 text-sm font-bold text-current-ink-700 uppercase shadow-md ring-2 ring-current-200 motion-safe:animate-float"
     >
       {label}
     </span>

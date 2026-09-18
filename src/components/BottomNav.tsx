@@ -6,7 +6,7 @@ const linkClass = ({ isActive }: { isActive: boolean }) =>
   [
     'relative flex min-h-14 flex-col items-center justify-center gap-0.5 text-xs font-semibold',
     isActive
-      ? 'text-current-700 before:absolute before:inset-x-1/4 before:top-0 before:h-1 before:rounded-b-full before:bg-current-600'
+      ? 'text-current-ink-700 before:absolute before:inset-x-1/4 before:top-0 before:h-1 before:rounded-b-full before:bg-current-600'
       : 'text-slate-600',
   ].join(' ');
 
@@ -15,7 +15,7 @@ export function BottomNav() {
     <nav
       aria-label="Main"
       data-testid="bottom-nav"
-      className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white pb-[env(safe-area-inset-bottom)] md:hidden"
+      className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-surface pb-[env(safe-area-inset-bottom)] md:hidden"
     >
       <ul className="mx-auto grid max-w-md grid-cols-2">
         <li>

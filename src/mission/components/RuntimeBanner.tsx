@@ -22,7 +22,7 @@ export function RuntimeBanner({ state, online, onRetry }: RuntimeBannerProps) {
     return (
       <div
         role="alert"
-        className="flex flex-wrap items-start gap-3 rounded-2xl border-2 border-incorrect-200 bg-incorrect-50 p-4 text-incorrect-900"
+        className="flex flex-wrap items-start gap-3 rounded-2xl border-2 border-incorrect-200 bg-incorrect-50 p-4 text-incorrect-ink-900"
       >
         <AlertIcon className="mt-0.5 shrink-0 text-xl" aria-hidden="true" />
         <div className="min-w-0 flex-1">
@@ -66,7 +66,7 @@ export function RuntimeBanner({ state, online, onRetry }: RuntimeBannerProps) {
       <p className="text-sm text-slate-700">{detail}</p>
       <div
         aria-hidden="true"
-        className="mt-3 h-2 overflow-hidden rounded-full bg-white ring-1 ring-current-200"
+        className="mt-3 h-2 overflow-hidden rounded-full bg-surface ring-1 ring-current-200"
       >
         <div
           className="h-full rounded-full bg-current-600 transition-[width] duration-700 motion-reduce:transition-none"

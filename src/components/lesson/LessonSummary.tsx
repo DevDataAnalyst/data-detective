@@ -30,7 +30,7 @@ export function LessonSummary({ lessonTitle, accuracy, durationMs, award }: Less
 
   return (
     <section aria-labelledby="summary-title" className="space-y-6 pt-6 text-center">
-      <div className="mx-auto flex size-20 items-center justify-center rounded-full bg-correct-100 text-correct-700 motion-safe:animate-pop-in">
+      <div className="mx-auto flex size-20 items-center justify-center rounded-full bg-correct-100 text-correct-ink-700 motion-safe:animate-pop-in">
         <StarIcon className="text-5xl" aria-hidden="true" />
       </div>
       <div>
@@ -45,14 +45,14 @@ export function LessonSummary({ lessonTitle, accuracy, durationMs, award }: Less
         <SummaryStat label="Time" value={formatDuration(durationMs)} />
         <div className="flex flex-col-reverse justify-end rounded-2xl bg-xp-50 p-3 ring-1 ring-xp-200">
           <dt className="text-xs font-semibold text-slate-600">XP earned</dt>
-          <dd className="text-xl font-bold text-xp-700 tabular-nums sm:text-2xl">
+          <dd className="text-xl font-bold text-xp-ink-700 tabular-nums sm:text-2xl">
             <span aria-hidden="true">+{shownXp}</span>
             <span className="sr-only">{xp} XP</span>
           </dd>
         </div>
       </dl>
 
-      {award && <p className="text-sm font-medium text-xp-700">{awardDetail(award)}</p>}
+      {award && <p className="text-sm font-medium text-xp-ink-700">{awardDetail(award)}</p>}
       <p className="text-slate-700">{summaryMessage(accuracy)}</p>
     </section>
   );
@@ -60,7 +60,7 @@ export function LessonSummary({ lessonTitle, accuracy, durationMs, award }: Less
 
 function SummaryStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex flex-col-reverse justify-end rounded-2xl bg-white p-3 ring-1 ring-slate-200">
+    <div className="flex flex-col-reverse justify-end rounded-2xl bg-surface p-3 ring-1 ring-slate-200">
       <dt className="text-xs font-semibold text-slate-600">{label}</dt>
       <dd className="text-xl font-bold text-slate-900 tabular-nums sm:text-2xl">{value}</dd>
     </div>

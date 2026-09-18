@@ -68,13 +68,13 @@ export function OnboardingPage() {
         : { label: 'Start lesson 1', disabled: dailyGoal === null, onClick: finish };
 
   return (
-    <div className="flex min-h-dvh flex-col bg-white">
+    <div className="flex min-h-dvh flex-col bg-surface">
       <header className="mx-auto flex h-16 w-full max-w-lg items-center gap-3 px-4">
         {step > 1 ? (
           <button
             type="button"
             onClick={() => setStep(step - 1)}
-            className="inline-flex min-h-11 items-center rounded-lg px-2 text-sm font-semibold text-current-700 hover:bg-current-50"
+            className="inline-flex min-h-11 items-center rounded-lg px-2 text-sm font-semibold text-current-ink-700 hover:bg-current-50"
           >
             ← Back
           </button>
@@ -163,7 +163,7 @@ export function OnboardingPage() {
         )}
       </main>
 
-      <footer className="fixed inset-x-0 bottom-0 z-20 border-t border-slate-200 bg-white pb-[env(safe-area-inset-bottom)]">
+      <footer className="fixed inset-x-0 bottom-0 z-20 border-t border-slate-200 bg-surface pb-[env(safe-area-inset-bottom)]">
         <div className="mx-auto max-w-lg px-4 py-3">
           <button
             type="button"
@@ -184,7 +184,7 @@ function Feature({ icon, children }: { icon: ReactNode; children: ReactNode }) {
     <li className="flex items-center gap-3 text-slate-800">
       <span
         aria-hidden="true"
-        className="flex size-10 shrink-0 items-center justify-center rounded-full bg-current-50 text-xl text-current-700"
+        className="flex size-10 shrink-0 items-center justify-center rounded-full bg-current-50 text-xl text-current-ink-700"
       >
         {icon}
       </span>
@@ -244,7 +244,7 @@ function ChoiceStep({
               className={`flex min-h-16 cursor-pointer items-center gap-3 rounded-2xl border-2 p-4 transition-colors has-focus-visible:outline-3 has-focus-visible:outline-offset-2 has-focus-visible:outline-current-600 ${
                 checked
                   ? 'border-current-600 bg-current-50'
-                  : 'border-slate-200 bg-white hover:bg-slate-50'
+                  : 'border-slate-200 bg-surface hover:bg-slate-50'
               }`}
             >
               <input

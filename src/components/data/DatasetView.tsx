@@ -11,7 +11,7 @@ export function ValueList({ dataset }: { dataset: NumberDataset }) {
         {dataset.values.map((value, index) => (
           <li
             key={index}
-            className="rounded-lg bg-white px-2.5 py-1.5 font-mono text-sm text-slate-800 tabular-nums ring-1 ring-slate-300"
+            className="rounded-lg bg-surface px-2.5 py-1.5 font-mono text-sm text-slate-800 tabular-nums ring-1 ring-slate-300"
           >
             {formatValue(dataset, value)}
           </li>
@@ -59,7 +59,7 @@ export function DatasetComparison({ datasets }: { datasets: readonly NumberDatas
 
 export function DataTableView({ table }: { table: DataTable }) {
   return (
-    <div className="overflow-x-auto rounded-2xl bg-white ring-1 ring-slate-300">
+    <div className="overflow-x-auto rounded-2xl bg-surface ring-1 ring-slate-300">
       <table className="min-w-full text-sm">
         <caption className="px-3 pt-2.5 pb-1 text-left font-semibold text-slate-700">
           {table.caption}

@@ -128,8 +128,8 @@ export function CheckpointPlayer({
   const exit = () => (session.phase === 'question' ? setExitOpen(true) : onExit());
 
   return (
-    <div className="flex min-h-dvh flex-col bg-white">
-      <header className="sticky top-0 z-20 border-b border-slate-100 bg-white/95 backdrop-blur">
+    <div className="flex min-h-dvh flex-col bg-surface">
+      <header className="sticky top-0 z-20 border-b border-slate-100 bg-surface/95 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-2xl items-center gap-3 px-3">
           <button
             type="button"
@@ -146,7 +146,7 @@ export function CheckpointPlayer({
       <main className="mx-auto w-full max-w-2xl flex-1 px-4 pt-4 pb-32">
         {session.phase === 'intro' && (
           <section aria-labelledby="checkpoint-intro-title" className="space-y-5 pt-2">
-            <p className="text-sm font-bold tracking-wide text-current-700 uppercase">
+            <p className="text-sm font-bold tracking-wide text-current-ink-700 uppercase">
               Test out · {total} questions · about 5 min
             </p>
             <h1 id="checkpoint-intro-title" className="text-3xl font-bold text-slate-900">
@@ -192,7 +192,7 @@ export function CheckpointPlayer({
         )}
       </main>
 
-      <footer className="fixed inset-x-0 bottom-0 z-20 border-t border-slate-200 bg-white pb-[env(safe-area-inset-bottom)]">
+      <footer className="fixed inset-x-0 bottom-0 z-20 border-t border-slate-200 bg-surface pb-[env(safe-area-inset-bottom)]">
         <div className="mx-auto max-w-2xl px-4 py-3">
           {session.phase === 'intro' && (
             <button

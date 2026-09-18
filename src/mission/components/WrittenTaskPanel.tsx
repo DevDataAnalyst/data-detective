@@ -53,7 +53,7 @@ export function WrittenTaskPanel({
   if (sent) {
     return (
       <div className="space-y-3">
-        <p className="rounded-xl bg-correct-50 p-3 font-semibold text-correct-900 ring-1 ring-correct-200">
+        <p className="rounded-xl bg-correct-50 p-3 font-semibold text-correct-ink-900 ring-1 ring-correct-200">
           Sent to the operations manager. Compare it with a model recommendation.
         </p>
         <RecommendationReview
@@ -106,7 +106,7 @@ export function WrittenTaskPanel({
             clearTimeout(saveTimer.current);
             saveTimer.current = setTimeout(() => save.current(next), SAVE_DELAY_MS);
           }}
-          className="block w-full rounded-xl border-2 border-slate-300 bg-white p-3 text-base leading-relaxed text-slate-900 focus:border-current-600 focus:outline-none"
+          className="block w-full rounded-xl border-2 border-slate-300 bg-surface p-3 text-base leading-relaxed text-slate-900 focus:border-current-600 focus:outline-none"
         />
         <p id={countId} className="text-sm text-slate-600">
           {sentences} {sentences === 1 ? 'sentence' : 'sentences'}. Aim for {min}–{max}.
@@ -122,7 +122,7 @@ export function WrittenTaskPanel({
           return (
             <label
               key={item.id}
-              className="flex min-h-11 cursor-pointer items-start gap-3 rounded-xl bg-white p-2.5 ring-1 ring-slate-200 has-focus-visible:ring-3 has-focus-visible:ring-current-600"
+              className="flex min-h-11 cursor-pointer items-start gap-3 rounded-xl bg-surface p-2.5 ring-1 ring-slate-200 has-focus-visible:ring-3 has-focus-visible:ring-current-600"
             >
               <input
                 type="checkbox"
@@ -145,7 +145,7 @@ export function WrittenTaskPanel({
 
       <div className="space-y-2">
         {tooShort && wordsToGo > 0 && (
-          <p id={errorId} className="font-medium text-incorrect-800">
+          <p id={errorId} className="font-medium text-incorrect-ink-800">
             Write at least {task.minWords} words so the manager has something to act on ({wordsToGo}{' '}
             to go).
           </p>

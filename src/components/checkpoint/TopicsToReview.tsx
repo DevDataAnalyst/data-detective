@@ -24,7 +24,7 @@ export function TopicsToReview({
   return (
     <section
       aria-labelledby="topics-to-review"
-      className="space-y-3 rounded-2xl bg-white p-4 ring-1 ring-slate-200"
+      className="space-y-3 rounded-2xl bg-surface p-4 ring-1 ring-slate-200"
     >
       <h2 id="topics-to-review" className="text-lg font-bold text-slate-900">
         Topics to review

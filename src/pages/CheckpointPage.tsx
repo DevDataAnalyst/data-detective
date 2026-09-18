@@ -72,10 +72,10 @@ export function CheckpointPage() {
     });
     return (
       <CheckpointScreen>
-        <section className="space-y-4 rounded-3xl bg-white px-4 py-6 text-center ring-1 ring-slate-200">
+        <section className="space-y-4 rounded-3xl bg-surface px-4 py-6 text-center ring-1 ring-slate-200">
           <ScreenTitle
             icon={
-              <span className="mx-auto flex size-20 items-center justify-center rounded-full bg-correct-100 text-5xl text-correct-700">
+              <span className="mx-auto flex size-20 items-center justify-center rounded-full bg-correct-100 text-5xl text-correct-ink-700">
                 <StarIcon aria-hidden="true" />
               </span>
             }
@@ -108,10 +108,10 @@ export function CheckpointPage() {
     const startIndex = lessonIds.indexOf(startId ?? '');
     return (
       <CheckpointScreen>
-        <section className="space-y-4 rounded-3xl bg-white px-4 py-6 text-center ring-1 ring-slate-200">
+        <section className="space-y-4 rounded-3xl bg-surface px-4 py-6 text-center ring-1 ring-slate-200">
           <ScreenTitle
             icon={
-              <span className="mx-auto flex size-20 items-center justify-center rounded-full bg-current-100 text-5xl text-current-700">
+              <span className="mx-auto flex size-20 items-center justify-center rounded-full bg-current-100 text-5xl text-current-ink-700">
                 <ClockIcon aria-hidden="true" />
               </span>
             }

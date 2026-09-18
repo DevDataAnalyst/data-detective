@@ -164,8 +164,8 @@ export function LessonPlayer({
   const exit = () => (session.phase === 'question' ? setExitOpen(true) : onExit());
 
   return (
-    <div className="flex min-h-dvh flex-col bg-white">
-      <header className="sticky top-0 z-20 border-b border-slate-100 bg-white/95 backdrop-blur">
+    <div className="flex min-h-dvh flex-col bg-surface">
+      <header className="sticky top-0 z-20 border-b border-slate-100 bg-surface/95 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-2xl items-center gap-3 px-3">
           <button
             type="button"
@@ -184,7 +184,7 @@ export function LessonPlayer({
       >
         {session.phase === 'intro' && (
           <section aria-labelledby="lesson-intro-title" className="space-y-5 pt-2">
-            <p className="text-sm font-bold tracking-wide text-current-700 uppercase">
+            <p className="text-sm font-bold tracking-wide text-current-ink-700 uppercase">
               Lesson {lessonNumber} · about {lesson.estimatedMinutes} min
             </p>
             <h1 id="lesson-intro-title" className="text-3xl font-bold text-slate-900">
@@ -203,7 +203,7 @@ export function LessonPlayer({
         {session.phase === 'question' && question && (
           <div key={attemptKey}>
             {isRetry(session) && (
-              <p className="mb-3 inline-flex rounded-full bg-incorrect-100 px-3 py-1 text-sm font-semibold text-incorrect-900">
+              <p className="mb-3 inline-flex rounded-full bg-incorrect-100 px-3 py-1 text-sm font-semibold text-incorrect-ink-900">
                 Second look: you have seen the explanation now
               </p>
             )}
@@ -234,7 +234,7 @@ export function LessonPlayer({
       </main>
 
       {!inFeedback && (
-        <footer className="fixed inset-x-0 bottom-0 z-20 border-t border-slate-200 bg-white pb-[env(safe-area-inset-bottom)]">
+        <footer className="fixed inset-x-0 bottom-0 z-20 border-t border-slate-200 bg-surface pb-[env(safe-area-inset-bottom)]">
           <div className="mx-auto max-w-2xl px-4 py-3">
             {session.phase === 'intro' && (
               <button

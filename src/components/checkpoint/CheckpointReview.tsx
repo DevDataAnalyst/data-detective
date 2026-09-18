@@ -29,7 +29,7 @@ export function CheckpointReview({ checkpoint, lessons, answers }: CheckpointRev
             <li
               key={question.id}
               className={`space-y-3 rounded-2xl p-4 ring-1 ${
-                correct ? 'bg-white ring-slate-200' : 'bg-incorrect-50 ring-incorrect-200'
+                correct ? 'bg-surface ring-slate-200' : 'bg-incorrect-50 ring-incorrect-200'
               }`}
             >
               <p className="flex flex-wrap items-center justify-between gap-2 text-sm font-semibold text-slate-600">
@@ -38,12 +38,12 @@ export function CheckpointReview({ checkpoint, lessons, answers }: CheckpointRev
                   {lesson && ` · ${lesson.title}`}
                 </span>
                 {correct ? (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-correct-100 px-2 py-0.5 text-correct-800">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-correct-100 px-2 py-0.5 text-correct-ink-800">
                     <CheckIcon aria-hidden="true" />
                     Right
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-incorrect-100 px-2 py-0.5 text-incorrect-900">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-incorrect-100 px-2 py-0.5 text-incorrect-ink-900">
                     <LightbulbIcon aria-hidden="true" />
                     Missed
                   </span>
@@ -65,7 +65,7 @@ export function CheckpointReview({ checkpoint, lessons, answers }: CheckpointRev
                     animate={false}
                     headingLevel="h3"
                   />
-                  <p className="rounded-xl bg-white p-3 leading-relaxed text-slate-800 ring-1 ring-incorrect-200">
+                  <p className="rounded-xl bg-surface p-3 leading-relaxed text-slate-800 ring-1 ring-incorrect-200">
                     {fillTemplate(question.explanation, question.dataset)}
                   </p>
                 </>

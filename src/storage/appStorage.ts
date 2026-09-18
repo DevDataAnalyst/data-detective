@@ -1,6 +1,7 @@
 import { createEventLog } from './events';
 import { openBrowserStorage } from './keyValue';
 import { createProgressStore } from './progressStore';
+import { createThemeStore } from './theme';
 
 const browserStorage = openBrowserStorage();
 
@@ -11,3 +12,13 @@ export const appProgressStore = createProgressStore(browserStorage.store, {
 
 /** The app's playtest event log, saved beside progress and never sent anywhere. */
 export const appEventLog = createEventLog(browserStorage.store);
+
+/** Light or dark, following the device unless the learner picks one. Applied to <html>. */
+export const appThemeStore = createThemeStore({
+  storage: browserStorage.store,
+  media:
+    typeof window.matchMedia === 'function'
+      ? window.matchMedia('(prefers-color-scheme: dark)')
+      : null,
+  root: document.documentElement,
+});

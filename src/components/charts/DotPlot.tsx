@@ -97,7 +97,7 @@ export function DotPlot({
             cx={dot.cx}
             cy={dot.cy}
             r={6}
-            className="fill-current-600 stroke-white"
+            className="fill-current-600 stroke-surface"
             strokeWidth={1.5}
           />
         ))}

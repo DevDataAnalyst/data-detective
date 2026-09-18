@@ -238,7 +238,7 @@ function stopLabel(stoppedAt: string): string {
 
 function Panel({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="space-y-2 rounded-2xl bg-white p-4 ring-1 ring-slate-200">
+    <section className="space-y-2 rounded-2xl bg-surface p-4 ring-1 ring-slate-200">
       <h2 className="font-bold text-slate-900">{title}</h2>
       {children}
     </section>
