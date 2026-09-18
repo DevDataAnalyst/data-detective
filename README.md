@@ -4,15 +4,28 @@ A prototype of a gamified web app for learning data skills. It tests one idea: t
 Duolingo-style lessons and a real hands-on mission belong together.
 Try it here : https://data-detective-omega.vercel.app/
 
-**Unit 1: Data Detective** teaches descriptive statistics in seven 3–5 minute lessons, then hands
-the learner a case: _The Late Delivery Mystery_. In the mission they write real Python (pandas) in
-the browser against 600 messy delivery records, work out where deliveries are genuinely slow, and
-write a recommendation for an operations manager.
+There are three units. Each one opens with a message from a manager or a client, teaches in
+seven 3–5 minute lessons, and ends with a case on a real dataset where the obvious answer is
+wrong. In each mission the learner writes real Python (pandas) in the browser, then writes a
+recommendation for someone who is not technical.
 
-- Lessons: four question types, instant feedback, XP, a daily goal and a streak.
-- Test out: a 10-question checkpoint that unlocks the mission for people who already know this.
+1. **Data Detective** (descriptive statistics). _The Late Delivery Mystery_: work out from 600
+   messy delivery records where deliveries are genuinely slow.
+2. **The Churn Culprit** (probability and Bayes' theorem). _The False Alarm_: a founder panics
+   about record cancellations, but students leave before their summer break every April.
+3. **Ship It or Skip It** (hypothesis tests and A/B testing). _The Checkout Redesign_: a new
+   checkout wins "significantly", but only because its visitors came at the weekend.
+
+- Lessons: nine question types, with instant feedback, XP, a daily goal and a streak. Five of
+  them are built on real analyst work: triage a vague request, spot the lying chart, find the
+  lurking variable in a courtroom, build a metric, and call an A/B test (ship it, kill it, or
+  wait).
+- Test out: a 10-question checkpoint in each unit, for people who already know the topic.
+- Boss battle: a 60-second round of questions the learner has already got right.
 - Mission: Python and pandas running in the browser through Pyodide, with hidden checks, three
-  levels of hints, and a portfolio summary at the end.
+  levels of hints, and a portfolio summary at the end. Finishing a unit opens the next one.
+- Daily challenge at `/daily`: one lying chart or courtroom case a day, the same for everyone,
+  with no lessons or sign-up needed and a result card to share.
 - Light and dark mode: it follows the device by default, with a toggle in the top bar and a
   choice on the profile page.
 - Professor Ponku, the mascot, turns up at the moments that matter: waving hello, thinking
@@ -46,7 +59,7 @@ jsDelivr CDN the first time it opens, so that part needs an internet connection.
 | grading tests    | `npm run test:python` (runs the mission's checks in real Pyodide) |
 | end-to-end       | `npm run test:e2e` (Playwright, builds and previews first)        |
 | lint and format  | `npm run lint`, `npm run format`                                  |
-| dataset          | `npm run generate:data`                                           |
+| datasets         | `npm run generate:data` (the three missions' CSVs)                |
 
 The end-to-end tests need browsers once: `npx playwright install chromium`. To use a Chrome that
 is already installed instead, run them as `PLAYWRIGHT_CHANNEL=chrome npm run test:e2e`. Each run starts
@@ -79,11 +92,12 @@ Or from this folder, with the Vercel CLI:
 npx vercel deploy --prod
 ```
 
-## Regenerate the dataset
+## Regenerate the datasets
 
-`public/data/deliveries.csv` is generated, not hand-written. The generator plants the patterns the
-mission is about (missing values, extreme outliers in one city, a genuinely slow city, a dinner
-rush) and is documented in [scripts/README.md](scripts/README.md).
+The missions' datasets in `public/data/` are generated, not hand-written. Each generator plants
+the patterns its mission is about: missing values, outliers, a slow city and a dinner rush in
+`deliveries.csv`; a seasonal wave of student cancellations in `churn.csv`; and a weekday/weekend
+mix-up in `checkout.csv`. They are documented in [scripts/README.md](scripts/README.md).
 
 ```bash
 npm run generate:data
@@ -97,20 +111,37 @@ documented number changed.
 
 Content is data. A unit is a typed object, and no component needs to change to add one.
 
-1. Write `src/content/unit2.ts` following the types in `src/content/types.ts`: a unit has lessons
-   (6–8 questions each, at least three question types), a 10-question checkpoint, and a mission id.
-2. Numbers in prompts and explanations use placeholders like `{mean}` filled from the question's
-   own dataset, so nothing is typed in twice.
-3. Add a mission in the same shape as `src/content/mission1.ts` if the unit has one: tasks with
-   starter code, the variables each task creates, three hint levels, and the summary lines.
-4. Export it from `src/content/index.ts` and add `validateUnit` (and `validateMission`) to the
-   content tests. Validation runs in the test suite and fails the build on any problem: wrong
-   answers, missing explanations, unknown placeholders, questions that are too long, and more.
-5. Mission grading lives in `src/mission/python/checks.py`. Each task gets a check that inspects
-   the learner's variables and returns a specific, non-revealing message.
+1. Write `src/content/unit4.ts` following the types in `src/content/types.ts`: a unit has an
+   opening `hook` message, lessons (6–8 questions each, at least three question types), a
+   10-question checkpoint, and a mission id.
+2. Numbers in prompts and explanations use placeholders like `{mean}`, filled from the question's
+   own data, so nothing is typed in twice.
+3. Add a mission in the same shape as `src/content/mission3.ts`: tasks with starter code, the
+   variables each task creates, three hint levels, the dataset facts it quotes, and the summary
+   lines.
+4. Add the unit to `courseUnits` in `src/content/index.ts` and the mission to
+   `src/content/missions.ts`, and add `validateUnit` and `validateMission` to the content tests.
+   Validation runs in the test suite and fails the build on any problem: wrong answers, missing
+   explanations, unknown placeholders, questions that are too long, and more. Units open in
+   order, so the new one opens once the one before it is finished.
+5. Each mission's grading is its own Python module, such as
+   `src/mission/python/checks_checkout.py`, listed in `checkModules.ts`. Each task gets a check
+   that inspects the learner's variables and returns a specific, non-revealing message.
 
 `CLAUDE.md` in this folder is the working brief: conventions, content rules and the decisions
 behind the game logic.
+
+## Daily challenge
+
+`/daily` shows one question a day: a lying chart one day, a courtroom case the next. Everyone gets
+the same question on the same date, and it needs no account or lessons, so it works as a link to
+share. The learner gets one try against the clock, then sees the full answer and a result card
+("I spotted the lying chart in 8 seconds — can you?") that they can share, download as an image
+or copy as text. Results are kept on the device and earn no XP.
+
+The questions are in `src/content/daily.ts`, checked by the same validation as the course. Days
+take them in order and start again after the last, so add new questions at the end: earlier days
+keep their questions.
 
 ## Playtest data
 
@@ -126,5 +157,6 @@ Testers open **Profile → Open playtest data** (or go to `/playtest`), where th
 - press **Copy summary** to paste a short version into a message,
 - press **Clear playtest data** to delete it.
 
-The export holds ids, counts and times. The only free text in it is the optional "What would you
-change?" note at the end of the mission.
+The summary is broken down by unit. The export holds ids, counts and times, including daily
+challenge answers and shares. The only free text in it is the optional "What would you change?"
+note at the end of the mission.

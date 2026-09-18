@@ -1,5 +1,6 @@
 /** The learner's saved progress. Pure data and pure updates; persistence lives in src/storage. */
 import { emptyCheckpointProgress, type CheckpointProgress } from './checkpoint';
+import type { DailyResult } from './daily';
 import type { MissionProgress } from './missionProgress';
 import { createActivity, DEFAULT_DAILY_GOAL, type ActivityState, type DateKey } from './streak';
 
@@ -43,6 +44,8 @@ export interface ProgressState {
   bossBattles: Record<string, BossProgress>;
   /** Units whose opening message the learner has read and dismissed. */
   hooksSeen: string[];
+  /** Daily challenge results by date. Kept apart from the course: they earn no XP. */
+  daily: Record<DateKey, DailyResult>;
 }
 
 export function createInitialProgress(): ProgressState {
@@ -56,6 +59,7 @@ export function createInitialProgress(): ProgressState {
     checkpoints: {},
     bossBattles: {},
     hooksSeen: [],
+    daily: {},
   };
 }
 

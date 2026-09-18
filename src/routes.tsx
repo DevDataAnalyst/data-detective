@@ -5,6 +5,7 @@ import { unit1 } from './content/unit1';
 import { BossBattlePage } from './pages/BossBattlePage';
 import { RootLayout } from './components/RootLayout';
 import { CheckpointPage } from './pages/CheckpointPage';
+import { DailyPage } from './pages/DailyPage';
 import { LessonPage } from './pages/LessonPage';
 import { MissionPage } from './pages/MissionPage';
 import { MissionSummaryPage } from './pages/MissionSummaryPage';
@@ -33,6 +34,7 @@ export const routes: RouteObject[] = [
         element: <AppShell />,
         children: [
           { index: true, element: <PathPage /> },
+          { path: 'daily', element: <DailyPage /> },
           { path: 'profile', element: <ProfilePage /> },
           { path: 'playtest', element: <PlaytestPage /> },
           { path: '*', element: <NotFoundPage /> },

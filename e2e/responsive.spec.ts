@@ -55,6 +55,10 @@ for (const size of WIDTHS) {
         ready: () => expect(page.getByRole('button', { name: 'Start checkpoint' })).toBeVisible(),
       },
       {
+        path: '/daily',
+        ready: () => expect(page.getByRole('button', { name: 'Start the clock' })).toBeVisible(),
+      },
+      {
         path: '/profile',
         ready: () => expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible(),
       },

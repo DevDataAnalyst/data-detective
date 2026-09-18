@@ -2,6 +2,7 @@ import { act, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import axe from 'axe-core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { dailyQuestions } from '../content/daily';
 import { lateDeliveryMystery } from '../content/mission1';
 import { unit1 } from '../content/unit1';
 import { PREVIEW_QUESTIONS } from '../dev/previewQuestions';
@@ -255,6 +256,35 @@ describe('accessibility audit (axe)', () => {
       act(() => vi.setSystemTime(new Date(2026, 2, 10, 9, 2)));
       await screen.findByRole('heading', { name: 'Time’s up!' });
       await expectAccessible('boss results');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('daily challenge: intro, question, result with the share card', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    // Day 2 is a courtroom case; day 1 a lying chart. Play one of each.
+    vi.setSystemTime(new Date(2026, 8, 19, 9, 0));
+    URL.createObjectURL = () => 'blob:daily-card';
+    URL.revokeObjectURL = () => {};
+    try {
+      const user = userEvent.setup();
+      for (const [day, question] of dailyQuestions.slice(0, 2).entries()) {
+        act(() => vi.setSystemTime(new Date(2026, 8, 19 + day, 9, 0)));
+        const view = renderApp({ path: '/daily', onboarded: day === 0 });
+        await user.click(await screen.findByRole('button', { name: 'Start the clock' }));
+        await screen.findByRole('timer');
+        await expectAccessible(`daily ${question.type} question`);
+        await (day === 0 ? answerCorrectly : answerIncorrectly)(user, question);
+        await user.click(screen.getByRole('button', { name: 'Check' }));
+        await screen.findByRole('heading', { name: 'Share your result' });
+        await expectAccessible(`daily ${question.type} result`);
+        view.unmount();
+      }
+      act(() => vi.setSystemTime(new Date(2026, 8, 21, 9, 0)));
+      renderApp({ path: '/daily' });
+      await screen.findByRole('heading', { name: 'Spot the lying chart' });
+      await expectAccessible('daily intro');
     } finally {
       vi.useRealTimers();
     }

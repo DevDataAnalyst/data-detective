@@ -25,7 +25,9 @@ export function templateTokens(text: string): TemplateToken[] {
 
 /** Indian digit grouping (1,00,000) and at most `maxDecimals` decimal places. */
 export function formatNumber(value: number, maxDecimals = 2): string {
-  return value.toLocaleString('en-IN', { maximumFractionDigits: maxDecimals });
+  const text = value.toLocaleString('en-IN', { maximumFractionDigits: maxDecimals });
+  // Negative zero, or a tiny negative number rounded away, would otherwise print as "-0".
+  return text === '-0' ? '0' : text;
 }
 
 /** A fraction as a percentage with at most one decimal place, e.g. 0.296 → "29.6%". */

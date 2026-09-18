@@ -15,6 +15,9 @@ export const CLAIM_CHART = {
   minLabelSpacing: 30,
 } as const;
 
+/** How each series' line is dashed, so two lines differ in more than colour. */
+export const SERIES_DASHES = [undefined, '6 4'] as const;
+
 /** A round step that gives about `count` intervals across `span`. */
 export function niceStep(span: number, count = 4): number {
   if (!(span > 0)) return 1;
@@ -30,7 +33,8 @@ export function axisTicks(axis: Pick<ChartAxis, 'min' | 'max'>, count = 4): numb
   const first = Math.ceil(axis.min / step - 1e-9) * step;
   const ticks: number[] = [];
   for (let value = first; value <= axis.max + 1e-9; value += step) {
-    ticks.push(Math.round(value * 1e6) / 1e6);
+    // `|| 0` turns the -0 that Math.ceil gives for an axis starting at 0 into 0.
+    ticks.push(Math.round(value * 1e6) / 1e6 || 0);
   }
   return ticks;
 }

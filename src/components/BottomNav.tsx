@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router';
-import { PathIcon, UserIcon } from './icons';
+import { CalendarIcon, PathIcon, UserIcon } from './icons';
 
 // The active tab gets a bar as well as colour, so colour is not the only signal.
 const linkClass = ({ isActive }: { isActive: boolean }) =>
@@ -17,11 +17,17 @@ export function BottomNav() {
       data-testid="bottom-nav"
       className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-surface pb-[env(safe-area-inset-bottom)] md:hidden"
     >
-      <ul className="mx-auto grid max-w-md grid-cols-2">
+      <ul className="mx-auto grid max-w-md grid-cols-3">
         <li>
           <NavLink to="/" end className={linkClass}>
             <PathIcon className="text-2xl" />
             Path
+          </NavLink>
+        </li>
+        <li>
+          <NavLink to="/daily" className={linkClass}>
+            <CalendarIcon className="text-2xl" />
+            Daily
           </NavLink>
         </li>
         <li>

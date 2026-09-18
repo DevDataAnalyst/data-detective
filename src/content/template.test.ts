@@ -11,6 +11,12 @@ describe('templates', () => {
     expect(formatNumber(150000)).toBe('1,50,000');
   });
 
+  it('never writes zero with a minus sign', () => {
+    expect(formatNumber(-0)).toBe('0');
+    expect(formatNumber(-0.001)).toBe('0');
+    expect(formatNumber(-0.5)).toBe('-0.5');
+  });
+
   it('rounds to the requested decimals', () => {
     const commute = { label: 'Commute', values: [22, 25, 27, 30, 31, 34, 150] };
     expect(fillTemplate('about {mean:1}', commute)).toBe('about 45.6');

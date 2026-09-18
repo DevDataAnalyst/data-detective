@@ -53,6 +53,16 @@ export type PlaytestEventBody =
       ms: number;
     }
   | { type: 'boss_abandoned'; unitId: string; answered: number; total: number }
+  | {
+      type: 'daily_answered';
+      /** The challenge's number: #1 on launch day. */
+      number: number;
+      questionId: string;
+      questionType: QuestionType;
+      correct: boolean;
+      ms: number;
+    }
+  | { type: 'daily_shared'; number: number; method: 'share' | 'download' | 'copy' }
   | { type: 'mission_opened'; missionId: string }
   | { type: 'pyodide_loaded'; ms: number }
   | { type: 'pyodide_failed'; message: string }

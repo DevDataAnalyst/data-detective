@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { saveDailyResult } from '../game/daily';
 import { markTaskPassed, recordHintShown, recordTaskRun } from '../game/missionProgress';
 import { markLessonCompleted } from '../game/progress';
 import { completeOnboarding, finishCheckpoint } from '../game/rewards';
@@ -183,5 +184,29 @@ describe('progress store', () => {
       status: 'not_started',
       passedAt: null,
     });
+  });
+
+  it('saves daily challenge results and drops malformed ones', () => {
+    const keyValue = createMemoryStore();
+    const result = { questionId: 'daily-lie-chai', selectedIndex: 0, correct: true, seconds: 8 };
+    createProgressStore(keyValue).update((state) => saveDailyResult(state, '2026-09-19', result));
+    expect(createProgressStore(keyValue).getSnapshot().daily).toEqual({ '2026-09-19': result });
+
+    const daily = parseStoredProgress(
+      JSON.stringify({
+        version: 1,
+        progress: {
+          daily: {
+            '2026-09-20': { questionId: 'q', selectedIndex: 1.6, correct: false, seconds: -4 },
+            '2026-09-21': { questionId: 'q', correct: 'yes' },
+            yesterday: { questionId: 'q', selectedIndex: 0, correct: true, seconds: 5 },
+          },
+        },
+      }),
+    ).daily;
+    expect(daily).toEqual({
+      '2026-09-20': { questionId: 'q', selectedIndex: 2, correct: false, seconds: 1 },
+    });
+    expect(parseStoredProgress(JSON.stringify({ version: 1, progress: {} })).daily).toEqual({});
   });
 });

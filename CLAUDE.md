@@ -330,8 +330,11 @@ Run from the project root. Needs Node 22.22 or newer.
   in an installed Chrome instead of the bundled Chromium.
 - `journey.spec.ts` is the whole path: onboarding, lesson 1, testing out, and the first three
   mission tasks with correct code. `responsive.spec.ts` checks 360, 768 and 1280px for horizontal
-  overflow and saves screenshots. `python-load.spec.ts` measures how long Python takes to load,
-  on this connection and on a Slow 4G profile, and only runs with `RUN_SLOW_NETWORK=1`.
+  overflow and saves screenshots. `daily.spec.ts` covers the daily challenge and its share card.
+  `python-load.spec.ts` measures how long Python takes to load, on this connection and on a Slow
+  4G profile, and only runs with `RUN_SLOW_NETWORK=1`.
+- Playwright reuses a server already on port 4173 without rebuilding. If a test cannot find
+  something new, stop any leftover `vite preview` so it builds afresh.
 - Helpers in `e2e/helpers.ts` answer any question type and write code into CodeMirror (typing it,
   then checking the text, because the editor closes brackets by itself).
 - Measured Python load, cold cache, on a ~1.4 Mbit/s connection (about Chrome's "Slow 4G"): 143
@@ -369,6 +372,32 @@ Run from the project root. Needs Node 22.22 or newer.
   significant lift is the weekend. It got 60% of its visitors at weekends against 20% for the
   old one, and within each day type the two convert the same, so the call is wait.
 - Every explanation names the common mistake. Question ids are unique across the course.
+
+## Daily challenge
+
+- `/daily` (a "Daily" tab in the app shell) plays one question a day from `src/content/daily.ts`:
+  lying charts and courtroom cases, alternating. `validateDailyQuestions` checks them like course
+  questions and keeps their ids apart from the course's. They stand alone, for visitors who have
+  never opened a lesson.
+- `dailyQuestionFor` in `src/game/daily.ts` picks by the local date: the days since
+  `DAILY_LAUNCH` index the list and wrap round, so everyone gets the same question on a date. Add
+  questions at the end, so days already played keep theirs. `dailyNumber` is #1 on launch day;
+  `dailyNumberText` leaves the number out before then.
+- One try a day: the clock starts on "Start the clock", and the first check is saved in
+  `progress.daily` by `saveDailyResult` (the first result stands; 60 days are kept). It pays no
+  XP and touches no streak or lesson, and newcomers are not sent to onboarding.
+- The share card (`src/components/daily/ShareCard.tsx`) is a 1080 × 1350 SVG with fixed colours,
+  laid out by the pure `layoutShareCard`. SVG text does not wrap, so lines are broken using a
+  cautious glyph-width estimate, and tests check that every daily question fits. Its chart is
+  `ClaimChartShapes` with a `ChartPalette` instead of theme classes.
+- `renderShareImage` draws the SVG onto a canvas, then Ponku on top, since an SVG drawn as an
+  image cannot load pictures. The PNG is made as soon as the result shows, because some phones
+  only allow sharing straight after a tap. Share sends the file through the Web Share API when
+  `navigator.canShare` allows it, and text otherwise; download is a plain link to the image; copy
+  falls back to a text box when the clipboard is blocked.
+- Events are `daily_answered` and `daily_shared`. `e2e/daily.spec.ts` checks that two visitors
+  get the same question, and that at 360px the card fits the screen and saves as a 1080 × 1350
+  PNG in a real browser.
 
 ## Build steps
 

@@ -814,6 +814,45 @@ export function validateMission(mission: Mission): ValidationIssue[] {
   return issues;
 }
 
+/** Every question id in the course: lessons, checkpoints and mission tasks. */
+function courseQuestionIds(units: readonly Unit[], missionList: readonly Mission[]): string[] {
+  return [
+    ...units.flatMap((unit) => [
+      ...unit.lessons.flatMap((lesson) => lesson.questions.map((question) => question.id)),
+      ...unit.checkpoint.items.map((item) => item.question.id),
+    ]),
+    ...missionList.flatMap((mission) =>
+      mission.tasks.flatMap((task) => (task.kind === 'question' ? [task.question.id] : [])),
+    ),
+  ];
+}
+
+/**
+ * The daily challenges: each is a valid lying chart or courtroom case, and ids are unique and
+ * never shared with the course, since results are saved by question id.
+ */
+export function validateDailyQuestions(
+  questions: readonly Question[],
+  units: readonly Unit[],
+  missionList: readonly Mission[],
+): ValidationIssue[] {
+  const issues: ValidationIssue[] = [];
+  if (questions.length === 0) issues.push(issue('daily', 'has no questions'));
+  const courseIds = new Set(courseQuestionIds(units, missionList));
+  const seen = new Set<string>();
+  questions.forEach((question, index) => {
+    const path = `daily[${index}](${question.id})`;
+    if (question.type !== 'spot_the_lie' && question.type !== 'courtroom') {
+      issues.push(issue(path, 'must be a spot_the_lie or courtroom question'));
+    }
+    if (seen.has(question.id)) issues.push(issue(path, 'id is used twice'));
+    if (courseIds.has(question.id)) issues.push(issue(path, 'id is already used in the course'));
+    seen.add(question.id);
+    issues.push(...validateQuestion(question, path));
+  });
+  return issues;
+}
+
 /**
  * Checks across units: ids are unique course-wide, because lessons are found by id and progress
  * is saved by id, and every unit's mission exists.
@@ -833,15 +872,7 @@ export function validateCourse(
   if (lessonIds.length > 0) {
     issues.push(issue('course', `lesson ids used in two units: ${lessonIds.join(', ')}`));
   }
-  const questionIds = repeated([
-    ...units.flatMap((unit) => [
-      ...unit.lessons.flatMap((lesson) => lesson.questions.map((question) => question.id)),
-      ...unit.checkpoint.items.map((item) => item.question.id),
-    ]),
-    ...missionList.flatMap((mission) =>
-      mission.tasks.flatMap((task) => (task.kind === 'question' ? [task.question.id] : [])),
-    ),
-  ]);
+  const questionIds = repeated(courseQuestionIds(units, missionList));
   if (questionIds.length > 0) {
     issues.push(issue('course', `question ids used twice: ${questionIds.join(', ')}`));
   }

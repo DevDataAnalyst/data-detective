@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { axisTicks, layoutClaimChart, niceStep } from '../components/charts/claimChartLayout';
+import {
+  axisTicks,
+  axisValue,
+  layoutClaimChart,
+  niceStep,
+} from '../components/charts/claimChartLayout';
 import type { ClaimChart } from '../content/types';
 import { chartTricks, exaggeration, honestChart, niceCeiling, visibleRange } from './charts';
 
@@ -99,6 +104,13 @@ describe('chart tricks', () => {
     expect(niceCeiling(96)).toBe(100);
     expect(niceStep(100)).toBe(25);
     expect(axisTicks({ min: 950, max: 1050 })).toEqual([950, 975, 1000, 1025, 1050]);
+  });
+
+  it('starts an axis from 0 at a plain 0, not -0, so the label has no minus sign', () => {
+    const ticks = axisTicks({ min: 0, max: 215 });
+    expect(ticks).toEqual([0, 100, 200]);
+    expect(Object.is(ticks[0], 0)).toBe(true);
+    expect(axisValue({ min: 0, max: 215, label: 'Cups' }, ticks[0])).toBe('0');
   });
 });
 

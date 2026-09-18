@@ -37,6 +37,11 @@ export function TopBar() {
               </NavLink>
             </li>
             <li>
+              <NavLink to="/daily" className={desktopLinkClass}>
+                Daily
+              </NavLink>
+            </li>
+            <li>
               <NavLink to="/profile" className={desktopLinkClass}>
                 Profile
               </NavLink>

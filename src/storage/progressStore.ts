@@ -1,4 +1,5 @@
 import type { CheckpointAttempt, CheckpointProgress } from '../game/checkpoint';
+import type { DailyResult } from '../game/daily';
 import {
   createInitialProgress,
   LEARNER_GOALS,
@@ -154,6 +155,23 @@ function parseBossBattles(value: unknown): ProgressState['bossBattles'] {
   return battles;
 }
 
+function parseDaily(value: unknown): ProgressState['daily'] {
+  if (!isRecord(value)) return {};
+  const results: ProgressState['daily'] = {};
+  for (const [date, raw] of Object.entries(value)) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !isRecord(raw)) continue;
+    if (typeof raw.questionId !== 'string' || typeof raw.correct !== 'boolean') continue;
+    const result: DailyResult = {
+      questionId: raw.questionId,
+      selectedIndex: Math.max(0, Math.round(finiteNumber(raw.selectedIndex, 0))),
+      correct: raw.correct,
+      seconds: Math.max(1, Math.round(finiteNumber(raw.seconds, 1))),
+    };
+    results[date] = result;
+  }
+  return results;
+}
+
 /**
  * Reads saved progress defensively: anything missing or malformed falls back to a fresh start
  * for that part, so a bad value never crashes the app.
@@ -197,6 +215,7 @@ export function parseStoredProgress(raw: string | null): ProgressState {
     checkpoints: parseCheckpoints(stored.checkpoints),
     bossBattles: parseBossBattles(stored.bossBattles),
     hooksSeen: stringList(stored.hooksSeen),
+    daily: parseDaily(stored.daily),
   };
 }
 
