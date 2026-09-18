@@ -217,6 +217,7 @@ describe('accessibility audit (axe)', () => {
       ['spot_the_lie', /spot the lie/i],
       ['courtroom', /courtroom/i],
       ['build_metric', /build the metric/i],
+      ['ab_verdict', /a\/b verdict/i],
     ] as const) {
       const view = renderApp({ path: '/dev/question-preview' });
       await user.click(await screen.findByRole('button', { name: button }));

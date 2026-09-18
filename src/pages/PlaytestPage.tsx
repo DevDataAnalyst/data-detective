@@ -25,6 +25,7 @@ const QUESTION_TYPE_NAMES: Record<string, string> = {
   spot_the_lie: 'Spot the lie',
   courtroom: 'Courtroom',
   build_metric: 'Build the metric',
+  ab_verdict: 'A/B verdict',
 };
 
 const COURSE: readonly PlaytestUnit[] = courseUnits.map((unit) => ({

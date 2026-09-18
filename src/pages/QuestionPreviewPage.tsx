@@ -14,6 +14,7 @@ const TYPES: ReadonlyArray<{ type: QuestionType; name: string; about: string }> 
   { type: 'spot_the_lie', name: 'Spot the lie', about: 'Find what a misleading chart does.' },
   { type: 'courtroom', name: 'Courtroom', about: 'Name the lurking variable behind a claim.' },
   { type: 'build_metric', name: 'Build the metric', about: 'Place the numerator and denominator.' },
+  { type: 'ab_verdict', name: 'A/B verdict', about: 'Ship, kill or wait, and see what happens.' },
 ];
 
 /**

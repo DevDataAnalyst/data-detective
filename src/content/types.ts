@@ -265,6 +265,33 @@ export interface BuildMetricQuestion extends QuestionBase {
   prefix?: string;
 }
 
+export interface AbVariant {
+  name: string;
+  visitors: number;
+  conversions: number;
+}
+
+/**
+ * Two versions were tested. Ship the new one, kill it, or wait for better data? Validation
+ * recomputes the right call from the numbers (`abDecision`); each call shows what happens next.
+ */
+export interface AbVerdictQuestion extends QuestionBase {
+  type: 'ab_verdict';
+  /** What was tested, e.g. "Old checkout vs new checkout". */
+  test: string;
+  control: AbVariant;
+  variant: AbVariant;
+  /** The smallest lift, in percentage points of conversion, that is worth shipping. */
+  minWorthwhileLift: number;
+  /** Something else the learner knows about how the test ran, e.g. that it stopped early. */
+  context?: string;
+  /** A flaw in how the test was run. With one, the right call is to wait. */
+  issue?: 'peeked_early' | 'confounded' | 'novelty_effect' | 'too_short';
+  verdict: 'ship' | 'kill' | 'wait';
+  /** What happens after each call, shown once the learner decides. */
+  consequences: Record<'ship' | 'kill' | 'wait', string>;
+}
+
 export type Question =
   | MultipleChoiceQuestion
   | NumericEstimateQuestion
@@ -273,7 +300,8 @@ export type Question =
   | InboxTriageQuestion
   | SpotTheLieQuestion
   | CourtroomQuestion
-  | BuildMetricQuestion;
+  | BuildMetricQuestion
+  | AbVerdictQuestion;
 
 export type QuestionType = Question['type'];
 

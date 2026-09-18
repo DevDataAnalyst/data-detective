@@ -12,7 +12,7 @@
     "typecheck": "tsc -b",
     "lint": "eslint . --max-warnings 0 && prettier --check .",
     "format": "prettier --write .",
-    "generate:data": "node scripts/generate-deliveries.ts && node scripts/generate-churn.ts",
+    "generate:data": "node scripts/generate-deliveries.ts && node scripts/generate-churn.ts && node scripts/generate-checkout.ts",
     "test:python": "vitest run --config vitest.python.config.ts",
     "test:e2e": "playwright test",
     "test:e2e:slow": "playwright test python-load"

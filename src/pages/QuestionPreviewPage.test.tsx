@@ -11,6 +11,7 @@ const TYPES = [
   { type: 'spot_the_lie', button: /spot the lie/i },
   { type: 'courtroom', button: /courtroom/i },
   { type: 'build_metric', button: /build the metric/i },
+  { type: 'ab_verdict', button: /a\/b verdict/i },
 ] as const;
 
 describe('question preview (development only)', () => {
@@ -70,6 +71,24 @@ describe('question preview (development only)', () => {
     await user.keyboard('{Enter}');
     const honest = await screen.findByRole('region', { name: 'The honest version' });
     expect(within(honest).getByRole('img', { name: /axis runs from 0/i })).toBeVisible();
+  });
+
+  it('shows what each A/B call leads to once the learner decides', async () => {
+    const user = userEvent.setup();
+    renderApp({ path: '/dev/question-preview' });
+    await user.click(await screen.findByRole('button', { name: /a\/b verdict/i }));
+    await user.keyboard('{Enter}');
+    expect(screen.getByText('less than 0.001')).toBeVisible();
+    await user.keyboard('3');
+    await user.keyboard('{Enter}');
+    expect(
+      await screen.findByText(
+        'Two more weeks pass with the weaker banner, and the answer does not change.',
+      ),
+    ).toBeVisible();
+    expect(
+      screen.getByText('Sign-ups rise by about 0.8 points, just as the test said. Good call.'),
+    ).toBeVisible();
   });
 
   it('lets a card be taken back out of the metric', async () => {

@@ -41,8 +41,9 @@ function change(values: readonly number[], from: number, to: number): number {
 }
 
 /**
- * The chart hides points that change the story: the full trend runs the other way or is flat, or
- * the points before it include a jump just as big, so the "new" one is not new.
+ * The chart hides points that change the story: the full trend runs the other way or is flat;
+ * the points before it include a jump just as big, so the "new" one is not new; or the stretch
+ * shown sits far from the rest, like the first days of a test when anything new gets clicked.
  */
 function isCherryPicked(chart: ClaimChart): boolean {
   if (!chart.window) return false;
@@ -60,7 +61,12 @@ function isCherryPicked(chart: ClaimChart): boolean {
     const precedent = before.some((value) =>
       shown > 0 ? value >= values[to] - margin : value <= values[to] + margin,
     );
-    return reversed || precedent;
+    const average = (items: readonly number[]) =>
+      items.reduce((sum, value) => sum + value, 0) / items.length;
+    const spread = Math.max(...values) - Math.min(...values);
+    const offLevel =
+      spread > 0 && Math.abs(average(values.slice(from, to + 1)) - average(values)) >= spread / 3;
+    return reversed || precedent || offLevel;
   });
 }
 

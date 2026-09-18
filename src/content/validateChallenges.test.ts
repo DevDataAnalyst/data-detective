@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { PREVIEW_QUESTIONS } from '../dev/previewQuestions';
 import type {
+  AbVerdictQuestion,
   BuildMetricQuestion,
   CourtroomQuestion,
   InboxTriageQuestion,
@@ -158,5 +159,36 @@ describe('build the metric validation', () => {
     const partial: BuildMetricQuestion = find('build_metric');
     partial.cards[1].value = undefined;
     expect(messages(partial)).toMatch(/give every card a value, or none/);
+  });
+});
+
+describe('A/B verdict validation', () => {
+  it('recomputes the right call from the numbers', () => {
+    const question: AbVerdictQuestion = find('ab_verdict');
+    question.verdict = 'wait';
+    expect(messages(question)).toMatch(/the numbers call for ship, not wait \(p = 0\.0001/);
+  });
+
+  it('wants a flaw explained, and then expects the learner to wait', () => {
+    const question: AbVerdictQuestion = find('ab_verdict');
+    question.issue = 'peeked_early';
+    expect(messages(question)).toMatch(/should tell the learner about the flaw/);
+    question.context = 'The team stopped the test on day 2, the first time it looked good.';
+    expect(messages(question)).toMatch(/call for wait, not ship/);
+  });
+
+  it('avoids p-values that sit right on the 0.05 line', () => {
+    const question: AbVerdictQuestion = find('ab_verdict');
+    question.variant = { ...question.variant, conversions: 877 };
+    expect(messages(question)).toMatch(/too close to 0\.05/);
+  });
+
+  it('checks the counts and the consequences', () => {
+    const question: AbVerdictQuestion = find('ab_verdict');
+    question.variant = { ...question.variant, conversions: 30000 };
+    question.consequences = { ...question.consequences, kill: ' ' };
+    const found = messages(question);
+    expect(found).toMatch(/conversions must be a whole number from 0 to visitors/);
+    expect(found).toMatch(/says nothing about what happens after kill/);
   });
 });

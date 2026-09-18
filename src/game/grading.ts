@@ -1,4 +1,5 @@
 import type { Question } from '../content/types';
+import { VERDICTS } from './abTest';
 
 export interface MultipleChoiceAnswer {
   type: 'multiple_choice';
@@ -35,6 +36,12 @@ export interface CourtroomAnswer {
   selectedIndex: number;
 }
 
+/** The call picked, by its position in `VERDICTS` (ship, kill, wait). */
+export interface AbVerdictAnswer {
+  type: 'ab_verdict';
+  selectedIndex: number;
+}
+
 /** Card indices placed on top and bottom of the fraction. */
 export interface BuildMetricAnswer {
   type: 'build_metric';
@@ -50,7 +57,8 @@ export type Answer =
   | InboxTriageAnswer
   | SpotTheLieAnswer
   | CourtroomAnswer
-  | BuildMetricAnswer;
+  | BuildMetricAnswer
+  | AbVerdictAnswer;
 
 /** Guards against floating point noise when comparing with a tolerance. */
 const EPSILON = 1e-9;
@@ -67,6 +75,7 @@ export function isAnswerReady(answer: Answer | null): answer is Answer {
     case 'inbox_triage':
     case 'spot_the_lie':
     case 'courtroom':
+    case 'ab_verdict':
       return Number.isInteger(answer.selectedIndex) && answer.selectedIndex >= 0;
     case 'build_metric':
       return answer.numerator !== null && answer.denominator !== null;
@@ -103,6 +112,9 @@ export function gradeAnswer(question: Question, answer: Answer): boolean {
   }
   if (question.type === 'courtroom' && answer.type === 'courtroom') {
     return answer.selectedIndex === question.confounderIndex;
+  }
+  if (question.type === 'ab_verdict' && answer.type === 'ab_verdict') {
+    return VERDICTS[answer.selectedIndex] === question.verdict;
   }
   if (question.type === 'build_metric' && answer.type === 'build_metric') {
     return (

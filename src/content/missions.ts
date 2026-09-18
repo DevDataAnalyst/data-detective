@@ -1,10 +1,15 @@
 import { lateDeliveryMystery } from './mission1';
 import { theFalseAlarm } from './mission2';
+import { theCheckoutRedesign } from './mission3';
 import type { Mission, Unit } from './types';
 
-export { lateDeliveryMystery, theFalseAlarm };
+export { lateDeliveryMystery, theCheckoutRedesign, theFalseAlarm };
 
-export const missions: readonly Mission[] = [lateDeliveryMystery, theFalseAlarm];
+export const missions: readonly Mission[] = [
+  lateDeliveryMystery,
+  theFalseAlarm,
+  theCheckoutRedesign,
+];
 
 export function findMission(missionId: string): Mission | null {
   return missions.find((mission) => mission.id === missionId) ?? null;

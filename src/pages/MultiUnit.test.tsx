@@ -5,7 +5,9 @@ import { lateDeliveryMystery } from '../content/mission1';
 import { bossPath, checkpointPath, missionPath } from '../content/paths';
 import { unit1 } from '../content/unit1';
 import { unit2 } from '../content/unit2';
+import { unit3 } from '../content/unit3';
 import { updateMission } from '../game/missionProgress';
+import { finishCheckpoint } from '../game/rewards';
 import { createMemoryStore } from '../storage/keyValue';
 import { createProgressStore } from '../storage/progressStore';
 import { answerCorrectly, playQuestions } from '../test/answerQuestion';
@@ -126,6 +128,32 @@ describe('units in sequence', () => {
     expect(within(boss).getByText('Next')).toBeInTheDocument();
     expect(
       unitTwo.getByRole('button', { name: /mission: the false alarm, unlocked/i }),
+    ).toBeVisible();
+  });
+
+  it('opens Unit 3 with the product manager’s email once Unit 2 is tested out', async () => {
+    const { store } = unitOneDone();
+    const allRight = Object.fromEntries(
+      unit2.checkpoint.items.map((item) => [item.question.id, true]),
+    );
+    store.update(
+      (state) =>
+        finishCheckpoint(state, { unit: unit2, correctByQuestion: allRight, now: new Date() })
+          .state,
+    );
+    const { router } = renderApp({ store });
+
+    expect(screen.getByText('Unit 2 tested out')).toBeVisible();
+    const hook = screen.getByRole('region', { name: 'New message for unit 3' });
+    expect(within(hook).getByRole('article', { name: /email from arjun/i })).toHaveTextContent(
+      /Checkout redesign: roll out on Monday\?/,
+    );
+    // Unit 2's mission is still to do, so the path opens on Unit 2.
+    await waitFor(() => expect(router.state.location.hash).toBe('#unit-2'));
+    expect(
+      section(unit3.title).getByRole('button', {
+        name: /lesson 1: what’s a hypothesis\?, ready to start/i,
+      }),
     ).toBeVisible();
   });
 

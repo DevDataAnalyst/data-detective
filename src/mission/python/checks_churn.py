@@ -186,7 +186,8 @@ def _check_churn_rate(ns, ref):
     df = _variable(ns, "df")
     if df is _MISSING:
         return _not_yet("Create a DataFrame called `df` by reading churn.csv.")
-    if not isinstance(df, pd.DataFrame) or [str(c) for c in df.columns] != ref["columns"]:
+    # Columns added along the way, such as a weekend flag, are fine.
+    if not isinstance(df, pd.DataFrame) or not set(ref["columns"]).issubset(str(c) for c in df.columns):
         return _not_yet("`df` should be the whole file, read with pd.read_csv(\"churn.csv\").")
     if len(df) != ref["n_rows"]:
         return _not_yet(f"`df` has {len(df)} rows, but the file has more. Read the whole file.")

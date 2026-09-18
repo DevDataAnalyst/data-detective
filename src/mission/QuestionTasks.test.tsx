@@ -2,7 +2,10 @@ import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { theFalseAlarm } from '../content/mission2';
-import { missionProgress } from '../game/missionProgress';
+import { theCheckoutRedesign } from '../content/mission3';
+import { markTaskPassed, missionProgress, selectTask } from '../game/missionProgress';
+import { createMemoryStore } from '../storage/keyValue';
+import { createProgressStore } from '../storage/progressStore';
 import { renderWorkspace } from '../test/renderWorkspace';
 
 const triage = theFalseAlarm.tasks[0];
@@ -62,5 +65,36 @@ describe('question tasks in a mission', () => {
     expect(await screen.findByText('Correct answer')).toBeVisible();
     expect(screen.queryByRole('button', { name: 'Check' })).not.toBeInTheDocument();
     expect(store.getSnapshot().activity.totalXp).toBe(20);
+  });
+
+  it('shows what a wrong A/B call leads to, then accepts the right one', async () => {
+    const user = userEvent.setup();
+    const store = createProgressStore(createMemoryStore());
+    store.update((state) =>
+      selectTask(
+        ['conversion', 'significance', 'weekend-question', 'by-day-type'].reduce(
+          (next, taskId) => markTaskPassed(next, theCheckoutRedesign.id, taskId, new Date()),
+          state,
+        ),
+        theCheckoutRedesign.id,
+        'the-call',
+      ),
+    );
+    renderWorkspace(store, theCheckoutRedesign);
+    expect(await screen.findByRole('heading', { name: 'Make the call' })).toBeVisible();
+
+    await user.keyboard('1');
+    await user.keyboard('{Enter}');
+    const check = await screen.findByRole('group', { name: 'Task check' });
+    expect(check).toHaveTextContent('the “win” was the weekend all along');
+    expect(screen.queryByText('Correct answer')).not.toBeInTheDocument();
+
+    await user.keyboard('3');
+    await user.click(screen.getByRole('button', { name: 'Check' }));
+    expect(await screen.findByText('Task passed')).toBeVisible();
+    expect(
+      missionProgress(store.getSnapshot(), theCheckoutRedesign.id).tasks['the-call'].status,
+    ).toBe('passed');
+    expect(screen.getByRole('button', { name: /next: reply to arjun/i })).toBeVisible();
   });
 });

@@ -56,6 +56,19 @@ describe('chart tricks', () => {
     expect(chartTricks(firstTime)).toEqual([]);
   });
 
+  it('spots a window that shows only an unusual stretch, such as a novelty spike', () => {
+    const fading: ClaimChart = {
+      kind: 'line',
+      title: 'Daily lift',
+      labels: ['D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7', 'D8'],
+      series: [{ name: 'Lift', values: [2.1, 1.8, 1.5, 0.6, 0.2, -0.1, 0.3, 0.1] }],
+      axis: { min: -1, max: 3, label: 'Lift' },
+      window: { from: 0, to: 2 },
+    };
+    expect(chartTricks(fading)).toEqual(['cherry_picked_range']);
+    expect(chartTricks({ ...fading, window: { from: 3, to: 7 } })).toEqual([]);
+  });
+
   it('spots two axes with different scales', () => {
     const dual: ClaimChart = {
       ...falling,

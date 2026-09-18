@@ -2,6 +2,7 @@ import { act, fireEvent, screen } from '@testing-library/react';
 import type { UserEvent } from '@testing-library/user-event';
 import { expect } from 'vitest';
 import type { BuildMetricQuestion, Question } from '../content/types';
+import { VERDICTS } from '../game/abTest';
 
 /** Places cards in the metric's top and bottom boxes: focus a card, press Space. */
 async function placeMetricCards(
@@ -58,6 +59,9 @@ export async function answerCorrectly(user: UserEvent, question: Question) {
     case 'build_metric':
       await placeMetricCards(user, question, question.numeratorIndex, question.denominatorIndex);
       break;
+    case 'ab_verdict':
+      await user.keyboard(String(VERDICTS.indexOf(question.verdict) + 1));
+      break;
   }
 }
 
@@ -103,6 +107,9 @@ export async function answerIncorrectly(user: UserEvent, question: Question) {
     case 'build_metric':
       // Upside down: the denominator on top.
       await placeMetricCards(user, question, question.denominatorIndex, question.numeratorIndex);
+      break;
+    case 'ab_verdict':
+      await user.keyboard(String(((VERDICTS.indexOf(question.verdict) + 1) % VERDICTS.length) + 1));
       break;
   }
 }

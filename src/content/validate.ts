@@ -14,6 +14,7 @@ import {
 import { evaluateFormula, formulaNames } from './formula';
 import { datasetScope, questionDataset, questionScope, templateTokens } from './template';
 import {
+  validateAbVerdict,
   validateBuildMetric,
   validateCourtroom,
   validateInboxTriage,
@@ -590,6 +591,8 @@ export function validateQuestion(question: Question, path: string): ValidationIs
       return [...issues, ...validateCourtroom(question, path)];
     case 'build_metric':
       return [...issues, ...validateBuildMetric(question, path)];
+    case 'ab_verdict':
+      return [...issues, ...validateAbVerdict(question, path)];
   }
 }
 

@@ -4,9 +4,11 @@
  * The worker loads the one for the mission that is open.
  */
 import deliveryChecks from './checks.py?raw';
+import checkoutChecks from './checks_checkout.py?raw';
 import churnChecks from './checks_churn.py?raw';
 
 export const CHECK_MODULES: Readonly<Record<string, string>> = {
   'late-delivery-mystery': deliveryChecks,
   'the-false-alarm': churnChecks,
+  'the-checkout-redesign': checkoutChecks,
 };

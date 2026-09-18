@@ -3,8 +3,10 @@
  * the metric. Like the other rules, anything that can be worked out from the content (such as
  * whether a chart really has the flaw the question names) is recomputed, not trusted.
  */
+import { abDecision, abStats, SIGNIFICANCE_LEVEL, VERDICTS } from '../game/abTest';
 import { chartTricks, exaggeration } from '../game/charts';
 import type {
+  AbVerdictQuestion,
   BuildMetricQuestion,
   ChartAxis,
   ClaimChart,
@@ -300,6 +302,67 @@ export function validateBuildMetric(question: BuildMetricQuestion, path: string)
         issue(`${path}.cards`, 'a percentage share cannot have a bigger top than bottom'),
       );
     }
+  }
+  return issues;
+}
+
+/** A p-value this close to 0.05 makes a poor teaching example: tiny changes flip the call. */
+const P_VALUE_MARGIN = 0.005;
+
+export function validateAbVerdict(question: AbVerdictQuestion, path: string) {
+  const issues: ValidationIssue[] = [];
+  if (blank(question.test)) issues.push(issue(`${path}.test`, 'is empty'));
+  const groups = [
+    ['control', question.control],
+    ['variant', question.variant],
+  ] as const;
+  for (const [name, group] of groups) {
+    const groupPath = `${path}.${name}`;
+    if (blank(group.name)) issues.push(issue(groupPath, 'needs a name'));
+    if (!(Number.isInteger(group.visitors) && group.visitors > 0)) {
+      issues.push(issue(groupPath, 'visitors must be a whole number above 0'));
+    }
+    if (
+      !(Number.isInteger(group.conversions) && group.conversions >= 0) ||
+      group.conversions > group.visitors
+    ) {
+      issues.push(issue(groupPath, 'conversions must be a whole number from 0 to visitors'));
+    }
+  }
+  if (question.control.name.trim() === question.variant.name.trim()) {
+    issues.push(issue(path, 'the two versions need different names'));
+  }
+  if (!(question.minWorthwhileLift > 0 && Number.isFinite(question.minWorthwhileLift))) {
+    issues.push(issue(`${path}.minWorthwhileLift`, 'must be a positive number of points'));
+  }
+  for (const verdict of VERDICTS) {
+    if (blank(question.consequences[verdict])) {
+      issues.push(
+        issue(`${path}.consequences`, `says nothing about what happens after ${verdict}`),
+      );
+    }
+  }
+  if (question.issue && blank(question.context)) {
+    issues.push(issue(`${path}.context`, 'should tell the learner about the flaw in the test'));
+  }
+  if (issues.length > 0) return issues;
+
+  const stats = abStats(question.control, question.variant);
+  if (Math.abs(stats.pValue - SIGNIFICANCE_LEVEL) < P_VALUE_MARGIN) {
+    issues.push(
+      issue(path, `the p-value (${stats.pValue.toFixed(4)}) is too close to 0.05 to teach cleanly`),
+    );
+  }
+  const expected = abDecision(stats, question.minWorthwhileLift, question.issue ?? null);
+  if (expected !== question.verdict) {
+    issues.push(
+      issue(
+        `${path}.verdict`,
+        `the numbers call for ${expected}, not ${question.verdict} (p = ${stats.pValue.toFixed(4)}, ` +
+          `difference ${stats.difference.toFixed(2)} points, 95% interval ${stats.ciLow.toFixed(2)} ` +
+          `to ${stats.ciHigh.toFixed(2)})`,
+      ),
+    );
   }
   return issues;
 }

@@ -2,6 +2,7 @@ import type { Ref } from 'react';
 import { fillQuestionText } from '../../content/template';
 import type { Question } from '../../content/types';
 import type { Answer } from '../../game/grading';
+import { AbVerdict } from './AbVerdict';
 import { BuildMetric } from './BuildMetric';
 import { Courtroom } from './Courtroom';
 import { InboxTriage } from './InboxTriage';
@@ -116,6 +117,14 @@ function renderBody(
           {...shared}
           question={question}
           answer={answer?.type === 'build_metric' ? answer : null}
+        />
+      );
+    case 'ab_verdict':
+      return (
+        <AbVerdict
+          {...shared}
+          question={question}
+          answer={answer?.type === 'ab_verdict' ? answer : null}
         />
       );
   }

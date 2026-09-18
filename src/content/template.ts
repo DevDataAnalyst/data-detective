@@ -1,6 +1,7 @@
+import { abStats } from '../game/abTest';
 import { computeStatistic, isStatistic, STATISTICS } from '../game/stats';
 import { evaluateFormula } from './formula';
-import type { NumberDataset, Question } from './types';
+import type { AbVerdictQuestion, NumberDataset, Question } from './types';
 
 /** `{name}`, `{name:1}` (one decimal place) or `{name:%}` (a fraction shown as a percentage). */
 const TOKEN_PATTERN = /\{([a-z_0-9]+)(?::(\d|%))?\}/g;
@@ -77,6 +78,24 @@ export function fillTemplate(text: string, dataset?: NumberDataset): string {
   );
 }
 
+/**
+ * An A/B verdict's numbers, for its text: `{control_rate:%}`, `{variant_rate:%}`, `{difference}`
+ * (percentage points), `{relative_lift:%}`, `{z}`, `{p_value}`, `{ci_low}` and `{ci_high}`.
+ */
+export function abScope(question: AbVerdictQuestion): Record<string, number> {
+  const stats = abStats(question.control, question.variant);
+  return {
+    control_rate: stats.controlRate,
+    variant_rate: stats.variantRate,
+    difference: stats.difference,
+    relative_lift: stats.relativeLift,
+    z: stats.z,
+    p_value: stats.pValue,
+    ci_low: stats.ciLow,
+    ci_high: stats.ciHigh,
+  };
+}
+
 /** The dataset a question's placeholders are filled from, if it has one. */
 export function questionDataset(question: Question): NumberDataset | undefined {
   return 'dataset' in question ? question.dataset : undefined;
@@ -88,7 +107,11 @@ export function questionDataset(question: Question): NumberDataset | undefined {
  * validation makes sure none do.
  */
 export function questionScope(question: Question): Record<string, number> {
-  const scope = { ...datasetScope(questionDataset(question)), ...question.givens };
+  const scope = {
+    ...datasetScope(questionDataset(question)),
+    ...(question.type === 'ab_verdict' ? abScope(question) : {}),
+    ...question.givens,
+  };
   for (const [name, formula] of Object.entries(question.derived ?? {})) {
     scope[name] = evaluateFormula(formula, scope);
   }

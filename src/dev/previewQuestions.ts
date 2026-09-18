@@ -1,4 +1,5 @@
 import type {
+  AbVerdictQuestion,
   BuildMetricQuestion,
   CourtroomQuestion,
   InboxTriageQuestion,
@@ -333,9 +334,64 @@ const buildMetric: BuildMetricQuestion[] = [
   },
 ];
 
+const abVerdict: AbVerdictQuestion[] = [
+  {
+    id: 'preview-ab-ship-banner',
+    type: 'ab_verdict',
+    prompt: 'The new home banner ran for two full weeks. What is your call?',
+    test: 'Old banner vs new banner',
+    control: { name: 'Old banner', visitors: 20000, conversions: 800 },
+    variant: { name: 'New banner', visitors: 20000, conversions: 960 },
+    minWorthwhileLift: 0.5,
+    verdict: 'ship',
+    consequences: {
+      ship: 'Sign-ups rise by about 0.8 points, just as the test said. Good call.',
+      kill: 'You keep the old banner and leave a real, worthwhile lift on the table.',
+      wait: 'Two more weeks pass with the weaker banner, and the answer does not change.',
+    },
+    explanation:
+      'The lift of {difference} points is clear (p = {p_value:3}) and bigger than the 0.5 points worth shipping. The common mistake is waiting forever for more data after a full, clean test.',
+  },
+  {
+    id: 'preview-ab-kill-tiny',
+    type: 'ab_verdict',
+    prompt: 'A new button colour was tested on 8 lakh visitors. What is your call?',
+    test: 'Blue button vs green button',
+    control: { name: 'Blue button', visitors: 400000, conversions: 16000 },
+    variant: { name: 'Green button', visitors: 400000, conversions: 16400 },
+    minWorthwhileLift: 0.5,
+    verdict: 'kill',
+    consequences: {
+      ship: 'The redesign ships, and a real but tiny lift of 0.1 points never repays the work.',
+      kill: 'You keep the blue button and spend the time on a bigger idea. Sensible.',
+      wait: 'More data only makes a 0.1-point lift more certain, and still not worth it.',
+    },
+    explanation:
+      'With 8 lakh visitors, even {difference} points is significant (p = {p_value:3}), but it is far below the 0.5 points worth shipping. The common mistake is treating “significant” as “important”.',
+  },
+  {
+    id: 'preview-ab-wait-small',
+    type: 'ab_verdict',
+    prompt: 'The team tried a new product page on a few hundred visitors. What is your call?',
+    test: 'Old page vs new page',
+    control: { name: 'Old page', visitors: 400, conversions: 16 },
+    variant: { name: 'New page', visitors: 400, conversions: 22 },
+    minWorthwhileLift: 0.5,
+    verdict: 'wait',
+    consequences: {
+      ship: 'You ship on 400 visitors each. The lift shrinks to nothing when everyone sees it.',
+      kill: 'You drop a page that might be worth having, on far too little evidence.',
+      wait: 'You keep the test running. With enough visitors, the answer becomes clear.',
+    },
+    explanation:
+      'The new page looks {difference} points better, but p = {p_value:2} and the interval runs from {ci_low:1} to {ci_high:1} points. The common mistake is deciding from a small sample, which can swing either way.',
+  },
+];
+
 export const PREVIEW_QUESTIONS: readonly Question[] = [
   ...inboxTriage,
   ...spotTheLie,
   ...courtroom,
   ...buildMetric,
+  ...abVerdict,
 ];

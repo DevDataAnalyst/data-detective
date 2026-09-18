@@ -1,6 +1,9 @@
 import { expect, type Page } from '@playwright/test';
 import type { Question } from '../src/content/types';
 
+/** The order the A/B verdict offers its calls in. */
+const VERDICT_ORDER = ['ship', 'kill', 'wait'];
+
 /** A fixed date, so anything that depends on the day is the same on every run. */
 export const FIXED_TIME = new Date('2026-03-10T09:00:00');
 
@@ -41,13 +44,16 @@ export async function answerCorrectly(page: Page, question: Question) {
     }
     case 'inbox_triage':
     case 'spot_the_lie':
-    case 'courtroom': {
+    case 'courtroom':
+    case 'ab_verdict': {
       const index =
         question.type === 'inbox_triage'
           ? question.answerableIndex
           : question.type === 'courtroom'
             ? question.confounderIndex
-            : question.correctIndex;
+            : question.type === 'ab_verdict'
+              ? VERDICT_ORDER.indexOf(question.verdict)
+              : question.correctIndex;
       await page.keyboard.press(String(index + 1));
       await expect(page.getByRole('radio').nth(index)).toBeChecked();
       break;

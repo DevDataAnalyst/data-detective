@@ -104,3 +104,47 @@ Churn rate for a month (or a group of months) is `cancelled` ÷ `subscribers_sta
 
 Unit 2's content quotes these numbers. `src/test/churnReference.test.ts` recomputes them from the
 CSV, and the content tests check the lessons and mission against them.
+
+## `generate-checkout.ts`
+
+Generates `public/data/checkout.csv`, the dataset for Unit 3's mission "The Checkout Redesign".
+Haatbox is a made-up online grocery app. Its product manager ran a new checkout against the old
+one for two weeks, saw the new one converting better, and wants to roll it out to everyone.
+
+```bash
+npm run generate:data
+```
+
+The seed is fixed (`20260919`), and the script re-checks every planted pattern after writing.
+
+### Columns
+
+One row per day and checkout: Monday 3 August to Sunday 16 August 2026, 14 days × 2 = 28 rows.
+
+| Column     | Type    | Notes                                  |
+| ---------- | ------- | -------------------------------------- |
+| `date`     | text    | `2026-08-03` to `2026-08-16`           |
+| `day`      | text    | `Mon` to `Sun`                         |
+| `variant`  | text    | `old` or `new` checkout                |
+| `visitors` | integer | Visitors who reached checkout that day |
+| `orders`   | integer | Visitors who placed an order           |
+
+Conversion rate is `orders` ÷ `visitors`.
+
+### Planted patterns
+
+1. **The alarm (a good one, this time).** Overall, the new checkout converts at 4.68% (1,433 of
+   30,591) and the old one at 3.85% (2,356 of 61,201): 0.83 points better, with a p-value far
+   below 0.0001.
+2. **The twist: the weekend.** The team sent the new checkout 60% of weekend traffic but only 20%
+   on weekdays, because they could watch it at weekends. 59.5% of the new checkout's visitors came
+   on a Saturday or Sunday, against 19.8% of the old one's.
+3. **Everyone converts more at weekends.** About 5.5% of visitors order at weekends, against 3.5%
+   on weekdays, whichever checkout they see.
+4. **Day for day, no difference.** On weekdays the old and new checkouts convert at 3.46% and
+   3.43%; at weekends, 5.43% and 5.54%. Neither gap is significant (p > 0.25). The overall lift is
+   the weekend mix, not the redesign, so the right call is to re-run the test with an even split
+   for full weeks before shipping.
+
+Unit 3's content quotes these numbers. `src/test/checkoutReference.test.ts` recomputes them from
+the CSV, and the content tests check the lessons and mission against them.

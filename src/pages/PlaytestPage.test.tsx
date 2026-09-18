@@ -41,7 +41,7 @@ describe('playtest page', () => {
     expect(await screen.findByRole('heading', { name: 'Playtest data' })).toBeInTheDocument();
 
     const lessons = screen.getByRole('heading', { name: 'Lessons' }).closest('section');
-    expect(lessons).toHaveTextContent('Completed1 of 14');
+    expect(lessons).toHaveTextContent('Completed1 of 21');
     const unitOne = screen
       .getByRole('heading', { name: 'Unit 1: Data Detective' })
       .closest('section');
