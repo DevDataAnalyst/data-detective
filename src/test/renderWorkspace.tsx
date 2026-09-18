@@ -2,7 +2,9 @@ import { render, screen, waitFor } from '@testing-library/react';
 import type { UserEvent } from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import { expect } from 'vitest';
+import { courseUnits } from '../content';
 import { lateDeliveryMystery } from '../content/mission1';
+import { missionPath, missionSummaryPath } from '../content/paths';
 import type { Mission } from '../content/types';
 import type {
   CheckResult,
@@ -72,13 +74,16 @@ export function renderWorkspace(
 ) {
   const workers: FakeWorker[] = [];
   const events = createEventLog(createMemoryStore());
+  const unit = courseUnits.find((candidate) => candidate.missionId === mission.id);
+  if (!unit) throw new Error(`No unit for ${mission.id}`);
   const router = createMemoryRouter(
     [
       {
-        path: '/mission',
+        path: '/units/:unitId/mission',
         element: (
           <MissionWorkspace
             mission={mission}
+            summaryPath={missionSummaryPath(unit.id)}
             createRuntime={(options) =>
               new PythonRuntime({
                 ...options,
@@ -92,10 +97,10 @@ export function renderWorkspace(
           />
         ),
       },
-      { path: '/mission/summary', element: <MissionSummaryPage /> },
+      { path: '/units/:unitId/mission/summary', element: <MissionSummaryPage /> },
       { path: '/', element: <p>Path</p> },
     ],
-    { initialEntries: ['/mission'] },
+    { initialEntries: [missionPath(unit.id)] },
   );
   const view = render(
     <ProgressProvider store={store} events={events}>

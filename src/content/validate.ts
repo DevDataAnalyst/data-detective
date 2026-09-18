@@ -810,3 +810,50 @@ export function validateMission(mission: Mission): ValidationIssue[] {
   });
   return issues;
 }
+
+/**
+ * Checks across units: ids are unique course-wide, because lessons are found by id and progress
+ * is saved by id, and every unit's mission exists.
+ */
+export function validateCourse(
+  units: readonly Unit[],
+  missionList: readonly Mission[],
+): ValidationIssue[] {
+  const issues: ValidationIssue[] = [];
+  const repeated = (ids: readonly string[]) => [
+    ...new Set(ids.filter((id, index) => ids.indexOf(id) !== index)),
+  ];
+
+  const unitIds = repeated(units.map((unit) => unit.id));
+  if (unitIds.length > 0) issues.push(issue('course', `duplicate unit ids: ${unitIds.join(', ')}`));
+  const lessonIds = repeated(units.flatMap((unit) => unit.lessons.map((lesson) => lesson.id)));
+  if (lessonIds.length > 0) {
+    issues.push(issue('course', `lesson ids used in two units: ${lessonIds.join(', ')}`));
+  }
+  const questionIds = repeated([
+    ...units.flatMap((unit) => [
+      ...unit.lessons.flatMap((lesson) => lesson.questions.map((question) => question.id)),
+      ...unit.checkpoint.items.map((item) => item.question.id),
+    ]),
+    ...missionList.flatMap((mission) =>
+      mission.tasks.flatMap((task) => (task.kind === 'question' ? [task.question.id] : [])),
+    ),
+  ]);
+  if (questionIds.length > 0) {
+    issues.push(issue('course', `question ids used twice: ${questionIds.join(', ')}`));
+  }
+  const checkpointIds = repeated(units.map((unit) => unit.checkpoint.id));
+  if (checkpointIds.length > 0) {
+    issues.push(issue('course', `checkpoint ids used twice: ${checkpointIds.join(', ')}`));
+  }
+  const missionIds = new Set(missionList.map((mission) => mission.id));
+  for (const unit of units) {
+    if (!missionIds.has(unit.missionId)) {
+      issues.push(issue(`unit(${unit.id})`, `mission "${unit.missionId}" does not exist`));
+    }
+  }
+  const claimed = repeated(units.map((unit) => unit.missionId));
+  if (claimed.length > 0)
+    issues.push(issue('course', `missions used twice: ${claimed.join(', ')}`));
+  return issues;
+}

@@ -38,13 +38,7 @@ import { TaskFeedbackPanel, type ShownFeedback } from './components/TaskFeedback
 import { TaskList } from './components/TaskList';
 import { WrittenTaskPanel } from './components/WrittenTaskPanel';
 import { feedbackForRun, type TaskFeedback } from './grading';
-import {
-  describeOutcome,
-  HINT_LEVELS,
-  MISSION_SUMMARY_PATH,
-  runSucceeded,
-  taskLabel,
-} from './missionHelpers';
+import { describeOutcome, HINT_LEVELS, runSucceeded, taskLabel } from './missionHelpers';
 import type {
   PythonRuntime,
   PythonRuntimeOptions,
@@ -55,6 +49,8 @@ import { usePythonRuntime } from './python/usePythonRuntime';
 
 interface MissionWorkspaceProps {
   mission: Mission;
+  /** The mission complete screen, opened after the recommendation is sent. */
+  summaryPath: string;
   /** Lets tests swap in a runtime with a fake worker. */
   createRuntime?: (options: PythonRuntimeOptions) => PythonRuntime;
 }
@@ -72,7 +68,11 @@ function announceFeedback(outcome: RunOutcome, feedback: TaskFeedback | null, xp
   return `${ran} Not quite yet. ${feedback.message}`;
 }
 
-export default function MissionWorkspace({ mission, createRuntime }: MissionWorkspaceProps) {
+export default function MissionWorkspace({
+  mission,
+  summaryPath,
+  createRuntime,
+}: MissionWorkspaceProps) {
   const store = useProgressStore();
   const progress = useProgress();
   const rewards = useRewards();
@@ -256,7 +256,7 @@ export default function MissionWorkspace({ mission, createRuntime }: MissionWork
         codeTasksPassed: counts.requiredPassed,
         stretchPassed: counts.stretchPassed,
       });
-      void navigate(MISSION_SUMMARY_PATH, { state: { justCompleted: true } });
+      void navigate(summaryPath, { state: { justCompleted: true } });
     }
   };
 
@@ -287,7 +287,7 @@ export default function MissionWorkspace({ mission, createRuntime }: MissionWork
               }
             : null
         }
-        summaryHref={completed ? MISSION_SUMMARY_PATH : null}
+        summaryHref={completed ? summaryPath : null}
         hint={
           hintsShown < HINT_LEVELS
             ? {
@@ -340,10 +340,7 @@ export default function MissionWorkspace({ mission, createRuntime }: MissionWork
                 ? 'The stretch tasks are still open if you want more practice.'
                 : 'You finished every task.'}
             </p>
-            <Link
-              to={MISSION_SUMMARY_PATH}
-              className={`${buttonStyles.secondary} min-h-11 text-sm`}
-            >
+            <Link to={summaryPath} className={`${buttonStyles.secondary} min-h-11 text-sm`}>
               See your summary
             </Link>
           </div>
@@ -437,7 +434,7 @@ export default function MissionWorkspace({ mission, createRuntime }: MissionWork
                 passed={saved.tasks[activeTask.id]?.status === 'passed'}
                 onCheck={(correct, ms) => answerQuestionTask(activeTask, correct, ms)}
                 next={questionNext(activeTask)}
-                summaryHref={completed ? MISSION_SUMMARY_PATH : null}
+                summaryHref={completed ? summaryPath : null}
               />
             ) : activeTask.kind === 'code' ? (
               <>
@@ -483,11 +480,7 @@ export default function MissionWorkspace({ mission, createRuntime }: MissionWork
                 key={`${activeTask.id}-${completed ? 'sent' : 'draft'}`}
                 task={activeTask}
                 savedText={saved.recommendation}
-                sent={
-                  completed
-                    ? { selfReview: saved.selfReview, summaryHref: MISSION_SUMMARY_PATH }
-                    : null
-                }
+                sent={completed ? { selfReview: saved.selfReview, summaryHref: summaryPath } : null}
                 onTextChange={(text) =>
                   store.update((state) => saveRecommendation(state, mission.id, text))
                 }

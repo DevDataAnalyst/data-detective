@@ -330,7 +330,24 @@ Run from the project root. Needs Node 22.22 or newer.
   seconds from opening the mission to a usable Run button. Keep that number in mind before adding
   anything else to the worker's start-up.
 
-## Units
+## Units and the path
+
+- `courseUnits` (`src/content/index.ts`) lists the units in order; `validateCourse` keeps lesson,
+  question and checkpoint ids unique course-wide. Each unit's pages live under `/units/:unitId/`
+  (`checkpoint`, `boss`, `mission`, `mission/summary`; helpers in `src/content/paths.ts`). The old
+  `/checkpoint`, `/mission` and `/mission/summary` links redirect to Unit 1.
+- Units open in order (`unitUnlocks` in `src/game/unlocks.ts`): a unit opens once the unit before
+  it is finished, by completing its mission or passing its checkpoint. `courseStanding` in
+  `src/game/course.ts` works out each unit's standing; pages read it through `useUnitRoute`, and
+  every unit page (lessons too) refuses a locked unit with `unitLockReason`.
+- The path shows every unit in order: its banner, test-out card and map (lessons, boss battle,
+  mission), with a milestone between units. A unit's `hook` appears once, as a chat card, when the
+  unit opens; dismissing it saves the unit id in `hooksSeen`. The path opens on the current unit by
+  putting its anchor (`#unit-2`) in the URL, so the router's scroll restoration scrolls there.
+- `/profile` and `/playtest` break the numbers down by unit. `summarizeUnits` in
+  `src/game/playtest.ts` assigns lesson and checkpoint events by id, boss answers to the round
+  being played and mission task events to the mission open at the time (task ids repeat across
+  missions).
 
 - Unit 1, "Data Detective" (`unit1.ts`), descriptive statistics, mission "The Late Delivery
   Mystery". It has no opening message (`hook: null`).

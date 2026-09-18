@@ -21,6 +21,26 @@ export interface TaskStats {
   deepestHint: number;
 }
 
+/** What the summary needs to know about a unit to split the log by unit. */
+export interface PlaytestUnit {
+  id: string;
+  title: string;
+  lessonIds: readonly string[];
+  checkpointId: string;
+  missionId: string;
+}
+
+export interface UnitPlaytestSummary {
+  unitId: string;
+  title: string;
+  lessons: { started: number; completed: number; abandoned: number; total: number };
+  /** First tries only, from lessons, the checkpoint, boss battles and mission questions. */
+  accuracyByType: QuestionTypeAccuracy[];
+  checkpoint: { attempts: number; passed: boolean; lastScore: string | null };
+  boss: { rounds: number; bestCorrect: number | null };
+  mission: { opened: boolean; completed: boolean; tasks: TaskStats[] };
+}
+
 export interface PlaytestSummary {
   events: number;
   from: string | null;
@@ -48,6 +68,8 @@ export interface PlaytestSummary {
   notes: string[];
   /** The furthest point the learner reached, in plain words. */
   stoppedAt: string;
+  /** The same numbers for each unit, when the course is passed in. */
+  units: UnitPlaytestSummary[];
 }
 
 function median(values: number[]): number | null {
@@ -89,7 +111,10 @@ function describeStop(events: readonly PlaytestEvent[]): string {
   return 'Nothing yet';
 }
 
-export function summarizePlaytest(events: readonly PlaytestEvent[]): PlaytestSummary {
+export function summarizePlaytest(
+  events: readonly PlaytestEvent[],
+  course: readonly PlaytestUnit[] = [],
+): PlaytestSummary {
   const onboarded = events.find((event) => event.type === 'onboarding_completed');
   const lessonsStarted = new Set<string>();
   const lessonsCompleted = new Set<string>();
@@ -220,7 +245,180 @@ export function summarizePlaytest(events: readonly PlaytestEvent[]): PlaytestSum
     surveys,
     notes,
     stoppedAt: describeStop(events),
+    units: summarizeUnits(events, course),
   };
+}
+
+function addAccuracy(
+  accuracy: Map<QuestionType, { answered: number; correct: number }>,
+  type: QuestionType,
+  correct: boolean,
+) {
+  const current = accuracy.get(type) ?? { answered: 0, correct: 0 };
+  accuracy.set(type, {
+    answered: current.answered + 1,
+    correct: current.correct + (correct ? 1 : 0),
+  });
+}
+
+/**
+ * Splits the log by unit. Lesson and checkpoint events name their lesson or checkpoint; boss
+ * events name their unit; mission task events belong to the mission most recently opened.
+ */
+export function summarizeUnits(
+  events: readonly PlaytestEvent[],
+  course: readonly PlaytestUnit[],
+): UnitPlaytestSummary[] {
+  const byLesson = new Map<string, string>();
+  const byCheckpoint = new Map<string, string>();
+  const byMission = new Map<string, string>();
+  for (const unit of course) {
+    unit.lessonIds.forEach((lessonId) => byLesson.set(lessonId, unit.id));
+    byCheckpoint.set(unit.checkpointId, unit.id);
+    byMission.set(unit.missionId, unit.id);
+  }
+
+  interface Tally {
+    started: Set<string>;
+    completed: Set<string>;
+    abandoned: number;
+    accuracy: Map<QuestionType, { answered: number; correct: number }>;
+    checkpoint: UnitPlaytestSummary['checkpoint'];
+    boss: UnitPlaytestSummary['boss'];
+    missionOpened: boolean;
+    missionCompleted: boolean;
+    tasks: Map<string, TaskStats>;
+  }
+  const tallies = new Map<string, Tally>(
+    course.map((unit) => [
+      unit.id,
+      {
+        started: new Set(),
+        completed: new Set(),
+        abandoned: 0,
+        accuracy: new Map(),
+        checkpoint: { attempts: 0, passed: false, lastScore: null },
+        boss: { rounds: 0, bestCorrect: null },
+        missionOpened: false,
+        missionCompleted: false,
+        tasks: new Map(),
+      },
+    ]),
+  );
+  const tallyFor = (unitId: string | undefined) => (unitId ? tallies.get(unitId) : undefined);
+  const taskFor = (tally: Tally, taskId: string) => {
+    const existing = tally.tasks.get(taskId);
+    if (existing) return existing;
+    const created: TaskStats = { taskId, runs: 0, passed: false, hints: 0, deepestHint: 0 };
+    tally.tasks.set(taskId, created);
+    return created;
+  };
+
+  let missionUnit: string | undefined;
+  let bossUnit: string | undefined;
+  for (const event of events) {
+    switch (event.type) {
+      case 'lesson_started':
+        tallyFor(byLesson.get(event.lessonId))?.started.add(event.lessonId);
+        break;
+      case 'lesson_completed':
+        tallyFor(byLesson.get(event.lessonId))?.completed.add(event.lessonId);
+        break;
+      case 'lesson_abandoned': {
+        const tally = tallyFor(byLesson.get(event.lessonId));
+        if (tally) tally.abandoned += 1;
+        break;
+      }
+      case 'question_answered': {
+        if (!event.firstAttempt && event.source !== 'boss') break;
+        const unitId =
+          event.source === 'boss'
+            ? bossUnit
+            : event.source === 'mission'
+              ? missionUnit
+              : byLesson.get(event.lessonId ?? '');
+        const tally = tallyFor(unitId);
+        // Boss answers are never first tries, so they only count toward their unit.
+        if (tally && (event.firstAttempt || event.source === 'boss')) {
+          addAccuracy(tally.accuracy, event.questionType, event.correct);
+        }
+        break;
+      }
+      case 'checkpoint_finished': {
+        const tally = tallyFor(byCheckpoint.get(event.checkpointId));
+        if (!tally) break;
+        tally.checkpoint = {
+          attempts: tally.checkpoint.attempts + 1,
+          passed: tally.checkpoint.passed || event.passed,
+          lastScore: `${event.correct} of ${event.total}`,
+        };
+        break;
+      }
+      case 'boss_started':
+        bossUnit = event.unitId;
+        break;
+      case 'boss_finished': {
+        const tally = tallyFor(event.unitId);
+        if (!tally) break;
+        tally.boss = {
+          rounds: tally.boss.rounds + 1,
+          bestCorrect: Math.max(tally.boss.bestCorrect ?? 0, event.correct),
+        };
+        break;
+      }
+      case 'mission_opened': {
+        missionUnit = byMission.get(event.missionId);
+        const tally = tallyFor(missionUnit);
+        if (tally) tally.missionOpened = true;
+        break;
+      }
+      case 'mission_completed': {
+        const tally = tallyFor(byMission.get(event.missionId));
+        if (tally) tally.missionCompleted = true;
+        break;
+      }
+      case 'task_run': {
+        const tally = tallyFor(missionUnit);
+        if (!tally) break;
+        const task = taskFor(tally, event.taskId);
+        task.runs += 1;
+        task.passed = task.passed || event.passed;
+        break;
+      }
+      case 'hint_viewed': {
+        const tally = tallyFor(missionUnit);
+        if (!tally) break;
+        const task = taskFor(tally, event.taskId);
+        task.hints += 1;
+        task.deepestHint = Math.max(task.deepestHint, event.level);
+        break;
+      }
+      default:
+        break;
+    }
+  }
+
+  return course.map((unit) => {
+    const tally = tallies.get(unit.id) as Tally;
+    return {
+      unitId: unit.id,
+      title: unit.title,
+      lessons: {
+        started: tally.started.size,
+        completed: tally.completed.size,
+        abandoned: tally.abandoned,
+        total: unit.lessonIds.length,
+      },
+      accuracyByType: [...tally.accuracy.entries()].map(([type, counts]) => ({ type, ...counts })),
+      checkpoint: tally.checkpoint,
+      boss: tally.boss,
+      mission: {
+        opened: tally.missionOpened,
+        completed: tally.missionCompleted,
+        tasks: [...tally.tasks.values()],
+      },
+    };
+  });
 }
 
 function formatMs(ms: number | null): string {
@@ -277,5 +475,18 @@ export function playtestSummaryText(summary: PlaytestSummary): string {
     surveys || '  none yet',
     summary.notes.length > 0 ? `Notes: ${summary.notes.join(' | ')}` : 'Notes: none',
     `Stopped at: ${summary.stoppedAt}`,
+    ...(summary.units.length > 0 ? ['By unit:', ...summary.units.map(unitLine)] : []),
   ].join('\n');
+}
+
+function unitLine(unit: UnitPlaytestSummary): string {
+  const answered = unit.accuracyByType.reduce((sum, row) => sum + row.answered, 0);
+  const correct = unit.accuracyByType.reduce((sum, row) => sum + row.correct, 0);
+  return [
+    `  ${unit.title}: lessons ${unit.lessons.completed}/${unit.lessons.total}`,
+    answered > 0 ? `first try ${correct}/${answered}` : 'no answers yet',
+    `checkpoint ${unit.checkpoint.passed ? 'passed' : `${unit.checkpoint.attempts} attempt(s)`}`,
+    `boss ${unit.boss.rounds} round(s)${unit.boss.bestCorrect !== null ? `, best ${unit.boss.bestCorrect}` : ''}`,
+    `mission ${unit.mission.completed ? 'completed' : unit.mission.opened ? 'opened' : 'not opened'}`,
+  ].join(', ');
 }

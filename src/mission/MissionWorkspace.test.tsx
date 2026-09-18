@@ -2,6 +2,8 @@ import { act, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { lateDeliveryMystery } from '../content/mission1';
+import { missionSummaryPath } from '../content/paths';
+import { unit1 } from '../content/unit1';
 import { markTaskPassed, missionProgress, selectTask, taskProgress } from '../game/missionProgress';
 import { createMemoryStore } from '../storage/keyValue';
 import { createProgressStore } from '../storage/progressStore';
@@ -271,7 +273,7 @@ describe('MissionWorkspace', () => {
     await user.click(screen.getByRole('button', { name: 'Send recommendation' }));
 
     expect(await screen.findByRole('heading', { name: 'Mission complete' })).toBeInTheDocument();
-    expect(router.state.location.pathname).toBe('/mission/summary');
+    expect(router.state.location.pathname).toBe(missionSummaryPath(unit1.id));
     const saved = missionProgress(store.getSnapshot(), MISSION);
     expect(saved).toMatchObject({
       recommendation: expect.stringMatching(/^Kolkata is slow\. It stays slowest/),

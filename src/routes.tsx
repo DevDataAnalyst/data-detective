@@ -1,5 +1,7 @@
-import type { RouteObject } from 'react-router';
+import { Navigate, type RouteObject } from 'react-router';
 import { AppShell } from './components/AppShell';
+import { checkpointPath, missionPath, missionSummaryPath } from './content/paths';
+import { unit1 } from './content/unit1';
 import { BossBattlePage } from './pages/BossBattlePage';
 import { RootLayout } from './components/RootLayout';
 import { CheckpointPage } from './pages/CheckpointPage';
@@ -39,10 +41,17 @@ export const routes: RouteObject[] = [
       // Lessons, the checkpoint and the mission are full screen, so learners can focus.
       { path: 'welcome', element: <OnboardingPage /> },
       { path: 'lesson/:lessonId', element: <LessonPage /> },
-      { path: 'checkpoint', element: <CheckpointPage /> },
+      { path: 'units/:unitId/checkpoint', element: <CheckpointPage /> },
       { path: 'units/:unitId/boss', element: <BossBattlePage /> },
-      { path: 'mission', element: <MissionPage /> },
-      { path: 'mission/summary', element: <MissionSummaryPage /> },
+      { path: 'units/:unitId/mission', element: <MissionPage /> },
+      { path: 'units/:unitId/mission/summary', element: <MissionSummaryPage /> },
+      // Links from before there were several units point at Unit 1.
+      { path: 'checkpoint', element: <Navigate to={checkpointPath(unit1.id)} replace /> },
+      { path: 'mission', element: <Navigate to={missionPath(unit1.id)} replace /> },
+      {
+        path: 'mission/summary',
+        element: <Navigate to={missionSummaryPath(unit1.id)} replace />,
+      },
       ...devRoutes,
     ],
   },

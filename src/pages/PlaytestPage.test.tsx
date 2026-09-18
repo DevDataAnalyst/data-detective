@@ -41,7 +41,16 @@ describe('playtest page', () => {
     expect(await screen.findByRole('heading', { name: 'Playtest data' })).toBeInTheDocument();
 
     const lessons = screen.getByRole('heading', { name: 'Lessons' }).closest('section');
-    expect(lessons).toHaveTextContent('Completed1 of 7');
+    expect(lessons).toHaveTextContent('Completed1 of 14');
+    const unitOne = screen
+      .getByRole('heading', { name: 'Unit 1: Data Detective' })
+      .closest('section');
+    expect(unitOne).toHaveTextContent('Lessons completed1 of 7');
+    expect(unitOne).toHaveTextContent('CheckpointNot taken');
+    const unitTwo = screen
+      .getByRole('heading', { name: 'Unit 2: The Churn Culprit' })
+      .closest('section');
+    expect(unitTwo).toHaveTextContent('Lessons completed0 of 7');
     expect(lessons).toHaveTextContent('Left part way0');
     // One lesson with a wrong answer pays 13 XP, short of the 20 XP daily goal.
     expect(lessons).toHaveTextContent('Daily goal met0 day(s)');

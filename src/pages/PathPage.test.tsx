@@ -1,6 +1,7 @@
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
+import { missionPath, missionSummaryPath } from '../content/paths';
 import { unit1 } from '../content/unit1';
 import { markTaskPassed, recordTaskRun, updateMission } from '../game/missionProgress';
 import { markLessonCompleted } from '../game/progress';
@@ -15,13 +16,18 @@ function lessonNode(name: RegExp) {
   return screen.getByRole('button', { name });
 }
 
+/** Everything on the path for one unit: its banner, test-out card and map. */
+function unitSection(title: string) {
+  return within(screen.getByRole('region', { name: title }));
+}
+
 describe('path page', () => {
   it('starts with lesson 1 available and everything else locked', () => {
     renderApp();
     expect(lessonNode(/lesson 1: what's in a dataset\?, ready to start/i)).toBeInTheDocument();
     expect(lessonNode(/lesson 2: the mean, locked/i)).toBeInTheDocument();
-    expect(lessonNode(/mission.*locked/i)).toBeInTheDocument();
-    expect(screen.getByText('0 of 7 lessons')).toBeInTheDocument();
+    expect(lessonNode(/mission: the late delivery mystery, locked/i)).toBeInTheDocument();
+    expect(unitSection(unit1.title).getByText('0 of 7 lessons')).toBeInTheDocument();
   });
 
   it('explains which lesson unlocks a locked lesson', async () => {
@@ -43,8 +49,8 @@ describe('path page', () => {
     const user = userEvent.setup();
     renderApp();
     expect(screen.getByText('The Late Delivery Mystery')).toBeInTheDocument();
-    expect(screen.getByText('+100 XP')).toBeInTheDocument();
-    await user.click(lessonNode(/mission/i));
+    expect(unitSection(unit1.title).getByText('+100 XP')).toBeInTheDocument();
+    await user.click(lessonNode(/mission: the late delivery mystery/i));
     expect(screen.getByRole('dialog')).toHaveTextContent(/pass the test-out checkpoint/i);
   });
 
@@ -83,13 +89,13 @@ describe('path page', () => {
     await user.click(lessonNode(/mission.*unlocked/i));
     expect(
       within(screen.getByRole('dialog')).getByRole('link', { name: 'Open mission' }),
-    ).toHaveAttribute('href', '/mission');
+    ).toHaveAttribute('href', missionPath(unit1.id));
   });
 
   it('puts the boss battle before the mission, and points to it once the lessons are done', async () => {
     const user = userEvent.setup();
     const locked = renderApp();
-    expect(lessonNode(/boss battle, locked/i)).toBeInTheDocument();
+    expect(lessonNode(/boss battle for data detective, locked/i)).toBeInTheDocument();
     locked.unmount();
 
     const store = createProgressStore(createMemoryStore());
@@ -100,7 +106,7 @@ describe('path page', () => {
       ),
     );
     renderApp({ store });
-    const boss = lessonNode(/boss battle, ready to start/i);
+    const boss = lessonNode(/boss battle for data detective, ready to start/i);
     expect(within(boss).getByText('Next')).toBeInTheDocument();
     await user.click(boss);
     const popover = screen.getByRole('dialog', { name: 'Beat the clock' });
@@ -116,9 +122,13 @@ describe('path page', () => {
       },
     }));
     expect(
-      await screen.findByRole('button', { name: /boss battle, best score 9 right/i }),
+      await screen.findByRole('button', {
+        name: /boss battle for data detective, best score 9 right/i,
+      }),
     ).toBeVisible();
-    expect(within(lessonNode(/^mission:/i)).getByText('Next')).toBeInTheDocument();
+    expect(
+      within(lessonNode(/^mission: the late delivery mystery/i)).getByText('Next'),
+    ).toBeInTheDocument();
   });
 
   it('shows mission progress, then completion, on the mission node', async () => {
@@ -143,7 +153,7 @@ describe('path page', () => {
     expect(screen.getByText('2 of 5 tasks passed')).toBeInTheDocument();
     expect(
       within(screen.getByRole('dialog')).getByRole('link', { name: 'Continue mission' }),
-    ).toHaveAttribute('href', '/mission');
+    ).toHaveAttribute('href', missionPath(unit1.id));
     view.unmount();
 
     store.update((state) =>
@@ -157,9 +167,12 @@ describe('path page', () => {
     const popover = within(screen.getByRole('dialog'));
     expect(popover.getByRole('link', { name: 'See summary' })).toHaveAttribute(
       'href',
-      '/mission/summary',
+      missionSummaryPath(unit1.id),
     );
-    expect(popover.getByRole('link', { name: 'Open mission' })).toHaveAttribute('href', '/mission');
+    expect(popover.getByRole('link', { name: 'Open mission' })).toHaveAttribute(
+      'href',
+      missionPath(unit1.id),
+    );
   });
 
   it('sends learners to the mission when they open the summary before finishing it', async () => {

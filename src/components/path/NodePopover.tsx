@@ -28,8 +28,16 @@ export function NodePopover({ id, top, arrowX, labelledBy, onClose, children }: 
 
     const onPointerDown = (event: PointerEvent) => {
       const target = event.target as Element | null;
-      // Taps on path nodes are handled by the nodes themselves (toggle or switch).
-      if (!target || popover?.contains(target) || target.closest('[data-path-node]')) return;
+      // Taps on this path's nodes are handled by the nodes themselves (toggle or switch). A node
+      // on another unit's path closes this popover like any other tap outside.
+      const node = target?.closest('[data-path-node]');
+      if (
+        !target ||
+        popover?.contains(target) ||
+        (node && popover?.parentElement?.contains(node))
+      ) {
+        return;
+      }
       close();
     };
     const onKeyDown = (event: KeyboardEvent) => {

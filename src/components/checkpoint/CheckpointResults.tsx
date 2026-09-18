@@ -1,4 +1,5 @@
 import { useEffect, useRef, type ReactNode } from 'react';
+import { missionPath } from '../../content/paths';
 import { Link } from 'react-router';
 import type { Unit } from '../../content/types';
 import type { CheckpointAnswerRecord } from '../../game/checkpoint';
@@ -101,7 +102,7 @@ export function CheckpointResults({
             can still play any lesson for practice.
           </p>
           <div className="flex flex-col gap-3 sm:flex-row">
-            <Link to="/mission" className={`${buttonStyles.primary} sm:flex-1`}>
+            <Link to={missionPath(unit.id)} className={`${buttonStyles.primary} sm:flex-1`}>
               Open the mission
             </Link>
             <Link to="/" className={`${buttonStyles.secondary} sm:flex-1`}>

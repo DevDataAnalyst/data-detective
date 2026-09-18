@@ -14,6 +14,8 @@ import { RecommendationReview } from './RecommendationReview';
 
 interface MissionSummaryProps {
   mission: Mission;
+  /** The mission workspace, for going back to it. */
+  missionHref: string;
   progress: MissionProgress;
   /** True straight after completing the mission, to animate the XP and confetti. */
   celebrate: boolean;
@@ -33,6 +35,7 @@ const CONFETTI = [
 /** The mission complete screen: what the learner did, XP, the streak freeze and a portfolio blurb. */
 export function MissionSummary({
   mission,
+  missionHref,
   progress,
   celebrate,
   onTryStretch,
@@ -230,14 +233,14 @@ export function MissionSummary({
           </Link>
           {stretchLeft > 0 ? (
             <Link
-              to="/mission"
+              to={missionHref}
               onClick={onTryStretch}
               className={`${buttonStyles.secondary} sm:flex-1`}
             >
               Try the stretch tasks
             </Link>
           ) : (
-            <Link to="/mission" className={`${buttonStyles.secondary} sm:flex-1`}>
+            <Link to={missionHref} className={`${buttonStyles.secondary} sm:flex-1`}>
               Back to the mission
             </Link>
           )}

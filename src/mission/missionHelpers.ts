@@ -1,9 +1,6 @@
 import type { MissionTask } from '../content/types';
 import type { RunOutcome } from './python/pythonRuntime';
 
-/** The mission complete screen. It does not load Python, so it opens quickly. */
-export const MISSION_SUMMARY_PATH = '/mission/summary';
-
 /** Each code task has a nudge, a pointer to the method, and an example with a blank. */
 export const HINT_LEVELS = 3;
 

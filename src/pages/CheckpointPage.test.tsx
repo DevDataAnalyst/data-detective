@@ -1,7 +1,9 @@
 import { screen, within } from '@testing-library/react';
 import userEvent, { type UserEvent } from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { checkpointPath, missionPath } from '../content/paths';
 import { unit1 } from '../content/unit1';
+import { unit2 } from '../content/unit2';
 import { checkpointProgress } from '../game/progress';
 import { createMemoryStore } from '../storage/keyValue';
 import { createProgressStore } from '../storage/progressStore';
@@ -52,7 +54,7 @@ describe('test-out checkpoint', () => {
     expect(screen.getByText('40 XP earned')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Open the mission' })).toHaveAttribute(
       'href',
-      '/mission',
+      missionPath(unit1.id),
     );
     const review = screen.getByRole('region', { name: 'Your answers' });
     expect(within(review).getAllByText('Missed')).toHaveLength(2);
@@ -68,8 +70,17 @@ describe('test-out checkpoint', () => {
     expect(
       screen.getByRole('button', { name: /lesson 3: .*, completed \(tested out\)/i }),
     ).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /mission.*unlocked/i })).toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'Test out' })).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /mission: the late delivery mystery, unlocked/i }),
+    ).toBeInTheDocument();
+    const unitOne = within(screen.getByRole('region', { name: unit1.title }));
+    expect(unitOne.queryByRole('link', { name: 'Test out' })).not.toBeInTheDocument();
+    // Passing Unit 1's checkpoint also opens Unit 2, with its own test-out card.
+    const unitTwo = within(screen.getByRole('region', { name: unit2.title }));
+    expect(unitTwo.getByRole('link', { name: 'Test out' })).toHaveAttribute(
+      'href',
+      checkpointPath(unit2.id),
+    );
   });
 
   it('asks each question once, without explanations until the end', async () => {

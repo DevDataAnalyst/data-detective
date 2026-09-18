@@ -67,9 +67,9 @@ describe('accessibility audit (axe)', () => {
       store: createProgressStore(createMemoryStore(), { persistent: false }),
     });
     await expectAccessible('path with notices');
-    await user.click(screen.getByRole('button', { name: /lesson 1:/i }));
+    await user.click(screen.getByRole('button', { name: /lesson 1: what's in a dataset/i }));
     await expectAccessible('lesson popover');
-    await user.click(screen.getByRole('button', { name: /mission:/i }));
+    await user.click(screen.getByRole('button', { name: /mission: the late delivery mystery/i }));
     await expectAccessible('mission popover');
     view.unmount();
 

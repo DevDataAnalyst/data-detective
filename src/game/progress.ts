@@ -41,6 +41,8 @@ export interface ProgressState {
   checkpoints: Record<string, CheckpointProgress>;
   /** Boss battle records by unit id. */
   bossBattles: Record<string, BossProgress>;
+  /** Units whose opening message the learner has read and dismissed. */
+  hooksSeen: string[];
 }
 
 export function createInitialProgress(): ProgressState {
@@ -53,6 +55,7 @@ export function createInitialProgress(): ProgressState {
     missions: {},
     checkpoints: {},
     bossBattles: {},
+    hooksSeen: [],
   };
 }
 
@@ -118,4 +121,10 @@ export function emptyBossProgress(): BossProgress {
 
 export function bossProgress(state: ProgressState, unitId: string): BossProgress {
   return state.bossBattles[unitId] ?? emptyBossProgress();
+}
+
+/** Remembers that a unit's opening message was read, so it is not shown again. */
+export function markHookSeen(state: ProgressState, unitId: string): ProgressState {
+  if (state.hooksSeen.includes(unitId)) return state;
+  return { ...state, hooksSeen: [...state.hooksSeen, unitId] };
 }

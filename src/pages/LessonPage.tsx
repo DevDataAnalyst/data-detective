@@ -5,10 +5,12 @@ import { LockIcon } from '../components/icons';
 import { LessonPlayer } from '../components/lesson/LessonPlayer';
 import { useRewards } from '../components/rewards/useRewards';
 import { MicroSurvey } from '../components/survey/MicroSurvey';
-import { findLesson } from '../content';
+import { courseUnits, findLesson } from '../content';
+import { courseStanding } from '../game/course';
 import { completedLessonIds } from '../game/progress';
 import { lessonStatus, unlockingLessonId } from '../game/unlocks';
 import { useProgress } from '../storage/progressContext';
+import { unitLockReason } from './unitRoute';
 
 export function LessonPage() {
   const { lessonId = '' } = useParams();
@@ -28,6 +30,16 @@ export function LessonPage() {
   const { unit, lesson, index } = location;
   const lessonIds = unit.lessons.map((item) => item.id);
   const completed = completedLessonIds(progress);
+  const standings = courseStanding(courseUnits, progress);
+  const unitIndex = standings.findIndex((standing) => standing.unit === unit);
+
+  if (!standings[unitIndex]?.unlocked) {
+    return (
+      <LessonMessage title={`“${lesson.title}” is still locked`} locked>
+        {unitLockReason(standings[unitIndex - 1] ?? null)}
+      </LessonMessage>
+    );
+  }
 
   if (lessonStatus(lessonIds, completed, lesson.id) === 'locked') {
     const unlockedBy = unit.lessons.find(

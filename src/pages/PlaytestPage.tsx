@@ -3,9 +3,16 @@ import { buttonStyles } from '../components/buttonStyles';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { CopyIcon, DownloadIcon } from '../components/icons';
 import { Mascot } from '../components/Mascot';
-import { lateDeliveryMystery } from '../content/missions';
-import { unit1 } from '../content/unit1';
-import { formatMs, playtestSummaryText, summarizePlaytest } from '../game/playtest';
+import { courseUnits } from '../content';
+import { findMission, missions } from '../content/missions';
+import {
+  formatMs,
+  playtestSummaryText,
+  summarizePlaytest,
+  type PlaytestUnit,
+  type QuestionTypeAccuracy,
+  type UnitPlaytestSummary,
+} from '../game/playtest';
 import { EVENTS_SCHEMA_VERSION } from '../storage/events';
 import { useEvents, usePlaytestEvents } from '../storage/eventsContext';
 
@@ -20,19 +27,31 @@ const QUESTION_TYPE_NAMES: Record<string, string> = {
   build_metric: 'Build the metric',
 };
 
-function taskTitle(taskId: string): string {
-  return lateDeliveryMystery.tasks.find((task) => task.id === taskId)?.title ?? taskId;
-}
+const COURSE: readonly PlaytestUnit[] = courseUnits.map((unit) => ({
+  id: unit.id,
+  title: unit.title,
+  lessonIds: unit.lessons.map((lesson) => lesson.id),
+  checkpointId: unit.checkpoint.id,
+  missionId: unit.missionId,
+}));
+
+const ALL_LESSONS = courseUnits.flatMap((unit) => unit.lessons);
+const ALL_TASKS = missions.flatMap((mission) => mission.tasks);
 
 function lessonTitle(lessonId: string): string {
-  return unit1.lessons.find((lesson) => lesson.id === lessonId)?.title ?? lessonId;
+  return ALL_LESSONS.find((lesson) => lesson.id === lessonId)?.title ?? lessonId;
+}
+
+function taskTitle(taskId: string, missionId?: string): string {
+  const tasks = missionId ? (findMission(missionId)?.tasks ?? ALL_TASKS) : ALL_TASKS;
+  return tasks.find((task) => task.id === taskId)?.title ?? taskId;
 }
 
 /** Playtest metrics from the local event log, with an export a tester can send back. */
 export function PlaytestPage() {
   const log = useEvents();
   const events = usePlaytestEvents();
-  const summary = summarizePlaytest(events);
+  const summary = summarizePlaytest(events, COURSE);
   const [status, setStatus] = useState('');
   const [clearing, setClearing] = useState(false);
 
@@ -103,7 +122,7 @@ export function PlaytestPage() {
 
       <Panel title="Lessons">
         <Row label="Completed">
-          {summary.lessonsCompleted} of {unit1.lessons.length}
+          {summary.lessonsCompleted} of {ALL_LESSONS.length}
         </Row>
         <Row label="Started">{summary.lessonsStarted}</Row>
         <Row label="Left part way">{summary.lessonsAbandoned}</Row>
@@ -112,21 +131,7 @@ export function PlaytestPage() {
       </Panel>
 
       <Panel title="First-try accuracy by question type">
-        {summary.accuracyByType.length === 0 ? (
-          <p className="text-slate-600">No questions answered yet.</p>
-        ) : (
-          <ul className="space-y-2">
-            {summary.accuracyByType.map((row) => (
-              <li key={row.type} className="flex flex-wrap justify-between gap-2">
-                <span className="text-slate-700">{QUESTION_TYPE_NAMES[row.type] ?? row.type}</span>
-                <span className="font-semibold text-slate-900 tabular-nums">
-                  {row.correct} of {row.answered} (
-                  {row.answered === 0 ? '—' : `${Math.round((row.correct / row.answered) * 100)}%`})
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
+        <AccuracyList rows={summary.accuracyByType} />
       </Panel>
 
       <Panel title="Checkpoint">
@@ -135,46 +140,21 @@ export function PlaytestPage() {
         <Row label="Last score">{summary.checkpoint.lastScore ?? '—'}</Row>
       </Panel>
 
-      <Panel title="Mission">
+      <Panel title="Missions">
         <Row label="Opened">{summary.mission.opened ? 'Yes' : 'No'}</Row>
         <Row label="Python load time">{formatMs(summary.mission.pyodideLoadMs)}</Row>
         <Row label="Gap after last lesson">{formatMs(summary.mission.gapFromLastLessonMs)}</Row>
         <Row label="Completed">{summary.mission.completed ? 'Yes' : 'No'}</Row>
-        {summary.mission.tasks.length > 0 && (
-          <table className="mt-2 w-full text-sm">
-            <caption className="sr-only">Mission task runs and hints</caption>
-            <thead>
-              <tr className="text-left text-slate-600">
-                <th scope="col" className="py-1 font-semibold">
-                  Task
-                </th>
-                <th scope="col" className="py-1 font-semibold">
-                  Runs
-                </th>
-                <th scope="col" className="py-1 font-semibold">
-                  Passed
-                </th>
-                <th scope="col" className="py-1 font-semibold">
-                  Hints
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {summary.mission.tasks.map((task) => (
-                <tr key={task.taskId} className="border-t border-slate-100">
-                  <td className="py-1.5 text-slate-800">{taskTitle(task.taskId)}</td>
-                  <td className="py-1.5 tabular-nums">{task.runs}</td>
-                  <td className="py-1.5">{task.passed ? 'Yes' : 'No'}</td>
-                  <td className="py-1.5 tabular-nums">
-                    {task.hints}
-                    {task.deepestHint > 0 && ` (to level ${task.deepestHint})`}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
       </Panel>
+
+      <section aria-labelledby="by-unit" className="space-y-3">
+        <h2 id="by-unit" className="text-lg font-bold text-slate-900">
+          By unit
+        </h2>
+        {summary.units.map((unit, index) => (
+          <UnitPanel key={unit.unitId} number={index + 1} unit={unit} />
+        ))}
+      </section>
 
       <Panel title="Where you stopped">
         <p className="text-slate-800">{stopLabel(summary.stoppedAt)}</p>
@@ -243,17 +223,105 @@ const SURVEY_NAMES: Record<string, string> = {
 /** Swaps the ids in the stop description for titles a reader knows. */
 function stopLabel(stoppedAt: string): string {
   return stoppedAt.replace(/“([^”]+)”/g, (_match, id: string) => {
-    const lesson = unit1.lessons.find((candidate) => candidate.id === id);
+    const lesson = ALL_LESSONS.find((candidate) => candidate.id === id);
     if (lesson) return `“${lessonTitle(id)}”`;
-    const task = lateDeliveryMystery.tasks.find((candidate) => candidate.id === id);
+    const task = ALL_TASKS.find((candidate) => candidate.id === id);
     return task ? `“${taskTitle(id)}”` : `“${id}”`;
   });
 }
 
-function Panel({ title, children }: { title: string; children: ReactNode }) {
+function AccuracyList({ rows }: { rows: readonly QuestionTypeAccuracy[] }) {
+  if (rows.length === 0) return <p className="text-slate-600">No questions answered yet.</p>;
+  return (
+    <ul className="space-y-2">
+      {rows.map((row) => (
+        <li key={row.type} className="flex flex-wrap justify-between gap-2">
+          <span className="text-slate-700">{QUESTION_TYPE_NAMES[row.type] ?? row.type}</span>
+          <span className="font-semibold text-slate-900 tabular-nums">
+            {row.correct} of {row.answered} (
+            {row.answered === 0 ? '—' : `${Math.round((row.correct / row.answered) * 100)}%`})
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function UnitPanel({ number, unit }: { number: number; unit: UnitPlaytestSummary }) {
+  const missionId = courseUnits.find((candidate) => candidate.id === unit.unitId)?.missionId;
+  return (
+    <Panel title={`Unit ${number}: ${unit.title}`} headingLevel="h3">
+      <Row label="Lessons completed">
+        {unit.lessons.completed} of {unit.lessons.total}
+      </Row>
+      <Row label="Lessons left part way">{unit.lessons.abandoned}</Row>
+      <Row label="Checkpoint">
+        {unit.checkpoint.passed
+          ? `Passed (${unit.checkpoint.lastScore})`
+          : unit.checkpoint.attempts > 0
+            ? `${unit.checkpoint.attempts} attempt(s), last ${unit.checkpoint.lastScore}`
+            : 'Not taken'}
+      </Row>
+      <Row label="Boss battle">
+        {unit.boss.rounds === 0
+          ? 'Not played'
+          : `${unit.boss.rounds} round(s), best ${unit.boss.bestCorrect} right`}
+      </Row>
+      <Row label="Mission">
+        {unit.mission.completed ? 'Completed' : unit.mission.opened ? 'Opened' : 'Not opened'}
+      </Row>
+      <p className="pt-1 text-sm font-semibold text-slate-700">First-try accuracy</p>
+      <AccuracyList rows={unit.accuracyByType} />
+      {unit.mission.tasks.length > 0 && (
+        <table className="mt-2 w-full text-sm">
+          <caption className="sr-only">Unit {number} mission task runs and hints</caption>
+          <thead>
+            <tr className="text-left text-slate-600">
+              <th scope="col" className="py-1 font-semibold">
+                Task
+              </th>
+              <th scope="col" className="py-1 font-semibold">
+                Runs
+              </th>
+              <th scope="col" className="py-1 font-semibold">
+                Passed
+              </th>
+              <th scope="col" className="py-1 font-semibold">
+                Hints
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {unit.mission.tasks.map((task) => (
+              <tr key={task.taskId} className="border-t border-slate-100">
+                <td className="py-1.5 text-slate-800">{taskTitle(task.taskId, missionId)}</td>
+                <td className="py-1.5 tabular-nums">{task.runs}</td>
+                <td className="py-1.5">{task.passed ? 'Yes' : 'No'}</td>
+                <td className="py-1.5 tabular-nums">
+                  {task.hints}
+                  {task.deepestHint > 0 && ` (to level ${task.deepestHint})`}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </Panel>
+  );
+}
+
+function Panel({
+  title,
+  headingLevel: Heading = 'h2',
+  children,
+}: {
+  title: string;
+  headingLevel?: 'h2' | 'h3';
+  children: ReactNode;
+}) {
   return (
     <section className="space-y-2 rounded-2xl bg-surface p-4 ring-1 ring-slate-200">
-      <h2 className="font-bold text-slate-900">{title}</h2>
+      <Heading className="font-bold text-slate-900">{title}</Heading>
       {children}
     </section>
   );

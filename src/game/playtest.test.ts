@@ -147,3 +147,97 @@ describe('formatMs', () => {
     expect(formatMs(50 * 3_600_000)).toBe('2d 2h');
   });
 });
+
+describe('playtest summary by unit', () => {
+  const course = [
+    { id: 'u1', title: 'One', lessonIds: ['a', 'b'], checkpointId: 'c1', missionId: 'm1' },
+    { id: 'u2', title: 'Two', lessonIds: ['x', 'y'], checkpointId: 'c2', missionId: 'm2' },
+  ];
+  const at = (minute: number) => `2026-03-10T09:${String(minute).padStart(2, '0')}:00.000Z`;
+  const answer = (source: 'lesson' | 'checkpoint' | 'boss' | 'mission', lessonId: string | null) =>
+    ({
+      type: 'question_answered',
+      questionId: 'q',
+      questionType: 'multiple_choice',
+      source,
+      lessonId,
+      firstAttempt: source !== 'boss',
+      correct: true,
+      ms: 900,
+    }) as const;
+  const log: PlaytestEvent[] = [
+    { type: 'lesson_started', lessonId: 'x', at: at(0) },
+    { ...answer('lesson', 'x'), at: at(1) },
+    { type: 'lesson_completed', lessonId: 'x', firstAttemptAccuracy: 1, ms: 60_000, at: at(2) },
+    {
+      type: 'checkpoint_finished',
+      checkpointId: 'c1',
+      correct: 9,
+      total: 10,
+      passed: true,
+      ms: 1,
+      at: at(3),
+    },
+    { type: 'boss_started', unitId: 'u1', questions: 12, durationMs: 60_000, at: at(4) },
+    { ...answer('boss', null), at: at(5) },
+    {
+      type: 'boss_finished',
+      unitId: 'u1',
+      correct: 7,
+      answered: 9,
+      total: 12,
+      endReason: 'time_up',
+      ms: 60_000,
+      at: at(6),
+    },
+    { type: 'mission_opened', missionId: 'm2', at: at(7) },
+    { ...answer('mission', null), at: at(8) },
+    { type: 'task_run', taskId: 'recommendation', passed: true, hadError: false, ms: 5, at: at(9) },
+    { type: 'hint_viewed', taskId: 'recommendation', level: 2, at: at(10) },
+    { type: 'mission_opened', missionId: 'm1', at: at(11) },
+    {
+      type: 'task_run',
+      taskId: 'recommendation',
+      passed: false,
+      hadError: true,
+      ms: 5,
+      at: at(12),
+    },
+  ];
+  const [one, two] = summarizePlaytest(log, course).units;
+
+  it('puts lessons and checkpoints in their unit', () => {
+    expect(two.lessons).toEqual({ started: 1, completed: 1, abandoned: 0, total: 2 });
+    expect(one.lessons.completed).toBe(0);
+    expect(one.checkpoint).toEqual({ attempts: 1, passed: true, lastScore: '9 of 10' });
+    expect(two.checkpoint.attempts).toBe(0);
+  });
+
+  it('counts boss rounds, and boss answers only toward their unit', () => {
+    expect(one.boss).toEqual({ rounds: 1, bestCorrect: 7 });
+    expect(one.accuracyByType).toEqual([{ type: 'multiple_choice', answered: 1, correct: 1 }]);
+    expect(summarizePlaytest(log, course).accuracyByType).toEqual([
+      { type: 'multiple_choice', answered: 2, correct: 2 },
+    ]);
+  });
+
+  it('gives mission task runs to the mission open at the time, even with the same task id', () => {
+    expect(two.mission).toMatchObject({ opened: true, completed: false });
+    expect(two.mission.tasks).toEqual([
+      { taskId: 'recommendation', runs: 1, passed: true, hints: 1, deepestHint: 2 },
+    ]);
+    expect(one.mission.tasks).toEqual([
+      { taskId: 'recommendation', runs: 1, passed: false, hints: 0, deepestHint: 0 },
+    ]);
+    expect(two.accuracyByType).toHaveLength(1);
+  });
+
+  it('adds a line per unit to the text summary', () => {
+    const text = playtestSummaryText(summarizePlaytest(log, course));
+    expect(text).toContain('By unit:');
+    expect(text).toContain('  Two: lessons 1/2, first try 2/2, checkpoint 0 attempt(s)');
+    expect(text).toContain(
+      '  One: lessons 0/2, first try 1/1, checkpoint passed, boss 1 round(s), best 7',
+    );
+  });
+});

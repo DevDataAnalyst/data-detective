@@ -3,7 +3,7 @@ import { Link } from 'react-router';
 import type { Unit } from '../../content/types';
 import type { MissionState } from '../../game/missionRules';
 import { lessonStatuses, nextLessonId, type LessonStatus } from '../../game/unlocks';
-import { MISSION_SUMMARY_PATH } from '../../mission/missionHelpers';
+import { bossPath, missionPath, missionSummaryPath } from '../../content/paths';
 import { buttonStyles } from '../buttonStyles';
 import { BOSS_RULES } from '../../game/bossBattle';
 import { XP_RULES } from '../../game/xp';
@@ -36,6 +36,8 @@ interface PathMapProps {
   testedOut: ReadonlySet<string>;
   boss: PathBoss;
   mission: PathMission;
+  /** Set while the whole unit is locked: why, e.g. "Finish Unit 1 first…". */
+  lockedReason?: string;
 }
 
 const BOSS_NODE = 'boss';
@@ -82,23 +84,27 @@ export function PathMap({
   testedOut,
   boss: bossInfo,
   mission: missionInfo,
+  lockedReason,
 }: PathMapProps) {
   const baseId = useId();
   const [openNode, setOpenNode] = useState<string | null>(null);
 
   const { title: missionTitle, xp: missionXp, state: missionState } = missionInfo;
   const lessonIds = unit.lessons.map((lesson) => lesson.id);
-  const statuses = lessonStatuses(lessonIds, completed);
+  const statuses: LessonStatus[] = lockedReason
+    ? lessonIds.map(() => 'locked')
+    : lessonStatuses(lessonIds, completed);
   const missionUnlocked = missionState !== 'locked';
   const missionDone = missionState === 'completed';
   const bossUnlocked = bossInfo.state !== 'locked';
-  const upNext =
-    nextLessonId(lessonIds, completed) ??
-    (bossInfo.state === 'available' && !missionDone
-      ? BOSS_NODE
-      : missionUnlocked && !missionDone
-        ? MISSION_NODE
-        : null);
+  const upNext = lockedReason
+    ? null
+    : (nextLessonId(lessonIds, completed) ??
+      (bossInfo.state === 'available' && !missionDone
+        ? BOSS_NODE
+        : missionUnlocked && !missionDone
+          ? MISSION_NODE
+          : null));
   const { lessons: positions, boss, mission, height } = pathPositions(unit.lessons.length);
   const allPositions = [...positions, boss, mission];
   const reached = [...statuses.map((status) => status !== 'locked'), bossUnlocked, missionUnlocked];
@@ -131,7 +137,10 @@ export function PathMap({
         {status === 'locked' ? (
           <p className="mt-2 flex items-start gap-2 text-slate-700">
             <LockIcon className="mt-0.5 shrink-0 text-locked-500" aria-hidden="true" />
-            <span>Complete “{unit.lessons[index - 1]?.title}” to unlock this lesson.</span>
+            <span>
+              {lockedReason ??
+                `Complete “${unit.lessons[index - 1]?.title}” to unlock this lesson.`}
+            </span>
           </p>
         ) : (
           <>
@@ -231,7 +240,7 @@ export function PathMap({
           <button
             type="button"
             data-path-node={BOSS_NODE}
-            aria-label={`Boss battle, ${
+            aria-label={`Boss battle for ${unit.title}, ${
               bossInfo.state === 'locked'
                 ? 'locked'
                 : bossInfo.state === 'played'
@@ -360,8 +369,8 @@ export function PathMap({
             <p className="mt-2 flex items-start gap-2 text-slate-700">
               <LockIcon className="mt-0.5 shrink-0 text-locked-500" aria-hidden="true" />
               <span>
-                Finish all {unit.lessons.length} lessons, or pass the test-out checkpoint, to take
-                on the boss.
+                {lockedReason ??
+                  `Finish all ${unit.lessons.length} lessons, or pass the test-out checkpoint, to take on the boss.`}
               </span>
             </p>
           ) : (
@@ -376,7 +385,7 @@ export function PathMap({
                   Today’s XP bonus is earned. Play again for practice.
                 </p>
               )}
-              <Link to={`/units/${unit.id}/boss`} className={`mt-3 w-full ${buttonStyles.primary}`}>
+              <Link to={bossPath(unit.id)} className={`mt-3 w-full ${buttonStyles.primary}`}>
                 {bossInfo.state === 'played' ? 'Play again' : 'Start the boss battle'}
               </Link>
             </>
@@ -397,10 +406,13 @@ export function PathMap({
               <p className="mt-1 text-slate-700">
                 You solved it. Your summary and portfolio text are here whenever you need them.
               </p>
-              <Link to={MISSION_SUMMARY_PATH} className={`mt-3 w-full ${buttonStyles.primary}`}>
+              <Link
+                to={missionSummaryPath(unit.id)}
+                className={`mt-3 w-full ${buttonStyles.primary}`}
+              >
                 See summary
               </Link>
-              <Link to="/mission" className={`mt-2 w-full ${buttonStyles.secondary}`}>
+              <Link to={missionPath(unit.id)} className={`mt-2 w-full ${buttonStyles.secondary}`}>
                 Open mission
               </Link>
             </>
@@ -410,7 +422,7 @@ export function PathMap({
                 You have passed {missionInfo.codeTasksPassed} of {missionInfo.codeTaskCount}{' '}
                 {missionInfo.taskLabel}. Your work is saved.
               </p>
-              <Link to="/mission" className={`mt-3 w-full ${buttonStyles.primary}`}>
+              <Link to={missionPath(unit.id)} className={`mt-3 w-full ${buttonStyles.primary}`}>
                 Continue mission
               </Link>
             </>
@@ -419,7 +431,7 @@ export function PathMap({
               <p className="mt-1 text-slate-700">
                 Write real Python to find out where deliveries are really late.
               </p>
-              <Link to="/mission" className={`mt-3 w-full ${buttonStyles.primary}`}>
+              <Link to={missionPath(unit.id)} className={`mt-3 w-full ${buttonStyles.primary}`}>
                 Open mission
               </Link>
             </>
@@ -427,8 +439,8 @@ export function PathMap({
             <p className="mt-2 flex items-start gap-2 text-slate-700">
               <LockIcon className="mt-0.5 shrink-0 text-locked-500" aria-hidden="true" />
               <span>
-                Finish all {unit.lessons.length} lessons, or pass the test-out checkpoint, to unlock
-                the mission.
+                {lockedReason ??
+                  `Finish all ${unit.lessons.length} lessons, or pass the test-out checkpoint, to unlock the mission.`}
               </span>
             </p>
           )}

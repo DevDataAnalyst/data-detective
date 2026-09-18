@@ -8,13 +8,13 @@ describe('app shell', () => {
     const user = userEvent.setup();
     renderApp({ path: '/' });
 
-    expect(screen.getByRole('heading', { level: 1, name: 'Data Detective' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: 'Data Detective' })).toBeInTheDocument();
 
     const bottomNav = within(screen.getByTestId('bottom-nav'));
     await user.click(bottomNav.getByRole('link', { name: /profile/i }));
     expect(screen.getByRole('heading', { level: 1, name: 'Profile' })).toBeInTheDocument();
 
     await user.click(bottomNav.getByRole('link', { name: /path/i }));
-    expect(screen.getByRole('heading', { level: 1, name: 'Data Detective' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: 'Data Detective' })).toBeInTheDocument();
   });
 });

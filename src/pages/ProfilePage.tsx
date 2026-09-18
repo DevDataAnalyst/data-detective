@@ -5,8 +5,11 @@ import { DailyXpChart } from '../components/charts/DailyXpChart';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { BoltIcon, FlameIcon, SnowflakeIcon, StarIcon } from '../components/icons';
 import { useRewards } from '../components/rewards/useRewards';
-import { unit1 } from '../content/unit1';
-import { completedLessonIds, markLessonCompleted } from '../game/progress';
+import { courseUnits } from '../content';
+import { unitMission } from '../content/missions';
+import { courseStanding, type UnitStanding } from '../game/course';
+import { gradedTasksLabel } from '../game/missionRules';
+import { markLessonCompleted } from '../game/progress';
 import { DAILY_GOAL_CHOICES, dailyStatus, recentDays } from '../game/streak';
 import { devDayOffset, setDevDayOffset, useToday } from '../storage/clock';
 import { useProgress, useProgressStore } from '../storage/progressContext';
@@ -16,8 +19,7 @@ import { useTheme } from '../storage/themeContext';
 export function ProfilePage() {
   const progress = useProgress();
   const today = useToday();
-  const completed = completedLessonIds(progress);
-  const completedCount = unit1.lessons.filter((lesson) => completed.has(lesson.id)).length;
+  const standings = courseStanding(courseUnits, progress);
   const status = dailyStatus(progress.activity, today, progress.dailyGoal);
 
   return (
@@ -57,7 +59,7 @@ export function ProfilePage() {
           Your last 14 days
         </h2>
         <p className="mb-3 text-sm text-slate-600">
-          Daily goal: {progress.dailyGoal} XP. Completing the mission earns a streak freeze that
+          Daily goal: {progress.dailyGoal} XP. Completing a mission earns a streak freeze that
           covers one missed day.
         </p>
         <DailyXpChart
@@ -66,11 +68,13 @@ export function ProfilePage() {
         />
       </section>
 
-      <section className="rounded-2xl bg-surface p-4 ring-1 ring-slate-200">
-        <h2 className="font-bold">Unit 1: {unit1.title}</h2>
-        <p className="text-slate-600">
-          {completedCount} of {unit1.lessons.length} lessons completed
-        </p>
+      <section aria-labelledby="units-title" className="space-y-3">
+        <h2 id="units-title" className="font-bold">
+          Your units
+        </h2>
+        {standings.map((standing) => (
+          <UnitStats key={standing.unit.id} standing={standing} />
+        ))}
       </section>
 
       <section className="rounded-2xl bg-surface p-4 ring-1 ring-slate-200">
@@ -267,10 +271,9 @@ function DevTools({ today }: { today: string }) {
           className={buttonStyles.secondary}
           onClick={() =>
             store.update((state) =>
-              unit1.lessons.reduce(
-                (next, lesson) => markLessonCompleted(next, lesson.id, new Date()),
-                state,
-              ),
+              courseUnits
+                .flatMap((unit) => unit.lessons)
+                .reduce((next, lesson) => markLessonCompleted(next, lesson.id, new Date()), state),
             )
           }
         >
@@ -296,6 +299,59 @@ function DevTools({ today }: { today: string }) {
           setConfirming(false);
         }}
       />
+    </section>
+  );
+}
+
+const MISSION_STATE_TEXT: Record<UnitStanding['missionState'], string> = {
+  locked: 'Locked',
+  available: 'Ready to start',
+  in_progress: 'In progress',
+  completed: 'Completed',
+};
+
+/** One unit's numbers: lessons, checkpoint, boss battle and mission. */
+function UnitStats({ standing }: { standing: UnitStanding }) {
+  const { unit, number } = standing;
+  const mission = unitMission(unit);
+  const rows: Array<[string, string]> = [
+    ['Lessons', `${standing.lessonsCompleted} of ${unit.lessons.length} completed`],
+    ['Checkpoint', standing.checkpointPassed ? 'Passed' : 'Not passed yet'],
+    [
+      'Boss battle',
+      standing.boss.plays === 0
+        ? 'Not played yet'
+        : `Best: ${standing.boss.bestCorrect} right in ${standing.boss.plays} round${standing.boss.plays === 1 ? '' : 's'}`,
+    ],
+    [
+      `Mission: ${mission.title}`,
+      standing.missionState === 'in_progress'
+        ? `${standing.graded.passed} of ${standing.graded.total} ${gradedTasksLabel(mission)} passed`
+        : MISSION_STATE_TEXT[standing.missionState],
+    ],
+  ];
+  return (
+    <section
+      aria-labelledby={`profile-unit-${number}`}
+      className="rounded-2xl bg-surface p-4 ring-1 ring-slate-200"
+    >
+      <h3 id={`profile-unit-${number}`} className="font-bold text-slate-900">
+        Unit {number}: {unit.title}
+        {!standing.unlocked && (
+          <>
+            {' '}
+            <span className="font-normal text-slate-600">(locked)</span>
+          </>
+        )}
+      </h3>
+      <dl className="mt-2 space-y-1 text-sm">
+        {rows.map(([label, value]) => (
+          <div key={label} className="flex flex-wrap justify-between gap-x-3">
+            <dt className="text-slate-700">{label}</dt>
+            <dd className="font-semibold text-slate-900">{value}</dd>
+          </div>
+        ))}
+      </dl>
     </section>
   );
 }

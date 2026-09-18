@@ -45,3 +45,21 @@ export function isMissionUnlocked(
 ): boolean {
   return checkpointPassed || lessonIds.every((id) => completed.has(id));
 }
+
+/** What the next unit needs from a unit: its mission completed, or its checkpoint passed. */
+export interface UnitGate {
+  missionCompleted: boolean;
+  checkpointPassed: boolean;
+}
+
+/**
+ * Units open in order. The first is always open; each later unit opens once the unit before it is
+ * finished, by completing its mission or by passing its test-out checkpoint.
+ */
+export function unitUnlocks(gates: readonly UnitGate[]): boolean[] {
+  return gates.map((_, index) => {
+    if (index === 0) return true;
+    const previous = gates[index - 1];
+    return previous.missionCompleted || previous.checkpointPassed;
+  });
+}

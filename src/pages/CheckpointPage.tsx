@@ -11,7 +11,9 @@ import { describeMinutes } from '../components/checkpoint/checkpointCopy';
 import { TopicsToReview } from '../components/checkpoint/TopicsToReview';
 import { Mascot } from '../components/Mascot';
 import { useRewards } from '../components/rewards/useRewards';
-import { unit1 } from '../content/unit1';
+import type { Unit } from '../content/types';
+import { FullScreenMessage } from '../components/FullScreenMessage';
+import { missionPath } from '../content/paths';
 import {
   checkpointAvailability,
   correctByQuestion,
@@ -26,9 +28,28 @@ import { checkpointXp } from '../game/xp';
 import { useNow } from '../storage/clock';
 import { useEvents } from '../storage/eventsContext';
 import { useProgress } from '../storage/progressContext';
+import { unitLockReason, useUnitRoute } from './unitRoute';
 
 export function CheckpointPage() {
-  const unit = unit1;
+  const route = useUnitRoute();
+  if (!route) {
+    return (
+      <FullScreenMessage title="We couldn’t find that checkpoint">
+        The link might be old or mistyped.
+      </FullScreenMessage>
+    );
+  }
+  if (!route.standing.unlocked) {
+    return (
+      <FullScreenMessage title="This checkpoint is still locked" locked>
+        {unitLockReason(route.previous)}
+      </FullScreenMessage>
+    );
+  }
+  return <UnitCheckpoint key={route.standing.unit.id} unit={route.standing.unit} />;
+}
+
+function UnitCheckpoint({ unit }: { unit: Unit }) {
   const { checkpoint } = unit;
   const progress = useProgress();
   const rewards = useRewards();
@@ -83,7 +104,7 @@ export function CheckpointPage() {
             . Every lesson is open for practice, and so is the mission.
           </p>
           <div className="flex flex-col gap-3 sm:flex-row">
-            <Link to="/mission" className={`${buttonStyles.primary} sm:flex-1`}>
+            <Link to={missionPath(unit.id)} className={`${buttonStyles.primary} sm:flex-1`}>
               Open the mission
             </Link>
             <Link to="/" className={`${buttonStyles.secondary} sm:flex-1`}>

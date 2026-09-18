@@ -196,6 +196,7 @@ export function parseStoredProgress(raw: string | null): ProgressState {
     missions: parseMissions(stored.missions),
     checkpoints: parseCheckpoints(stored.checkpoints),
     bossBattles: parseBossBattles(stored.bossBattles),
+    hooksSeen: stringList(stored.hooksSeen),
   };
 }
 

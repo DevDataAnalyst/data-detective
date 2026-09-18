@@ -4,6 +4,7 @@ import {
   lessonStatus,
   lessonStatuses,
   nextLessonId,
+  unitUnlocks,
   unlockingLessonId,
 } from './unlocks';
 
@@ -59,5 +60,28 @@ describe('mission unlocking', () => {
 
   it('unlocks straight away after passing the checkpoint', () => {
     expect(isMissionUnlocked(lessons, new Set(), true)).toBe(true);
+  });
+});
+
+describe('units open in order', () => {
+  const unfinished = { missionCompleted: false, checkpointPassed: false };
+
+  it('keeps later units locked until the one before is finished', () => {
+    expect(unitUnlocks([unfinished, unfinished, unfinished])).toEqual([true, false, false]);
+  });
+
+  it('opens the next unit when the mission is completed, or the checkpoint is passed', () => {
+    expect(
+      unitUnlocks([{ missionCompleted: true, checkpointPassed: false }, unfinished, unfinished]),
+    ).toEqual([true, true, false]);
+    expect(
+      unitUnlocks([{ missionCompleted: false, checkpointPassed: true }, unfinished, unfinished]),
+    ).toEqual([true, true, false]);
+  });
+
+  it('needs every unit in between to be finished, not just the first', () => {
+    const finished = { missionCompleted: true, checkpointPassed: true };
+    expect(unitUnlocks([finished, unfinished, finished])).toEqual([true, true, false]);
+    expect(unitUnlocks([finished, finished, unfinished])).toEqual([true, true, true]);
   });
 });
