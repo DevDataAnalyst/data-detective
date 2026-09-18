@@ -40,16 +40,27 @@ function change(values: readonly number[], from: number, to: number): number {
   return values[to] - values[from];
 }
 
-/** The chart hides points that change the story: the full trend runs the other way or is flat. */
+/**
+ * The chart hides points that change the story: the full trend runs the other way or is flat, or
+ * the points before it include a jump just as big, so the "new" one is not new.
+ */
 function isCherryPicked(chart: ClaimChart): boolean {
   if (!chart.window) return false;
   const { from, to } = chart.window;
   const last = chart.labels.length - 1;
   return chart.series.some((series) => {
-    const shown = change(series.values, from, to);
-    const full = change(series.values, 0, last);
+    const { values } = series;
+    const shown = change(values, from, to);
+    const full = change(values, 0, last);
     if (shown === 0) return false;
-    return Math.sign(shown) !== Math.sign(full) || Math.abs(full) <= Math.abs(shown) / 4;
+    const reversed = Math.sign(shown) !== Math.sign(full) || Math.abs(full) <= Math.abs(shown) / 4;
+    const margin = Math.abs(shown) / 4;
+    // Only earlier points can show the "new" jump happened before.
+    const before = values.slice(0, from);
+    const precedent = before.some((value) =>
+      shown > 0 ? value >= values[to] - margin : value <= values[to] + margin,
+    );
+    return reversed || precedent;
   });
 }
 

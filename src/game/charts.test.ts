@@ -39,6 +39,23 @@ describe('chart tricks', () => {
     expect(chartTricks(whole)).toEqual([]);
   });
 
+  it('spots a window that hides an earlier jump just as big', () => {
+    const seasonal: ClaimChart = {
+      kind: 'line',
+      title: 'Churn',
+      labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jan', 'Feb', 'Mar', 'Apr'],
+      series: [{ name: 'Churn', values: [2.4, 2.7, 2.9, 3.7, 2.6, 2.4, 2.4, 2.6, 2.3, 4] }],
+      axis: { min: 2, max: 4.5, label: 'Churn', suffix: '%' },
+      window: { from: 6, to: 9 },
+    };
+    expect(chartTricks(seasonal)).toEqual(['cherry_picked_range']);
+    const firstTime = {
+      ...seasonal,
+      series: [{ name: 'Churn', values: [2.4, 2.7, 2.9, 2.8, 2.6, 2.4, 2.4, 2.6, 2.3, 4] }],
+    };
+    expect(chartTricks(firstTime)).toEqual([]);
+  });
+
   it('spots two axes with different scales', () => {
     const dual: ClaimChart = {
       ...falling,

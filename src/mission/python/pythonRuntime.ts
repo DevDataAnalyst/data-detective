@@ -43,6 +43,8 @@ export interface WorkerLike {
 }
 
 export interface PythonRuntimeOptions {
+  /** Picks the hidden checks the worker loads. */
+  missionId: string;
   datasetUrl: string;
   datasetFileName: string;
   /** How long learner code may run once it starts. */
@@ -221,6 +223,7 @@ export class PythonRuntime {
     };
     worker.postMessage({
       type: 'init',
+      missionId: this.options.missionId,
       datasetUrl: this.options.datasetUrl,
       datasetFileName: this.options.datasetFileName,
     });

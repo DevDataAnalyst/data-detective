@@ -20,7 +20,7 @@ export const CHALLENGE_LIMITS = {
   triageCandidates: 3,
   courtroomSuspects: { min: 2, max: 3 },
   metricCards: { min: 3, max: 6 },
-  chartLabels: { min: 2, max: 12 },
+  chartLabels: { min: 2, max: 16 },
   chartSeries: { min: 1, max: 2 },
   options: { min: 2, max: 5 },
 } as const;

@@ -48,6 +48,7 @@ const okResult = (stdout = ''): RunResult => ({ stdout, rich: [], error: null })
 function setup(replay: string[] = []) {
   const workers: FakeWorker[] = [];
   const runtime = new PythonRuntime({
+    missionId: 'late-delivery-mystery',
     datasetUrl: 'data/deliveries.csv',
     datasetFileName: 'deliveries.csv',
     timeoutMs: 10_000,
@@ -77,6 +78,7 @@ describe('PythonRuntime', () => {
     expect(runtime.getState().phase).toBe('loading');
     expect(workers[0].sent[0]).toEqual({
       type: 'init',
+      missionId: 'late-delivery-mystery',
       datasetUrl: 'data/deliveries.csv',
       datasetFileName: 'deliveries.csv',
     });

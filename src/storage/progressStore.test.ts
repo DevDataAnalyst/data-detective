@@ -164,7 +164,7 @@ describe('progress store', () => {
             m: {
               tasks: { a: { hintsShown: 99, status: 'won', passedAt: 7 } },
               selfReview: ['ok', 3],
-              facts: { orders: '600' },
+              facts: { orders: { n: 600 }, cities: Number.NaN, slowestCity: 'Kolkata' },
               freezeGranted: 'yes',
             },
           },
@@ -173,7 +173,8 @@ describe('progress store', () => {
     ).missions;
     expect(missions.m).toMatchObject({
       selfReview: ['ok'],
-      facts: null,
+      // Facts are kept only when they are text or numbers.
+      facts: { slowestCity: 'Kolkata' },
       freezeGranted: false,
       completedAt: null,
     });

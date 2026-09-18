@@ -7,7 +7,7 @@ import { PathMap } from '../components/path/PathMap';
 import { findMission } from '../content/missions';
 import { unit1 } from '../content/unit1';
 import { missionProgress } from '../game/missionProgress';
-import { missionState, missionTaskCounts } from '../game/missionRules';
+import { gradedTasksLabel, missionState, missionTaskCounts } from '../game/missionRules';
 import { checkpointAvailability } from '../game/checkpoint';
 import {
   bossProgress,
@@ -166,6 +166,7 @@ export function PathPage() {
                 : 'locked',
           codeTasksPassed: counts?.requiredPassed ?? 0,
           codeTaskCount: counts?.requiredTotal ?? 0,
+          taskLabel: mission ? gradedTasksLabel(mission) : 'tasks',
         }}
       />
     </div>

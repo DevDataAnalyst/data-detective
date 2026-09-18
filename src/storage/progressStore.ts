@@ -59,18 +59,13 @@ function parseActivity(value: unknown): ActivityState {
 
 function parseFacts(value: unknown): MissionFacts | null {
   if (!isRecord(value)) return null;
-  const numbers = ['orders', 'missingDeliveryTimes', 'cities', 'outliers'] as const;
-  const texts = ['misleadingCity', 'slowestCity'] as const;
-  if (!numbers.every((key) => typeof value[key] === 'number')) return null;
-  if (!texts.every((key) => typeof value[key] === 'string')) return null;
-  return {
-    orders: value.orders as number,
-    missingDeliveryTimes: value.missingDeliveryTimes as number,
-    cities: value.cities as number,
-    outliers: value.outliers as number,
-    misleadingCity: value.misleadingCity as string,
-    slowestCity: value.slowestCity as string,
-  };
+  const facts: MissionFacts = {};
+  for (const [name, fact] of Object.entries(value)) {
+    if (typeof fact === 'string' || (typeof fact === 'number' && Number.isFinite(fact))) {
+      facts[name] = fact;
+    }
+  }
+  return Object.keys(facts).length > 0 ? facts : null;
 }
 
 const TASK_STATUSES: readonly MissionTaskStatus[] = ['not_started', 'attempted', 'passed'];

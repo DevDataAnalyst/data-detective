@@ -17,6 +17,8 @@ export interface PathMission {
   state: MissionState;
   codeTasksPassed: number;
   codeTaskCount: number;
+  /** "code tasks", or "tasks" when the mission also has question tasks. */
+  taskLabel: string;
 }
 
 export interface PathBoss {
@@ -56,14 +58,19 @@ const CIRCLE_CLASSES: Record<LessonStatus, string> = {
   locked: 'bg-locked-200 text-locked-500 shadow-[0_6px_0_var(--color-locked-300)]',
 };
 
-function missionStateText({ state, codeTasksPassed, codeTaskCount }: PathMission): string {
+function missionStateText({
+  state,
+  codeTasksPassed,
+  codeTaskCount,
+  taskLabel,
+}: PathMission): string {
   switch (state) {
     case 'locked':
       return 'locked';
     case 'available':
       return 'unlocked';
     case 'in_progress':
-      return `in progress, ${codeTasksPassed} of ${codeTaskCount} code tasks passed`;
+      return `in progress, ${codeTasksPassed} of ${codeTaskCount} ${taskLabel} passed`;
     case 'completed':
       return 'completed';
   }
@@ -400,8 +407,8 @@ export function PathMap({
           ) : missionState === 'in_progress' ? (
             <>
               <p className="mt-1 text-slate-700">
-                You have passed {missionInfo.codeTasksPassed} of {missionInfo.codeTaskCount} code
-                tasks. Your code is saved.
+                You have passed {missionInfo.codeTasksPassed} of {missionInfo.codeTaskCount}{' '}
+                {missionInfo.taskLabel}. Your work is saved.
               </p>
               <Link to="/mission" className={`mt-3 w-full ${buttonStyles.primary}`}>
                 Continue mission

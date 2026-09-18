@@ -115,6 +115,13 @@ describe('reference answers', () => {
   });
 });
 
+describe('dataset facts', () => {
+  it('report exactly the facts the mission content quotes', () => {
+    const summary = JSON.parse(pyodide.runPython('reference_summary()'));
+    expect(Object.keys(summary).sort()).toEqual([...lateDeliveryMystery.facts].sort());
+  });
+});
+
 describe('mission checks', () => {
   it('pass every task solved correctly, in order', () => {
     const ws = workspace();

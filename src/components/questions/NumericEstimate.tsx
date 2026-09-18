@@ -17,20 +17,25 @@ export function NumericEstimate({
   const hintId = useId();
   const [text, setText] = useState(answer ? String(answer.value) : '');
   const { dataset } = question;
-  const statistic = STATISTIC_LABELS[question.statistic];
+  const statistic = question.statistic ? STATISTIC_LABELS[question.statistic] : null;
+  const unit = dataset ?? { prefix: question.answerPrefix, suffix: question.answerSuffix };
+  const label = statistic
+    ? `Your estimate of the ${statistic}`
+    : (question.answerLabel ?? 'Your answer');
+  const tolerance = formatValue({ ...unit, prefix: undefined }, question.tolerance);
 
   return (
     <div className="space-y-5">
-      <DatasetView dataset={dataset} />
+      {dataset && <DatasetView dataset={dataset} />}
 
       <div>
         <label htmlFor={inputId} className="block font-semibold text-slate-800">
-          Your estimate of the {statistic}
+          {label}
         </label>
         <div className="mt-2 flex items-center gap-2">
-          {dataset.prefix && (
+          {unit.prefix && (
             <span aria-hidden="true" className="text-lg font-semibold text-slate-600">
-              {dataset.prefix}
+              {unit.prefix}
             </span>
           )}
           <input
@@ -49,27 +54,25 @@ export function NumericEstimate({
             }}
             className="min-h-12 w-40 rounded-xl border-2 border-slate-300 bg-surface px-3 text-lg font-semibold text-slate-900 tabular-nums focus:border-current-600 focus:outline-none read-only:bg-slate-50"
           />
-          {dataset.suffix && <span className="text-lg text-slate-600">{dataset.suffix}</span>}
+          {unit.suffix && <span className="text-lg text-slate-600">{unit.suffix}</span>}
         </div>
         <p id={hintId} className="mt-1.5 text-sm text-slate-600">
-          A rough estimate is fine: anything within ±{formatNumber(question.tolerance)} counts.
+          A rough estimate is fine: anything within ±
+          {unit.suffix === '%' ? tolerance : formatNumber(question.tolerance)} counts.
         </p>
       </div>
 
       {reveal && answer && (
         <div className="rounded-2xl bg-slate-50 p-4 text-slate-800 ring-1 ring-slate-200">
           <p>
-            The {statistic} is{' '}
-            <strong className="text-slate-900">
-              {formatValue(dataset, question.correctValue)}
-            </strong>
-            .
+            {statistic ? `The ${statistic} is ` : 'The answer is '}
+            <strong className="text-slate-900">{formatValue(unit, question.correctValue)}</strong>.
           </p>
           <p className="mt-1">
-            You said {formatValue(dataset, answer.value)}
+            You said {formatValue(unit, answer.value)}
             {Math.abs(answer.value - question.correctValue) < 1e-9
               ? ', spot on.'
-              : `, off by ${formatValue(dataset, Math.abs(answer.value - question.correctValue))}.`}
+              : `, off by ${formatValue(unit, Math.abs(answer.value - question.correctValue))}.`}
           </p>
         </div>
       )}

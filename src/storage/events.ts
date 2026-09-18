@@ -22,8 +22,8 @@ export type PlaytestEventBody =
       type: 'question_answered';
       questionId: string;
       questionType: QuestionType;
-      /** Where it was asked: a lesson, the checkpoint or a boss battle. */
-      source: 'lesson' | 'checkpoint' | 'boss';
+      /** Where it was asked: a lesson, the checkpoint, a boss battle or a mission task. */
+      source: 'lesson' | 'checkpoint' | 'boss' | 'mission';
       lessonId: string | null;
       /** False when the question came back after a wrong answer. */
       firstAttempt: boolean;

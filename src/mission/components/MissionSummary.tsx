@@ -6,7 +6,7 @@ import { CheckIcon, CopyIcon, SnowflakeIcon } from '../../components/icons';
 import { Mascot } from '../../components/Mascot';
 import type { Mission, WrittenTask } from '../../content/types';
 import type { MissionProgress } from '../../game/missionProgress';
-import { missionTaskCounts } from '../../game/missionRules';
+import { gradedTasksLabel, missionTaskCounts } from '../../game/missionRules';
 import { missionXpSummary, XP_RULES } from '../../game/xp';
 import { MicroSurvey, SurveyNote } from '../../components/survey/MicroSurvey';
 import { summaryLines } from '../portfolio';
@@ -140,7 +140,9 @@ export function MissionSummary({
             </h2>
             <dl className="space-y-2 tabular-nums">
               <div className="flex justify-between gap-3">
-                <dt className="text-slate-700">Mission ({counts.requiredPassed} code tasks)</dt>
+                <dt className="text-slate-700">
+                  Mission ({counts.requiredPassed} {gradedTasksLabel(mission)})
+                </dt>
                 <dd className="font-semibold text-slate-900">{xp.base} XP</dd>
               </div>
               <div className="flex justify-between gap-3">

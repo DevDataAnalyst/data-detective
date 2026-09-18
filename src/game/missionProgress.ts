@@ -16,17 +16,11 @@ export interface MissionTaskProgress {
   hintsShown: number;
 }
 
-/** Facts about the dataset worked out when Python loaded it, kept for the summary screen. */
-export interface MissionFacts {
-  orders: number;
-  missingDeliveryTimes: number;
-  cities: number;
-  outliers: number;
-  /** The city whose mean looks worst because of outliers. */
-  misleadingCity: string;
-  /** The city that is slowest once outliers are removed. */
-  slowestCity: string;
-}
+/**
+ * Facts about the dataset worked out when Python loaded it, kept for the summary screen. Each
+ * mission names its facts in its content, e.g. `orders` or `slowestCity`.
+ */
+export type MissionFacts = Record<string, string | number>;
 
 export interface MissionProgress {
   activeTaskId: string | null;
@@ -181,9 +175,8 @@ export function saveRecommendation(
 }
 
 function sameFacts(a: MissionFacts | null, b: MissionFacts): boolean {
-  return (
-    a !== null && (Object.keys(b) as Array<keyof MissionFacts>).every((key) => a[key] === b[key])
-  );
+  if (a === null || Object.keys(a).length !== Object.keys(b).length) return false;
+  return Object.keys(b).every((key) => a[key] === b[key]);
 }
 
 /** Keeps the facts Python worked out about the dataset, for the summary screen. */
@@ -195,4 +188,17 @@ export function saveMissionFacts(
   return updateMission(state, missionId, (mission) =>
     sameFacts(mission.facts, facts) ? mission : { ...mission, facts: { ...facts } },
   );
+}
+
+/** Records a checked answer to a question task. Like a run, a passed task stays passed. */
+export function recordQuestionAnswer(
+  state: ProgressState,
+  missionId: string,
+  taskId: string,
+): ProgressState {
+  return updateTask(state, missionId, taskId, (task) => ({
+    ...task,
+    runs: task.runs + 1,
+    status: task.status === 'passed' ? 'passed' : 'attempted',
+  }));
 }

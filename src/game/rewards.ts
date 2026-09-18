@@ -10,7 +10,7 @@ import {
   updateMission,
   type MissionFacts,
 } from './missionProgress';
-import { codeTasksDone, requiredCodeTasks } from './missionRules';
+import { gradedTasksDone, requiredGradedTasks } from './missionRules';
 import {
   bossProgress,
   checkpointProgress,
@@ -130,8 +130,8 @@ export interface MissionTaskOutcome extends XpOutcome {
 }
 
 /**
- * Marks a mission code task passed. The first pass of a required task pays its share of the
- * mission's 100 XP; the first pass of a stretch task pays stretch XP.
+ * Marks a mission code or question task passed. The first pass of a required task pays its share
+ * of the mission's 100 XP; the first pass of a stretch task pays stretch XP.
  */
 export function passMissionTask(
   state: ProgressState,
@@ -140,7 +140,7 @@ export function passMissionTask(
   const { mission, taskId, now } = input;
   const task = mission.tasks.find((candidate) => candidate.id === taskId);
   const progress = missionProgress(state, mission.id);
-  if (!task || task.kind !== 'code' || progress.tasks[taskId]?.status === 'passed') {
+  if (!task || task.kind === 'written' || progress.tasks[taskId]?.status === 'passed') {
     return { state, xp: 0, goalJustMet: false, streakChange: 'none', firstPass: false };
   }
 
@@ -151,7 +151,7 @@ export function passMissionTask(
     ).length;
     xp = stretchTaskXp(stretchPassed);
   } else {
-    const required = requiredCodeTasks(mission);
+    const required = requiredGradedTasks(mission);
     xp = missionTaskXp(
       required.findIndex((candidate) => candidate.id === taskId),
       required.length,
@@ -183,7 +183,7 @@ export function completeMission(
 ): MissionCompletion {
   const { mission, now } = input;
   const progress = missionProgress(state, mission.id);
-  if (progress.completedAt || !codeTasksDone(mission, progress)) {
+  if (progress.completedAt || !gradedTasksDone(mission, progress)) {
     return { state, completedNow: false, freezeGranted: false };
   }
   const freeze = grantFreeze(state.activity);

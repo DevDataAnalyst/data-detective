@@ -54,7 +54,7 @@ export interface RunResult {
 }
 
 export type ToWorker =
-  | { type: 'init'; datasetUrl: string; datasetFileName: string }
+  | { type: 'init'; missionId: string; datasetUrl: string; datasetFileName: string }
   /** `taskId` asks the worker to check that task after the code runs. */
   | { type: 'run'; id: number; code: string; taskId?: string }
   | { type: 'reset'; id: number };

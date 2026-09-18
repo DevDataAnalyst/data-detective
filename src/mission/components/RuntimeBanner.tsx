@@ -6,7 +6,7 @@ import type { RuntimeState } from '../python/pythonRuntime';
 const STAGES: Record<LoadStage, { step: number; text: string; percent: number }> = {
   python: { step: 1, text: 'Downloading Python', percent: 25 },
   packages: { step: 2, text: 'Loading pandas', percent: 65 },
-  data: { step: 3, text: 'Loading the delivery data', percent: 90 },
+  data: { step: 3, text: 'Loading the data', percent: 90 },
 };
 
 interface RuntimeBannerProps {

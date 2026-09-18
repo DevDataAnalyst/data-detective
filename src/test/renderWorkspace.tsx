@@ -3,6 +3,7 @@ import type { UserEvent } from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import { expect } from 'vitest';
 import { lateDeliveryMystery } from '../content/mission1';
+import type { Mission } from '../content/types';
 import type {
   CheckResult,
   DatasetSummary,
@@ -65,7 +66,10 @@ export class FakeWorker implements WorkerLike {
 }
 
 /** Renders the mission workspace (and its summary route) with fake Python workers. */
-export function renderWorkspace(store: ProgressStore = createProgressStore(createMemoryStore())) {
+export function renderWorkspace(
+  store: ProgressStore = createProgressStore(createMemoryStore()),
+  mission: Mission = lateDeliveryMystery,
+) {
   const workers: FakeWorker[] = [];
   const events = createEventLog(createMemoryStore());
   const router = createMemoryRouter(
@@ -74,7 +78,7 @@ export function renderWorkspace(store: ProgressStore = createProgressStore(creat
         path: '/mission',
         element: (
           <MissionWorkspace
-            mission={lateDeliveryMystery}
+            mission={mission}
             createRuntime={(options) =>
               new PythonRuntime({
                 ...options,

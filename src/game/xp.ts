@@ -55,7 +55,7 @@ export function checkpointXp(alreadyPassed: boolean): number {
 }
 
 /**
- * The mission's base XP is paid out as it is earned, split evenly across its required code tasks
+ * The mission's base XP is paid out as it is earned, split evenly across its required graded tasks
  * (any remainder goes to the last task). This way any mission progress counts toward the daily
  * goal, and a learner who spreads the mission over several days keeps their streak.
  */

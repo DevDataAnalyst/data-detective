@@ -1035,5 +1035,7 @@ export const unit1: Unit = {
     shapesOfData,
   ],
   checkpoint,
+  // Unit 1 opens straight into lesson 1; its story arrives with the mission brief.
+  hook: null,
   missionId: 'late-delivery-mystery',
 };

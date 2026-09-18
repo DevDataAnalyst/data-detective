@@ -2,7 +2,7 @@
  * Web Worker that runs Python with Pyodide, so loading and running code never freezes the page.
  * Pyodide is fetched from the jsDelivr CDN the first time a mission opens.
  */
-import checksSource from './checks.py?raw';
+import { CHECK_MODULES } from './checkModules';
 import type { CheckResult, DatasetSummary, FromWorker, RunResult, ToWorker } from './protocol';
 import runnerSource from './runner.py?raw';
 
@@ -47,7 +47,9 @@ let queue: Promise<void> = Promise.resolve();
 
 const post = (message: FromWorker) => scope.postMessage(message);
 
-async function initialise(datasetUrl: string, datasetFileName: string) {
+async function initialise(missionId: string, datasetUrl: string, datasetFileName: string) {
+  const checksSource = CHECK_MODULES[missionId];
+  if (!checksSource) throw new Error(`No checks for the mission "${missionId}"`);
   const started = performance.now();
   post({ type: 'progress', stage: 'python', message: 'Downloading Python' });
   const { loadPyodide } = (await import(/* @vite-ignore */ `${INDEX_URL}pyodide.mjs`)) as {
@@ -58,7 +60,7 @@ async function initialise(datasetUrl: string, datasetFileName: string) {
   post({ type: 'progress', stage: 'packages', message: 'Loading pandas' });
   await loaded.loadPackage(['pandas']);
 
-  post({ type: 'progress', stage: 'data', message: 'Loading the delivery data' });
+  post({ type: 'progress', stage: 'data', message: 'Loading the data' });
   const response = await fetch(datasetUrl);
   if (!response.ok) throw new Error(`Could not download the dataset (${response.status})`);
   loaded.FS.writeFile(`${HOME}/${datasetFileName}`, await response.text());
@@ -114,7 +116,7 @@ scope.addEventListener('message', (event) => {
     switch (message.type) {
       case 'init':
         try {
-          await initialise(message.datasetUrl, message.datasetFileName);
+          await initialise(message.missionId, message.datasetUrl, message.datasetFileName);
         } catch (error) {
           post({ type: 'init-failed', message: (error as Error).message ?? String(error) });
         }

@@ -11,12 +11,14 @@ import {
   type Statistic,
   type StatisticOptions,
 } from '../game/stats';
-import { questionDataset, templateTokens } from './template';
+import { evaluateFormula, formulaNames } from './formula';
+import { datasetScope, questionDataset, questionScope, templateTokens } from './template';
 import {
   validateBuildMetric,
   validateCourtroom,
   validateInboxTriage,
   validateSpotTheLie,
+  validateStoryMessage,
 } from './validateChallenges';
 import {
   countWords,
@@ -40,16 +42,6 @@ import type {
 } from './types';
 
 export { countWords, formatIssues, type ValidationIssue };
-
-/** Facts about a mission's dataset that summary text may quote, e.g. `{outliers}`. */
-export const MISSION_FACTS = [
-  'orders',
-  'missingDeliveryTimes',
-  'cities',
-  'outliers',
-  'misleadingCity',
-  'slowestCity',
-] as const;
 
 export const CONTENT_LIMITS = {
   introWords: 80,
@@ -139,23 +131,97 @@ function validateDataset(dataset: NumberDataset, path: string): ValidationIssue[
   return issues;
 }
 
-function validateTemplates(question: Question, path: string): ValidationIssue[] {
+/** The values a question's text can quote, or the error that stops them being worked out. */
+function scopeOf(question: Question): { scope: Record<string, number> } | { error: string } {
+  try {
+    return { scope: questionScope(question) };
+  } catch (error) {
+    return { error: (error as Error).message };
+  }
+}
+
+function validateGivens(question: Question, path: string): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
-  for (const field of ['prompt', 'explanation'] as const) {
-    for (const token of templateTokens(question[field])) {
-      const dataset = questionDataset(question);
-      if (!dataset) {
-        issues.push(issue(`${path}.${field}`, `${token.raw} needs the question to have a dataset`));
-        continue;
+  const names = [...Object.keys(question.givens ?? {}), ...Object.keys(question.derived ?? {})];
+  for (const name of names) {
+    if (!/^[a-z][a-z0-9_]*$/.test(name)) {
+      issues.push(issue(`${path}.givens`, `"${name}" should be lower snake_case`));
+    }
+    if (isStatistic(name)) {
+      issues.push(issue(`${path}.givens`, `"${name}" is a statistic name; pick another`));
+    }
+  }
+  for (const [name, value] of Object.entries(question.givens ?? {})) {
+    if (!Number.isFinite(value)) issues.push(issue(`${path}.givens`, `${name} is not a number`));
+  }
+  const known = new Set([
+    ...Object.keys(datasetScope(questionDataset(question))),
+    ...Object.keys(question.givens ?? {}),
+  ]);
+  for (const [name, formula] of Object.entries(question.derived ?? {})) {
+    try {
+      const unknown = formulaNames(formula).filter((used) => !known.has(used));
+      if (unknown.length > 0) {
+        issues.push(issue(`${path}.derived.${name}`, `uses unknown ${unknown.join(', ')}`));
       }
-      if (!isStatistic(token.name)) {
-        issues.push(issue(`${path}.${field}`, `${token.raw} is not a known statistic`));
-        continue;
-      }
-      tryCompute(token.name, dataset.values, `${path}.${field}`, issues);
+    } catch (error) {
+      issues.push(issue(`${path}.derived.${name}`, (error as Error).message));
+    }
+    known.add(name);
+  }
+  if (issues.length > 0) return issues;
+  const result = scopeOf(question);
+  if ('error' in result) return [issue(`${path}.derived`, result.error)];
+  for (const name of Object.keys(question.derived ?? {})) {
+    if (!Number.isFinite(result.scope[name])) {
+      issues.push(issue(`${path}.derived.${name}`, 'does not work out to a finite number'));
     }
   }
   return issues;
+}
+
+function validateTemplates(question: Question, path: string): ValidationIssue[] {
+  const issues: ValidationIssue[] = [];
+  const result = scopeOf(question);
+  const scope = 'scope' in result ? result.scope : {};
+  const dataset = questionDataset(question);
+  for (const field of ['prompt', 'explanation'] as const) {
+    for (const token of templateTokens(question[field])) {
+      if (token.name in scope) continue;
+      if (!isStatistic(token.name)) {
+        issues.push(
+          issue(`${path}.${field}`, `${token.raw} is not a known statistic or given value`),
+        );
+      } else if (!dataset) {
+        issues.push(issue(`${path}.${field}`, `${token.raw} needs the question to have a dataset`));
+      } else {
+        tryCompute(token.name, dataset.values, `${path}.${field}`, issues);
+      }
+    }
+  }
+  return issues;
+}
+
+/** Works out a formula over the question's values, recording any problem as an issue. */
+function tryFormula(
+  question: Question,
+  formula: string,
+  path: string,
+  issues: ValidationIssue[],
+): number | null {
+  const result = scopeOf(question);
+  if ('error' in result) return null;
+  try {
+    const value = evaluateFormula(formula, result.scope);
+    if (!Number.isFinite(value)) {
+      issues.push(issue(path, `${formula} does not work out to a finite number`));
+      return null;
+    }
+    return value;
+  } catch (error) {
+    issues.push(issue(path, `cannot work out ${formula}: ${(error as Error).message}`));
+    return null;
+  }
 }
 
 function validateBase(question: Question, path: string): ValidationIssue[] {
@@ -172,6 +238,7 @@ function validateBase(question: Question, path: string): ValidationIssue[] {
       ),
     );
   }
+  issues.push(...validateGivens(question, path));
   issues.push(...validateTemplates(question, path));
   return issues;
 }
@@ -182,13 +249,14 @@ function numericOptionIssues(
   expected: number,
   alternatives: readonly number[],
   path: string,
+  tolerance = STORED_PRECISION,
 ): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   const correct = parseLeadingNumber(question.options[question.correctIndex]);
   if (correct === null) {
     return [issue(path, 'the correct option has no number to compare')];
   }
-  if (Math.abs(correct - expected) > STORED_PRECISION) {
+  if (Math.abs(correct - expected) > tolerance) {
     issues.push(
       issue(path, `the correct option says ${correct} but the data gives ${show(expected)}`),
     );
@@ -206,7 +274,7 @@ function numericOptionIssues(
   question.options.forEach((option, index) => {
     const value = parseLeadingNumber(option);
     if (index !== question.correctIndex && value !== null) {
-      if (Math.abs(value - expected) <= STORED_PRECISION) {
+      if (Math.abs(value - expected) <= tolerance) {
         issues.push(issue(`${path}`, `option ${index} ("${option}") is also correct`));
       }
     }
@@ -329,6 +397,12 @@ function validateCheck(question: MultipleChoiceQuestion, path: string): Validati
       if (found.length > 0) issues.push(issue(path, `the data has a mode: ${found.join(', ')}`));
       return issues;
     }
+    case 'formula': {
+      const expected = tryFormula(question, check.formula, path, issues);
+      if (expected === null) return issues;
+      const tolerance = (check.tolerance ?? 0) + STORED_PRECISION;
+      return [...issues, ...numericOptionIssues(question, expected, [], path, tolerance)];
+    }
   }
 }
 
@@ -378,17 +452,16 @@ function validateEstimateValue(
   if (!(question.tolerance > 0) || !Number.isFinite(question.tolerance)) {
     issues.push(issue(`${path}.tolerance`, 'must be a positive number'));
   }
-  const expected = tryCompute(question.statistic, question.dataset.values, path, issues);
+  const { statistic, dataset } = question;
+  if (!statistic || !dataset) return issues;
+  const expected = tryCompute(statistic, dataset.values, path, issues);
   if (expected === null) return issues;
   if (Math.abs(stated - expected) > STORED_PRECISION) {
     issues.push(
-      issue(
-        path,
-        `says ${stated} but the ${question.statistic} of the dataset is ${show(expected)}`,
-      ),
+      issue(path, `says ${stated} but the ${statistic} of the dataset is ${show(expected)}`),
     );
   }
-  for (const alternative of alternativeValues(question.statistic, question.dataset.values)) {
+  for (const alternative of alternativeValues(statistic, dataset.values)) {
     if (Math.abs(alternative - stated) > question.tolerance) {
       issues.push(
         issue(
@@ -402,8 +475,31 @@ function validateEstimateValue(
 }
 
 function validateNumericEstimate(question: NumericEstimateQuestion, path: string) {
-  const issues = validateDataset(question.dataset, `${path}.dataset`);
-  issues.push(...validateEstimateValue(question, question.correctValue, `${path}.correctValue`));
+  const issues: ValidationIssue[] = [];
+  if (question.dataset) issues.push(...validateDataset(question.dataset, `${path}.dataset`));
+  const { statistic, formula } = question;
+  if (statistic && formula) {
+    issues.push(issue(path, 'use either a statistic or a formula, not both'));
+  } else if (statistic) {
+    if (!question.dataset) issues.push(issue(path, 'a statistic needs a dataset'));
+    issues.push(...validateEstimateValue(question, question.correctValue, `${path}.correctValue`));
+  } else if (formula) {
+    issues.push(...validateEstimateValue(question, question.correctValue, `${path}.correctValue`));
+    if (!question.answerLabel?.trim()) {
+      issues.push(issue(path, 'a formula answer needs an answerLabel for the answer box'));
+    }
+    const expected = tryFormula(question, formula, `${path}.formula`, issues);
+    if (expected !== null && Math.abs(question.correctValue - expected) > STORED_PRECISION) {
+      issues.push(
+        issue(
+          `${path}.correctValue`,
+          `says ${question.correctValue} but ${formula} works out to ${show(expected)}`,
+        ),
+      );
+    }
+  } else {
+    issues.push(issue(path, 'needs a statistic of its dataset, or a formula'));
+  }
   if (question.correctValue !== 0 && question.tolerance >= Math.abs(question.correctValue)) {
     issues.push(issue(`${path}.tolerance`, 'is so wide that guessing 0 would pass'));
   }
@@ -582,6 +678,7 @@ export function validateUnit(unit: Unit): ValidationIssue[] {
   if (!unit.title.trim()) issues.push(issue(path, 'title is empty'));
   if (!unit.description.trim()) issues.push(issue(path, 'description is empty'));
   if (!unit.missionId.trim()) issues.push(issue(path, 'missionId is empty'));
+  if (unit.hook) issues.push(...validateStoryMessage(unit.hook, `${path}.hook`));
   if (unit.lessons.length === 0) issues.push(issue(path, 'has no lessons'));
 
   const lessonIds = unit.lessons.map((lesson) => lesson.id);
@@ -637,6 +734,12 @@ export function validateMission(mission: Mission): ValidationIssue[] {
   if (!mission.tasks.some((task) => task.kind === 'written' && !task.stretch)) {
     issues.push(issue(`${path}.tasks`, 'needs a required written task for the recommendation'));
   }
+  if (!mission.tasks.some((task) => task.kind !== 'written' && !task.stretch)) {
+    issues.push(issue(`${path}.tasks`, 'needs at least one required code or question task'));
+  }
+  if (new Set(mission.facts).size !== mission.facts.length) {
+    issues.push(issue(`${path}.facts`, 'lists a fact twice'));
+  }
 
   const summaryLines = [
     ...mission.summary.whatYouDid.map((line) => ({ line, part: 'whatYouDid' })),
@@ -644,7 +747,7 @@ export function validateMission(mission: Mission): ValidationIssue[] {
   ];
   for (const { line, part } of summaryLines) {
     for (const [, name] of line.text.matchAll(/\{(\w+)\}/g)) {
-      if (!(MISSION_FACTS as readonly string[]).includes(name)) {
+      if (!mission.facts.includes(name)) {
         issues.push(issue(`${path}.summary.${part}`, `{${name}} is not a known mission fact`));
       }
     }
@@ -677,7 +780,9 @@ export function validateMission(mission: Mission): ValidationIssue[] {
       );
     }
     if (!task.instructions.trim()) issues.push(issue(taskPath, 'instructions are empty'));
-    if (task.kind === 'code') {
+    if (task.kind === 'question') {
+      issues.push(...validateQuestion(task.question, `${taskPath}.question`));
+    } else if (task.kind === 'code') {
       if (!task.starterCode.trim()) issues.push(issue(taskPath, 'starter code is empty'));
       for (const name of task.creates) {
         if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(name)) {

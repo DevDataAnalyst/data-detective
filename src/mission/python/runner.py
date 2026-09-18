@@ -160,7 +160,10 @@ def run_code(code, namespace):
         error = _describe_error(caught, code)
 
     try:
-        _collect_figures()
+        # Library deprecation notices while saving a chart are not the learner's concern.
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            _collect_figures()
     except Exception:  # noqa: BLE001 - a broken chart should not hide the rest of the output
         pass
 

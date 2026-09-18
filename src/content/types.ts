@@ -29,12 +29,22 @@ export interface DataTable {
 }
 
 interface QuestionBase {
-  /** Unique across the whole unit. */
+  /** Unique across the whole course. */
   id: string;
   /** Templated. */
   prompt: string;
   /** Templated. Says why the answer is right in one or two sentences, naming the common mistake. */
   explanation: string;
+  /**
+   * Named numbers the question is built on, e.g. `{ strong: 100, applicants: 1000 }`. Text can quote
+   * them as `{strong}`, or `{rate:%}` for a fraction shown as a percentage.
+   */
+  givens?: Record<string, number>;
+  /**
+   * Values worked out from the givens (and the dataset's statistics) with a formula such as
+   * `strong / applicants`, in order. Text and checks use them like givens.
+   */
+  derived?: Record<string, string>;
 }
 
 /**
@@ -59,7 +69,17 @@ export type AnswerCheck =
   /** Which option is right depends on the skewness of `dataset`. */
   | { kind: 'skew'; optionIndex: { right: number; left: number; symmetric: number } }
   /** The correct option says there is no mode: every value in `dataset` appears once. */
-  | { kind: 'no_mode' };
+  | { kind: 'no_mode' }
+  /**
+   * The correct option's number equals this formula over the question's givens, derived values
+   * and dataset statistics, e.g. `caught / flagged * 100` for an option like "29.6%".
+   */
+  | {
+      kind: 'formula';
+      formula: string;
+      /** How far a rounded option ("About 30%") may be from the exact value. Defaults to 0.005. */
+      tolerance?: number;
+    };
 
 export interface MultipleChoiceQuestion extends QuestionBase {
   type: 'multiple_choice';
@@ -72,12 +92,22 @@ export interface MultipleChoiceQuestion extends QuestionBase {
   check?: AnswerCheck;
 }
 
-/** "Estimate the mean before we reveal it." */
+/**
+ * "Estimate the mean before we reveal it." The answer is either a statistic of `dataset`, or a
+ * `formula` over the question's givens, such as a probability.
+ */
 export interface NumericEstimateQuestion extends QuestionBase {
   type: 'numeric_estimate';
-  dataset: NumberDataset;
+  dataset?: NumberDataset;
   /** The statistic being estimated; validation recomputes `correctValue` from it. */
-  statistic: Statistic;
+  statistic?: Statistic;
+  /** Instead of a statistic: the formula validation recomputes `correctValue` from. */
+  formula?: string;
+  /** Labels the answer box when there is no statistic, e.g. "Your estimate of the chance". */
+  answerLabel?: string;
+  /** Written before and after the answer when there is no dataset, e.g. "₹" or "%". */
+  answerPrefix?: string;
+  answerSuffix?: string;
   correctValue: number;
   /** Answers within ± tolerance count as correct. */
   tolerance: number;
@@ -318,7 +348,19 @@ export interface WrittenTask extends MissionTaskBase {
   modelAnswer: string;
 }
 
-export type MissionTask = CodeTask | WrittenTask;
+/**
+ * A task answered with a challenge question, such as inbox triage or the courtroom. It is checked
+ * in the browser, so it works while Python is still loading.
+ */
+export interface QuestionTask extends MissionTaskBase {
+  kind: 'question';
+  question: Question;
+}
+
+export type MissionTask = CodeTask | WrittenTask | QuestionTask;
+
+/** Tasks that are checked automatically and pay XP: code and question tasks. */
+export type GradedTask = CodeTask | QuestionTask;
 
 export interface MissionDataset {
   /** Name of the file in Python's working directory, e.g. `deliveries.csv`. */
@@ -329,9 +371,9 @@ export interface MissionDataset {
 }
 
 /**
- * A line on the mission complete screen. `{orders}`, `{missingDeliveryTimes}`, `{cities}`,
- * `{outliers}`, `{misleadingCity}` and `{slowestCity}` are filled from facts worked out from the
- * dataset. `requiresTask` shows the line only if that task was passed; `unlessTask` hides it then.
+ * A line on the mission complete screen. Placeholders such as `{orders}` are filled from the
+ * mission's `facts`, worked out from the dataset. `requiresTask` shows the line only if that task
+ * was passed; `unlessTask` hides it then.
  */
 export interface MissionSummaryLine {
   text: string;
@@ -345,6 +387,11 @@ export interface Mission {
   /** Shown at the top of the workspace. At most 120 words. */
   brief: string;
   dataset: MissionDataset;
+  /**
+   * Facts about the dataset that the mission's Python checks report when they load, such as
+   * `orders`. Summary lines can quote only these.
+   */
+  facts: readonly string[];
   /** Required tasks first, then stretch tasks. */
   tasks: MissionTask[];
   /** The mission complete screen. */
@@ -360,6 +407,11 @@ export interface Unit {
   id: string;
   title: string;
   description: string;
+  /**
+   * The message that opens the unit, from a manager or client, shown once when the unit becomes
+   * available. Null when the unit has no opening message.
+   */
+  hook: StoryMessage | null;
   /** In path order. */
   lessons: Lesson[];
   checkpoint: Checkpoint;

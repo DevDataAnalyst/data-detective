@@ -7,10 +7,11 @@ import { BoltIcon, CheckIcon, LockIcon, SearchIcon } from '../components/icons';
 import { RichText } from '../components/RichText';
 import { useRewards } from '../components/rewards/useRewards';
 import { MicroSurvey } from '../components/survey/MicroSurvey';
-import type { CodeTask, Mission, MissionTask } from '../content/types';
+import type { CodeTask, Mission, MissionTask, QuestionTask } from '../content/types';
 import {
   missionProgress,
   recordHintShown,
+  recordQuestionAnswer,
   recordTaskRun,
   replayCode,
   saveMissionFacts,
@@ -20,6 +21,7 @@ import {
   taskProgress,
 } from '../game/missionProgress';
 import {
+  gradedTasksLabel,
   missionTaskCounts,
   nextTaskId,
   suggestedTaskId,
@@ -30,6 +32,7 @@ import { useEvents } from '../storage/eventsContext';
 import { useProgress, useProgressStore } from '../storage/progressContext';
 import { CodeTaskPanel } from './components/CodeTaskPanel';
 import { HintPanel } from './components/HintPanel';
+import { QuestionTaskPanel } from './components/QuestionTaskPanel';
 import { RuntimeBanner } from './components/RuntimeBanner';
 import { TaskFeedbackPanel, type ShownFeedback } from './components/TaskFeedbackPanel';
 import { TaskList } from './components/TaskList';
@@ -80,6 +83,7 @@ export default function MissionWorkspace({ mission, createRuntime }: MissionWork
 
   const { runtime, state: runtimeState } = usePythonRuntime(
     {
+      missionId: mission.id,
       datasetUrl: absoluteUrl(mission.dataset.url),
       datasetFileName: mission.dataset.fileName,
       replayCode: () => replayCode(store.getSnapshot(), mission.id, taskIds),
@@ -192,6 +196,45 @@ export default function MissionWorkspace({ mission, createRuntime }: MissionWork
     setOutcomes({});
     setFeedback({});
     setAnnouncement('Python was reset. Run your tasks again to recreate their variables.');
+  };
+
+  /** Records a checked answer to a question task and pays XP for a first pass. */
+  const answerQuestionTask = (task: QuestionTask, correct: boolean, ms: number): number => {
+    const before = taskProgress(store.getSnapshot(), mission.id, task.id);
+    store.update((state) =>
+      selectTask(recordQuestionAnswer(state, mission.id, task.id), mission.id, task.id),
+    );
+    events.record({
+      type: 'question_answered',
+      questionId: task.question.id,
+      questionType: task.question.type,
+      source: 'mission',
+      lessonId: null,
+      firstAttempt: before.runs === 0,
+      correct,
+      ms,
+    });
+    events.record({ type: 'task_run', taskId: task.id, passed: correct, hadError: false, ms });
+    const xp = correct ? rewards.passMissionTask(mission, task.id).xp : 0;
+    setAnnouncement(
+      correct
+        ? `Task passed${xp > 0 ? `, ${xp} XP earned` : ''}.`
+        : 'Not quite yet. Read why, then try again.',
+    );
+    return xp;
+  };
+
+  const questionNext = (task: QuestionTask) => {
+    const saved = missionProgress(store.getSnapshot(), mission.id);
+    const nextId = nextTaskId(mission, saved, task.id);
+    const next = mission.tasks.find((candidate) => candidate.id === nextId);
+    return next
+      ? {
+          label: taskLabel(mission.tasks, next.id),
+          title: next.title,
+          onSelect: () => select(next.id),
+        }
+      : null;
   };
 
   const showHint = (task: CodeTask, level: number) => {
@@ -352,7 +395,7 @@ export default function MissionWorkspace({ mission, createRuntime }: MissionWork
         <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[17rem_minmax(0,1fr)] lg:items-start">
           <div className="min-w-0 space-y-2 lg:sticky lg:top-18">
             <p className="text-sm font-semibold text-slate-600">
-              {counts.requiredPassed} of {counts.requiredTotal} code tasks passed
+              {counts.requiredPassed} of {counts.requiredTotal} {gradedTasksLabel(mission)} passed
             </p>
             <TaskList
               tasks={mission.tasks}
@@ -386,6 +429,15 @@ export default function MissionWorkspace({ mission, createRuntime }: MissionWork
                 openTask={mission.tasks.find((task) => task.id === suggestedTaskId(mission, saved))}
                 tasks={mission.tasks}
                 onSelect={select}
+              />
+            ) : activeTask.kind === 'question' ? (
+              <QuestionTaskPanel
+                key={activeTask.id}
+                task={activeTask}
+                passed={saved.tasks[activeTask.id]?.status === 'passed'}
+                onCheck={(correct, ms) => answerQuestionTask(activeTask, correct, ms)}
+                next={questionNext(activeTask)}
+                summaryHref={completed ? MISSION_SUMMARY_PATH : null}
               />
             ) : activeTask.kind === 'code' ? (
               <>

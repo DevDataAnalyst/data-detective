@@ -9,6 +9,7 @@ export const lateDeliveryMystery: Mission = {
   title: 'The Late Delivery Mystery',
   brief:
     'You have just joined a food delivery startup as a junior analyst. Customers in some cities complain that their food keeps arriving late.\n\nThe operations manager wants to know three things before next week’s review: where delivery times are **really** worst, whether a few extreme cases are distorting the averages, and what the team should look at first.\n\nYou have 600 recent orders in `deliveries.csv`. Like most real data, it is messy. Work through the tasks in Python, then write your recommendation.',
+  facts: ['orders', 'missingDeliveryTimes', 'cities', 'outliers', 'misleadingCity', 'slowestCity'],
   dataset: {
     fileName: 'deliveries.csv',
     url: 'data/deliveries.csv',
