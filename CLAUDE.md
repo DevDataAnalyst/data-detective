@@ -436,6 +436,20 @@ Run from the project root. Needs Node 22.22 or newer.
   get the same question, and that at 360px the card fits the screen and saves as a 1080 × 1350
   PNG in a real browser.
 
+## Optional UPI support
+
+- The mission complete screen ends with `DonateButton` (`src/components/DonateButton.tsx`): an
+  optional way to chip in through UPI, after every other part of the screen so it never stands in
+  the way. The UPI ID, payee name, note and suggested amounts are in `src/content/support.ts`.
+- `upiPayUrl` builds the `upi://pay?pa=…&pn=…&am=…&cu=INR&tn=…` link (spaces as %20, @ kept as
+  it is; "Any amount" leaves `am` out). On a phone the link opens a UPI app with the details
+  filled in. On a computer (`(hover: hover) and (pointer: fine)`) the card shows the same link as
+  a QR code, drawn as SVG in the page with `uqr`, loaded only when shown: no outside QR service,
+  so no request leaves the site. Copying the UPI ID works anywhere, including iPhones, where UPI
+  links may not open an app.
+- Nothing confirms that a payment happened, so nothing in the app may depend on one. Anything
+  that unlocks on payment would need a payment gateway that confirms the transaction.
+
 ## Build steps
 
 - [x] 1. Scaffold

@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import { buttonStyles } from '../../components/buttonStyles';
+import { DonateButton } from '../../components/DonateButton';
 import { useCountUp, usePrefersReducedMotion } from '../../components/hooks';
 import { CheckIcon, CopyIcon, SnowflakeIcon } from '../../components/icons';
 import { Mascot } from '../../components/Mascot';
@@ -245,6 +246,9 @@ export function MissionSummary({
             </Link>
           )}
         </div>
+
+        {/* Optional, and last, so it never stands between a learner and the next step. */}
+        <DonateButton />
       </main>
     </div>
   );

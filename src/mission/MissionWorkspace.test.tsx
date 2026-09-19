@@ -322,5 +322,14 @@ describe('MissionWorkspace', () => {
     expect(within(compare).getByText(/Not ticked:/).parentElement).toHaveTextContent(
       'I explain that a few extreme values distort the mean',
     );
+
+    // Optional UPI support comes last, after the way back to the path, and asks for nothing.
+    const support = screen.getByRole('region', { name: 'Enjoying Data Detective?' });
+    const back = screen.getByRole('link', { name: 'Back to path' });
+    expect(back.compareDocumentPosition(support) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(within(support).getByRole('link', { name: /with a UPI app/ })).toHaveAttribute(
+      'href',
+      expect.stringMatching(/^upi:\/\/pay\?/),
+    );
   });
 });

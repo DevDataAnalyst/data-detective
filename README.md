@@ -37,6 +37,10 @@ recommendation for someone who is not technical.
   through a hint, a thumbs up for a right answer, celebrating a finished lesson or mission, and
   napping when a streak needs attention. The app's colours come from the mascot's palette. The
   art, palette and brand guide are in [design/mascot](design/mascot/README.md).
+- Optional support: the mission complete screen ends with a way to chip in through UPI (a UPI
+  app link on phones, a QR code on computers, and the UPI ID to copy). Nothing is unlocked by
+  paying, and the QR code is drawn in the page rather than by an outside service. The UPI ID is
+  in `src/content/support.ts`.
 - Everything is stored on the learner's device. There is no backend, no account and no analytics
   service.
 

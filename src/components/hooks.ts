@@ -18,6 +18,24 @@ export function usePrefersReducedMotion(): boolean {
   return useSyncExternalStore(subscribeToReducedMotion, prefersReducedMotionNow, () => false);
 }
 
+/** Whether a media query matches, following changes. False where `matchMedia` is missing. */
+export function useMediaQuery(query: string): boolean {
+  const subscribe = useCallback(
+    (onChange: () => void) => {
+      if (typeof window.matchMedia !== 'function') return () => {};
+      const list = window.matchMedia(query);
+      list.addEventListener('change', onChange);
+      return () => list.removeEventListener('change', onChange);
+    },
+    [query],
+  );
+  return useSyncExternalStore(
+    subscribe,
+    () => typeof window.matchMedia === 'function' && window.matchMedia(query).matches,
+    () => false,
+  );
+}
+
 /**
  * Measures an element's width in CSS pixels so SVG charts can be drawn at 1:1 scale, which keeps
  * touch targets at their real size. Falls back to `fallback` until measured (and in tests).
