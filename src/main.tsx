@@ -2,6 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { createBrowserRouter } from 'react-router';
 import { RouterProvider } from 'react-router/dom';
+import { Analytics } from '@vercel/analytics/react';
 import './index.css';
 import { routes } from './routes';
 import { appEventLog, appProgressStore, appThemeStore } from './storage/appStorage';
@@ -13,6 +14,7 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ProgressProvider store={appProgressStore} events={appEventLog} theme={appThemeStore}>
       <RouterProvider router={router} />
+      <Analytics />
     </ProgressProvider>
   </StrictMode>,
 );
