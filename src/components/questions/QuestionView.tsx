@@ -8,6 +8,7 @@ import { Courtroom } from './Courtroom';
 import { InboxTriage } from './InboxTriage';
 import { MultipleChoice } from './MultipleChoice';
 import { NumericEstimate } from './NumericEstimate';
+import { OrderSteps } from './OrderSteps';
 import { PredictReveal } from './PredictReveal';
 import { SpotTheLie } from './SpotTheLie';
 import { TapOutlier } from './TapOutlier';
@@ -125,6 +126,14 @@ function renderBody(
           {...shared}
           question={question}
           answer={answer?.type === 'ab_verdict' ? answer : null}
+        />
+      );
+    case 'order_steps':
+      return (
+        <OrderSteps
+          {...shared}
+          question={question}
+          answer={answer?.type === 'order_steps' ? answer : null}
         />
       );
   }

@@ -1,5 +1,5 @@
 import { AlertIcon, ClockIcon, LightbulbIcon } from '../../components/icons';
-import { hintForError } from '../errorHints';
+import { hintForError, type ErrorHintContext } from '../errorHints';
 import type { PythonError, RichOutput, TableOutput } from '../python/protocol';
 import type { RunOutcome } from '../python/pythonRuntime';
 
@@ -7,9 +7,16 @@ interface OutputPanelProps {
   outcome: RunOutcome | null;
   running: boolean;
   downloadingPackages?: string | null;
+  /** The open mission's files, tables and variables, so error hints can name them. */
+  hintContext?: ErrorHintContext;
 }
 
-export function OutputPanel({ outcome, running, downloadingPackages = null }: OutputPanelProps) {
+export function OutputPanel({
+  outcome,
+  running,
+  downloadingPackages = null,
+  hintContext,
+}: OutputPanelProps) {
   return (
     <section
       aria-labelledby="output-title"
@@ -21,7 +28,9 @@ export function OutputPanel({ outcome, running, downloadingPackages = null }: Ou
       >
         Output
       </h3>
-      <div aria-busy={running}>{renderBody(outcome, running, downloadingPackages)}</div>
+      <div aria-busy={running}>
+        {renderBody(outcome, running, downloadingPackages, hintContext)}
+      </div>
     </section>
   );
 }
@@ -30,6 +39,7 @@ function renderBody(
   outcome: RunOutcome | null,
   running: boolean,
   downloadingPackages: string | null,
+  hintContext: ErrorHintContext | undefined,
 ) {
   if (running) {
     return (
@@ -83,7 +93,7 @@ function renderBody(
           {rich.map((output, index) => (
             <RichOutputView key={index} output={output} />
           ))}
-          {error && <ErrorView error={error} />}
+          {error && <ErrorView error={error} hintContext={hintContext} />}
           {empty && (
             <p className="text-slate-600">
               Your code ran without showing anything. Use <code className="font-mono">print()</code>
@@ -170,8 +180,8 @@ function TableView({ table }: { table: TableOutput }) {
   );
 }
 
-function ErrorView({ error }: { error: PythonError }) {
-  const hint = hintForError(error);
+function ErrorView({ error, hintContext }: { error: PythonError; hintContext?: ErrorHintContext }) {
+  const hint = hintForError(error, hintContext);
   return (
     <div className="rounded-xl border-2 border-incorrect-200 bg-incorrect-50 p-3 text-incorrect-ink-900">
       <p className="flex items-center gap-2 font-bold">

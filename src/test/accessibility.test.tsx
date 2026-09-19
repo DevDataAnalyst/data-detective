@@ -4,7 +4,11 @@ import axe from 'axe-core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { dailyQuestions } from '../content/daily';
 import { lateDeliveryMystery } from '../content/mission1';
+import { theFinalRound } from '../content/mission4';
 import { unit1 } from '../content/unit1';
+import { unit2 } from '../content/unit2';
+import { unit3 } from '../content/unit3';
+import { unit4 } from '../content/unit4';
 import { PREVIEW_QUESTIONS } from '../dev/previewQuestions';
 import { markTaskPassed, selectTask } from '../game/missionProgress';
 import { markLessonCompleted } from '../game/progress';
@@ -219,6 +223,7 @@ describe('accessibility audit (axe)', () => {
       ['courtroom', /courtroom/i],
       ['build_metric', /build the metric/i],
       ['ab_verdict', /a\/b verdict/i],
+      ['order_steps', /order the steps/i],
     ] as const) {
       const view = renderApp({ path: '/dev/question-preview' });
       await user.click(await screen.findByRole('button', { name: button }));
@@ -233,7 +238,7 @@ describe('accessibility audit (axe)', () => {
       await expectAccessible(`${type} feedback`);
       view.unmount();
     }
-  });
+  }, 30_000);
 
   it('boss battle: intro, a question mid-round and the results', async () => {
     vi.useFakeTimers({ toFake: ['Date'] });
@@ -289,6 +294,63 @@ describe('accessibility audit (axe)', () => {
       vi.useRealTimers();
     }
   });
+
+  it('Unit 4: SQL and pandas questions, and a SQL task in the mission', async () => {
+    const user = userEvent.setup();
+    const store = createProgressStore(createMemoryStore());
+    for (const unit of [unit1, unit2, unit3]) {
+      const allRight = Object.fromEntries(
+        unit.checkpoint.items.map((item) => [item.question.id, true]),
+      );
+      store.update(
+        (state) =>
+          finishCheckpoint(state, { unit, correctByQuestion: allRight, now: new Date() }).state,
+      );
+    }
+    const lesson = unit4.lessons.find(
+      (candidate) => candidate.id === 'joins-without-double-counting',
+    );
+    if (!lesson) throw new Error('No joins lesson');
+    // Lessons open in order, so the ones before it have been played.
+    store.update((state) =>
+      unit4.lessons
+        .slice(0, 4)
+        .reduce((next, earlier) => markLessonCompleted(next, earlier.id, new Date()), state),
+    );
+    const view = renderApp({ path: `/lesson/${lesson.id}`, store });
+    await user.click(await screen.findByRole('button', { name: 'Start' }));
+    await screen.findByRole('region', { name: 'SQL code' });
+    await expectAccessible('SQL question with tables');
+    await answerIncorrectly(user, lesson.questions[0]);
+    await user.keyboard('{Enter}');
+    await screen.findByRole('button', { name: /continue/i });
+    await expectAccessible('SQL question feedback');
+    view.unmount();
+
+    const pandas = unit4.lessons.find((candidate) => candidate.id === 'pandas-patterns');
+    if (!pandas) throw new Error('No pandas lesson');
+    const second = renderApp({ path: `/lesson/${pandas.id}`, store });
+    await user.click(await screen.findByRole('button', { name: 'Start' }));
+    await screen.findByRole('region', { name: 'Python code' });
+    await expectAccessible('pandas question');
+    second.unmount();
+
+    const missionStore = createProgressStore(createMemoryStore());
+    missionStore.update((state) =>
+      selectTask(
+        ['clarify', 'plan'].reduce(
+          (next, taskId) => markTaskPassed(next, theFinalRound.id, taskId, new Date()),
+          state,
+        ),
+        theFinalRound.id,
+        'grain',
+      ),
+    );
+    const { workers } = renderWorkspace(missionStore, theFinalRound);
+    await pythonReady(workers);
+    await screen.findByRole('textbox', { name: /SQL query for task 3/ });
+    await expectAccessible('SQL mission task');
+  }, 30_000);
 
   it('page not found', async () => {
     renderApp({ path: '/no-such-page' });

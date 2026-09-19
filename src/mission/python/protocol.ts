@@ -53,8 +53,17 @@ export interface RunResult {
   error: PythonError | null;
 }
 
+/** A data file the worker downloads into Python's working directory. */
+export interface DataFile {
+  url: string;
+  fileName: string;
+  /** Also load it into the SQL database as this table. */
+  table?: string;
+}
+
 export type ToWorker =
-  | { type: 'init'; missionId: string; datasetUrl: string; datasetFileName: string }
+  /** The first file is the mission's main dataset, which its checks work from. */
+  | { type: 'init'; missionId: string; files: DataFile[] }
   /** `taskId` asks the worker to check that task after the code runs. */
   | { type: 'run'; id: number; code: string; taskId?: string }
   | { type: 'reset'; id: number };

@@ -2,7 +2,9 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { buttonStyles } from '../../components/buttonStyles';
 import { PlayIcon, RefreshIcon } from '../../components/icons';
 import type { CodeTask } from '../../content/types';
+import type { ErrorHintContext } from '../errorHints';
 import type { RunOutcome } from '../python/pythonRuntime';
+import { codeNoun } from '../sqlTasks';
 import { CodeEditor } from './CodeEditor';
 import { OutputPanel } from './OutputPanel';
 
@@ -22,6 +24,8 @@ interface CodeTaskPanelProps {
   onCodeChange: (code: string) => void;
   onRun: (code: string) => void;
   onResetEnvironment: () => void;
+  /** The mission's files, tables and variables, so error hints can name them. */
+  hintContext?: ErrorHintContext;
 }
 
 const SAVE_DELAY_MS = 600;
@@ -40,6 +44,7 @@ export function CodeTaskPanel({
   onCodeChange,
   onRun,
   onResetEnvironment,
+  hintContext,
 }: CodeTaskPanelProps) {
   // The editor owns the text while it is open; saved code only seeds it.
   const [initialCode] = useState(() => savedCode ?? task.starterCode);
@@ -76,13 +81,14 @@ export function CodeTaskPanel({
     <div className="space-y-3">
       <CodeEditor
         initialCode={initialCode}
-        label={`Python code for task ${label}: ${task.title}`}
+        language={task.language}
+        label={`${codeNoun(task)} for task ${label}: ${task.title}`}
         onChange={handleChange}
         onRun={run}
       />
       <p className="text-xs text-slate-500">
-        Press Esc then Tab to move out of the editor. Ctrl + Enter (⌘ + Enter on Mac) runs your
-        code.
+        Press Esc then Tab to move out of the editor. Ctrl + Enter (⌘ + Enter on Mac) runs your{' '}
+        {task.language === 'sql' ? 'query' : 'code'}.
       </p>
       <div className="flex flex-wrap items-center gap-2">
         <button
@@ -105,7 +111,12 @@ export function CodeTaskPanel({
         </button>
       </div>
       {!running && feedback}
-      <OutputPanel outcome={outcome} running={running} downloadingPackages={downloadingPackages} />
+      <OutputPanel
+        outcome={outcome}
+        running={running}
+        downloadingPackages={downloadingPackages}
+        hintContext={hintContext}
+      />
     </div>
   );
 }

@@ -62,8 +62,9 @@ describe('MissionWorkspace', () => {
     await waitFor(() => expect(workers).toHaveLength(1));
     expect(workers[0].sent[0]).toMatchObject({
       type: 'init',
-      datasetFileName: 'deliveries.csv',
-      datasetUrl: expect.stringMatching(/\/data\/deliveries\.csv$/),
+      files: [
+        { fileName: 'deliveries.csv', url: expect.stringMatching(/\/data\/deliveries\.csv$/) },
+      ],
     });
 
     workers[0].emit({ type: 'progress', stage: 'packages', message: 'Loading pandas' });
@@ -81,7 +82,7 @@ describe('MissionWorkspace', () => {
       const { workers } = renderWorkspace();
       await waitFor(() => expect(workers).toHaveLength(1));
       expect(workers[0].sent[0]).toMatchObject({
-        datasetUrl: `${window.location.origin}/data/deliveries.csv`,
+        files: [{ url: `${window.location.origin}/data/deliveries.csv` }],
       });
     } finally {
       window.history.pushState({}, '', '/');

@@ -2,6 +2,9 @@
 
 Loaded once into Pyodide by the mission worker. Learner code runs in its own namespace dict, so
 variables persist between runs until the environment is reset.
+
+Missions with SQL tasks also get a read-only SQLite database of their tables. The page turns a
+SQL task into a call to `sql()`, so SQL runs, is checked and is replayed exactly like Python.
 """
 
 import ast
@@ -10,6 +13,7 @@ import contextlib
 import io
 import json
 import os
+import sqlite3
 import sys
 import traceback
 import warnings
@@ -26,10 +30,50 @@ _rich_outputs = []
 # Facts about the most recent run that the task checks can look at.
 LAST_RUN = {"figure_titles": []}
 
+# The mission's tables, for SQL tasks. None when the mission has no SQL.
+DATABASE = None
+
+
+class SQLError(Exception):
+    """A problem with a SQL query. Reported without Python's line numbers, which mean nothing here."""
+
+
+def load_tables(tables):
+    """Loads CSV files into an in-memory SQLite database that queries can only read.
+
+    `tables` maps each table name to its file, e.g. {"orders": "orders.csv"}.
+    """
+    global DATABASE
+    import pandas as pd
+
+    connection = sqlite3.connect(":memory:")
+    for name, file_name in tables.items():
+        pd.read_csv(file_name).to_sql(name, connection, index=False)
+    connection.execute("PRAGMA query_only = ON")
+    DATABASE = connection
+
+
+def sql(query):
+    """Runs a SQL query on the mission's tables and returns the result as a DataFrame."""
+    import pandas as pd
+
+    if DATABASE is None:
+        raise SQLError("This mission has no SQL tables.")
+    if not query.strip().rstrip(";").strip():
+        raise SQLError("The query is empty. Write a query that starts with SELECT.")
+    try:
+        cursor = DATABASE.execute(query)
+    except sqlite3.Error as error:
+        raise SQLError(str(error)) from None
+    if cursor.description is None:
+        raise SQLError("This query does not return a table. Write one that starts with SELECT.")
+    columns = [column[0] for column in cursor.description]
+    return pd.DataFrame(cursor.fetchall(), columns=columns)
+
 
 def new_namespace():
     """A fresh place for learner variables."""
-    return {"__name__": "__main__", "display": display}
+    return {"__name__": "__main__", "display": display, "sql": sql}
 
 
 def _cell(value):
@@ -111,6 +155,8 @@ def _collect_figures():
 
 
 def _describe_error(error, code):
+    if isinstance(error, SQLError):
+        return {"type": "SQL error", "message": str(error), "line": None, "trace": []}
     lines = code.splitlines()
 
     def source(line_number):

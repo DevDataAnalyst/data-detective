@@ -21,11 +21,21 @@ export interface NumberDataset {
   values: number[];
 }
 
-/** A tiny table, used for questions about rows and columns. */
+/**
+ * A tiny table, used for questions about rows and columns. When SQL runs against it, the caption
+ * is the table's name and `null` is a missing value.
+ */
 export interface DataTable {
   caption: string;
   columns: string[];
-  rows: Array<Array<string | number>>;
+  rows: Array<Array<string | number | null>>;
+}
+
+/** Code shown with a question, such as a query to read. Keep lines short enough for a phone. */
+export interface CodeSnippet {
+  language: 'sql' | 'python';
+  /** With a fill-the-blank check, `____` marks the blank. */
+  text: string;
 }
 
 interface QuestionBase {
@@ -79,7 +89,27 @@ export type AnswerCheck =
       formula: string;
       /** How far a rounded option ("About 30%") may be from the exact value. Defaults to 0.005. */
       tolerance?: number;
-    };
+    }
+  /**
+   * The question's SQL `code` runs against its `tables` and returns one value. The correct option's
+   * number equals it and no other option's does. Tests run the query to check.
+   */
+  | { kind: 'sql_value' }
+  /** The correct option's number is how many rows the SQL `code` returns; no other option's is. */
+  | { kind: 'sql_rows' }
+  /**
+   * Each option fills the `____` in the SQL `code`. With the correct option the query returns the
+   * same rows as `reference`; with every other option it returns different rows, or fails.
+   * `ordered` compares rows in order, for questions about sorting.
+   */
+  | { kind: 'sql_blank'; reference: string; ordered?: boolean }
+  /** The Python `code` prints exactly the correct option, and no other option. */
+  | { kind: 'python_output' }
+  /**
+   * Each option fills the `____` in the Python `code`. Only the correct option prints what
+   * `reference` prints; the others print something else, or fail.
+   */
+  | { kind: 'python_blank'; reference: string };
 
 export interface MultipleChoiceQuestion extends QuestionBase {
   type: 'multiple_choice';
@@ -89,6 +119,10 @@ export interface MultipleChoiceQuestion extends QuestionBase {
   /** Several datasets shown side by side, labelled by their `label`. */
   datasets?: NumberDataset[];
   table?: DataTable;
+  /** Code to read, shown above the options. */
+  code?: CodeSnippet;
+  /** The tables SQL `code` runs against, shown as exhibits. Each caption is a table name. */
+  tables?: DataTable[];
   check?: AnswerCheck;
 }
 
@@ -248,6 +282,24 @@ export interface CourtroomQuestion extends QuestionBase {
   confounderIndex: number;
 }
 
+/**
+ * Put the steps of a method, or the lines of a query, in order. Learners tap the steps into place,
+ * so it works the same with a finger, a mouse or the keyboard.
+ */
+export interface OrderStepsQuestion extends QuestionBase {
+  type: 'order_steps';
+  /** 3–7 steps, in the right order. They are shown shuffled, the same way every time. */
+  steps: string[];
+  /** Steps that are lines of code, shown in a code font. */
+  language?: 'sql' | 'python';
+  /**
+   * For lines of SQL: the tables the finished query runs against, shown as exhibits. Tests check
+   * that the lines, in order, return the same rows as `reference`.
+   */
+  tables?: DataTable[];
+  reference?: string;
+}
+
 /** Pick the numerator and denominator that answer a business question. */
 export interface BuildMetricQuestion extends QuestionBase {
   type: 'build_metric';
@@ -301,7 +353,8 @@ export type Question =
   | SpotTheLieQuestion
   | CourtroomQuestion
   | BuildMetricQuestion
-  | AbVerdictQuestion;
+  | AbVerdictQuestion
+  | OrderStepsQuestion;
 
 export type QuestionType = Question['type'];
 
@@ -353,9 +406,14 @@ export interface CodeTaskHints {
   example: string;
 }
 
-/** A task solved by writing and running Python. */
+/** A task solved by writing and running code. */
 export interface CodeTask extends MissionTaskBase {
   kind: 'code';
+  /**
+   * Python by default. A SQL task is one query over the mission's tables; its result is saved
+   * as its one `creates` variable, so later Python tasks can use it.
+   */
+  language?: 'python' | 'sql';
   starterCode: string;
   /** Variables the learner's code should create, shown as a checklist, e.g. `["df"]`. */
   creates: string[];
@@ -396,6 +454,8 @@ export interface MissionDataset {
   /** Where the app fetches it from, relative to the site root. */
   url: string;
   columns: Array<{ name: string; description: string }>;
+  /** For missions with SQL tasks: the table the file is loaded into, e.g. `orders`. */
+  table?: string;
 }
 
 /**
@@ -414,7 +474,10 @@ export interface Mission {
   title: string;
   /** Shown at the top of the workspace. At most 120 words. */
   brief: string;
+  /** The main dataset. The mission's checks work out their answers from it. */
   dataset: MissionDataset;
+  /** More files, for missions over several tables. */
+  extraData?: MissionDataset[];
   /**
    * Facts about the dataset that the mission's Python checks report when they load, such as
    * `orders`. Summary lines can quote only these.

@@ -148,3 +148,63 @@ Conversion rate is `orders` ÷ `visitors`.
 
 Unit 3's content quotes these numbers. `src/test/checkoutReference.test.ts` recomputes them from
 the CSV, and the content tests check the lessons and mission against them.
+
+## `generate-interview.ts`
+
+Generates three files for Unit 4's mission "The Final Round": `public/data/customers.csv`,
+`orders.csv` and `order_items.csv`. Nashta Now is a made-up breakfast delivery app in five cities.
+In the story, a candidate is given the three tables in a technical interview and asked why the
+finance dashboard and the operations team disagree about which city brought in the most money.
+
+```bash
+npm run generate:data
+```
+
+The seed is fixed (`20260920`), and the script re-checks every planted pattern after writing.
+
+### Columns
+
+`customers.csv`: one row per customer (2,650).
+
+| Column        | Type    | Notes                                         |
+| ------------- | ------- | --------------------------------------------- |
+| `customer_id` | integer | `1001` upwards, in sign-up order              |
+| `city`        | text    | Mumbai, Pune, Bengaluru, Hyderabad or Chennai |
+| `signup_date` | text    | `2025-01-01` to the end of June 2026          |
+
+`orders.csv`: one row per order (3,460), 1 April to 30 June 2026.
+
+| Column        | Type    | Notes                                                |
+| ------------- | ------- | ---------------------------------------------------- |
+| `order_id`    | integer | `50001` upwards, in date order                       |
+| `customer_id` | integer | Always a known customer, who had signed up by then   |
+| `order_date`  | text    | `2026-04-01` to `2026-06-30`                         |
+| `status`      | text    | `delivered`, or `cancelled` (5% to 10% in each city) |
+| `order_value` | integer | ₹, exactly the sum of quantity × price of its items  |
+
+`order_items.csv`: one row per item in an order (7,228).
+
+| Column     | Type    | Notes                                             |
+| ---------- | ------- | ------------------------------------------------- |
+| `order_id` | integer | Every order has at least one item                 |
+| `item`     | text    | One of 13 dishes and drinks, such as `Poha`       |
+| `category` | text    | `Breakfast`, `Snacks`, `Chai & coffee`, and so on |
+| `quantity` | integer | 1 to 3                                            |
+| `price`    | integer | ₹ for one, from 30 to 90                          |
+
+### Planted patterns
+
+1. **Counted once, Mumbai earns the most.** Delivered order value by city: Mumbai ₹1,69,730,
+   Pune ₹1,46,930, Bengaluru ₹1,26,380, Hyderabad ₹91,660, Chennai ₹55,430.
+2. **The twist: the dashboard's join.** Pune orders are family combos of about 3.7 items; Mumbai
+   orders have about 1.5. Join orders to order_items and add up `order_value`, and each order is
+   counted once per item: Pune jumps to ₹5,68,830, nearly twice anyone else (Mumbai ₹3,02,630).
+3. **A second way to check.** Adding up quantity × price over the items of delivered orders gives
+   exactly the same totals as the orders table.
+4. **Details for follow-up questions.** Each city has its own best seller by revenue, clear of the
+   next item by at least 5% (Cold coffee in Mumbai, Misal pav in Pune, Masala dosa in Bengaluru,
+   Pesarattu in Hyderabad, Idli in Chennai), and 1,014 customers placed no order in the quarter,
+   for anti-join questions.
+
+Unit 4's content quotes these numbers. `src/test/interviewReference.ts` recomputes them from the
+CSVs; the content tests and the Pyodide tests of the mission's checks compare against it.

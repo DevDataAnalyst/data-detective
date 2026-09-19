@@ -12,6 +12,7 @@ const TYPES = [
   { type: 'courtroom', button: /courtroom/i },
   { type: 'build_metric', button: /build the metric/i },
   { type: 'ab_verdict', button: /a\/b verdict/i },
+  { type: 'order_steps', button: /order the steps/i },
 ] as const;
 
 describe('question preview (development only)', () => {
@@ -89,6 +90,63 @@ describe('question preview (development only)', () => {
     expect(
       screen.getByText('Sign-ups rise by about 0.8 points, just as the test said. Good call.'),
     ).toBeVisible();
+  });
+
+  it('orders steps with number keys, takes them back and shows the right order', async () => {
+    const user = userEvent.setup();
+    renderApp({ path: '/dev/question-preview' });
+    await user.click(await screen.findByRole('button', { name: /order the steps/i }));
+    await user.keyboard('{Enter}');
+    const chai = PREVIEW_QUESTIONS.find((question) => question.id === 'preview-order-morning');
+    if (chai?.type !== 'order_steps') throw new Error('No chai placeholder');
+    await screen.findByRole('heading', { name: chai.prompt });
+
+    // Number keys place the nth step still to place; Backspace takes back the last one.
+    const tray = () => screen.getByRole('region', { name: /steps to place/i });
+    const firstOffered = within(tray()).getAllByRole('button')[0].textContent ?? '';
+    await user.keyboard('1');
+    expect(screen.getByRole('group', { name: /your order \(1 of 4 placed\)/i })).toHaveTextContent(
+      firstOffered.replace(/^1/, ''),
+    );
+    await user.keyboard('{Backspace}');
+    expect(screen.getByRole('group', { name: /your order \(0 of 4 placed\)/i })).toBeVisible();
+
+    // Tapping a placed step gives it back; Check waits for every step.
+    await user.click(screen.getByRole('button', { name: 'Add milk and sugar' }));
+    await user.click(
+      screen.getByRole('button', { name: /step 1: add milk and sugar, take back/i }),
+    );
+    expect(screen.getByRole('button', { name: 'Add milk and sugar' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Check' })).toBeDisabled();
+
+    // A wrong order marks each step and shows the right order.
+    await answerIncorrectly(user, chai);
+    expect(screen.getByRole('group', { name: /your order/i })).toHaveFocus();
+    await user.keyboard('{Enter}');
+    expect(
+      await screen.findByRole('button', { name: /step 1: strain it into a cup, wrong place/i }),
+    ).toBeDisabled();
+    const right = screen.getByRole('region', { name: 'The right order' });
+    expect(
+      within(right)
+        .getAllByRole('listitem')
+        .map((item) => item.textContent),
+    ).toEqual(chai.steps);
+  });
+
+  it('shows lines of SQL in a code font, with the tables they run against', async () => {
+    const user = userEvent.setup();
+    renderApp({ path: '/dev/question-preview' });
+    await user.click(await screen.findByRole('button', { name: /order the steps/i }));
+    await user.keyboard('{Enter}');
+    const chai = PREVIEW_QUESTIONS.find((question) => question.id === 'preview-order-morning');
+    if (!chai) throw new Error('No chai placeholder');
+    await answerCorrectly(user, chai);
+    await checkAndContinue(user);
+    expect(await screen.findByRole('region', { name: 'Table orders' })).toBeVisible();
+    expect(
+      screen.getByRole('button', { name: 'GROUP BY city;' }).querySelector('.font-mono'),
+    ).not.toBeNull();
   });
 
   it('lets a card be taken back out of the metric', async () => {

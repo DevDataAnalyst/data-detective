@@ -1,6 +1,7 @@
 import { closeBrackets, closeBracketsKeymap } from '@codemirror/autocomplete';
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands';
 import { python } from '@codemirror/lang-python';
+import { SQLite, sql } from '@codemirror/lang-sql';
 import {
   bracketMatching,
   HighlightStyle,
@@ -22,6 +23,8 @@ import { useEffect, useEffectEvent, useRef } from 'react';
 interface CodeEditorProps {
   /** The code when the editor opens. Later changes come from the learner, not this prop. */
   initialCode: string;
+  /** Python unless the task is SQL. */
+  language?: 'python' | 'sql';
   label: string;
   onChange: (code: string) => void;
   /** Ctrl+Enter or Cmd+Enter. */
@@ -65,7 +68,7 @@ const theme = EditorView.theme({
   '&.cm-focused': { outline: '3px solid var(--color-current-600)', outlineOffset: '2px' },
 });
 
-/** Python syntax colours, from the theme so they read well on light and dark backgrounds. */
+/** Syntax colours, from the theme so they read well on light and dark backgrounds. */
 const highlightStyle = HighlightStyle.define([
   {
     tag: [
@@ -88,8 +91,14 @@ const highlightStyle = HighlightStyle.define([
   { tag: tags.invalid, color: 'var(--color-incorrect-ink-800)' },
 ]);
 
-/** A CodeMirror 6 Python editor. */
-export function CodeEditor({ initialCode, label, onChange, onRun }: CodeEditorProps) {
+/** A CodeMirror 6 editor for Python, or for SQL in SQLite's dialect. */
+export function CodeEditor({
+  initialCode,
+  language = 'python',
+  label,
+  onChange,
+  onRun,
+}: CodeEditorProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const change = useEffectEvent(onChange);
   const run = useEffectEvent(onRun);
@@ -110,7 +119,7 @@ export function CodeEditor({ initialCode, label, onChange, onRun }: CodeEditorPr
           closeBrackets(),
           highlightActiveLine(),
           syntaxHighlighting(highlightStyle),
-          python(),
+          language === 'sql' ? sql({ dialect: SQLite, upperCaseKeywords: true }) : python(),
           Prec.highest(
             keymap.of([
               {
@@ -137,7 +146,7 @@ export function CodeEditor({ initialCode, label, onChange, onRun }: CodeEditorPr
       }),
     });
     return () => view.destroy();
-  }, [initialCode, label]);
+  }, [initialCode, label, language]);
 
   return <div ref={hostRef} className="rounded-xl ring-1 ring-slate-300" />;
 }

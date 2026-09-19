@@ -1,5 +1,6 @@
 import type {
   CheckResult,
+  DataFile,
   DatasetSummary,
   FromWorker,
   LoadStage,
@@ -45,8 +46,8 @@ export interface WorkerLike {
 export interface PythonRuntimeOptions {
   /** Picks the hidden checks the worker loads. */
   missionId: string;
-  datasetUrl: string;
-  datasetFileName: string;
+  /** The mission's data files, main dataset first. */
+  files: DataFile[];
   /** How long learner code may run once it starts. */
   timeoutMs?: number;
   /** How long downloading the packages a run needs may take, e.g. matplotlib on a slow line. */
@@ -224,8 +225,7 @@ export class PythonRuntime {
     worker.postMessage({
       type: 'init',
       missionId: this.options.missionId,
-      datasetUrl: this.options.datasetUrl,
-      datasetFileName: this.options.datasetFileName,
+      files: this.options.files,
     });
   }
 

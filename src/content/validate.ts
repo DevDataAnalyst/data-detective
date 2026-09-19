@@ -11,6 +11,7 @@ import {
   type Statistic,
   type StatisticOptions,
 } from '../game/stats';
+import { CODE_BLANK } from './code';
 import { evaluateFormula, formulaNames } from './formula';
 import { datasetScope, questionDataset, questionScope, templateTokens } from './template';
 import {
@@ -30,11 +31,14 @@ import {
 } from './validationCore';
 import type {
   Checkpoint,
+  CodeSnippet,
+  DataTable,
   Lesson,
   Mission,
   MultipleChoiceQuestion,
   NumberDataset,
   NumericEstimateQuestion,
+  OrderStepsQuestion,
   PredictRevealQuestion,
   Question,
   RevealVisual,
@@ -53,7 +57,13 @@ export const CONTENT_LIMITS = {
   checkpointQuestions: 10,
   optionsPerQuestion: { min: 2, max: 5 },
   missionBriefWords: 120,
+  /** Longer lines of code scroll sideways on a phone. */
+  codeLineChars: 48,
+  orderSteps: { min: 3, max: 7 },
+  stepChars: 80,
 } as const;
+
+const SQL_NAME = /^[A-Za-z_][A-Za-z0-9_]*$/;
 
 /** Stored answers may be rounded to two decimal places. */
 const STORED_PRECISION = 0.005 + 1e-9;
@@ -404,7 +414,116 @@ function validateCheck(question: MultipleChoiceQuestion, path: string): Validati
       const tolerance = (check.tolerance ?? 0) + STORED_PRECISION;
       return [...issues, ...numericOptionIssues(question, expected, [], path, tolerance)];
     }
+    case 'sql_value':
+    case 'sql_rows':
+      return codeCheckIssues(question, 'sql', false, path);
+    case 'sql_blank':
+      return [
+        ...codeCheckIssues(question, 'sql', true, path),
+        ...(check.reference.trim() ? [] : [issue(path, 'needs a reference query')]),
+      ];
+    case 'python_output':
+      return codeCheckIssues(question, 'python', false, path);
+    case 'python_blank':
+      return [
+        ...codeCheckIssues(question, 'python', true, path),
+        ...(check.reference.trim() ? [] : [issue(path, 'needs reference code')]),
+      ];
   }
+}
+
+/**
+ * The rules for checks that run code that can be checked without running it. Running it is the
+ * tests' job: `src/test/sqlQuestions.test.ts` runs every SQL check in SQLite, and the Pyodide
+ * suite runs every Python one. They prove the right option is right and the others are wrong.
+ */
+function codeCheckIssues(
+  question: MultipleChoiceQuestion,
+  language: CodeSnippet['language'],
+  fillsBlank: boolean,
+  path: string,
+): ValidationIssue[] {
+  const { code } = question;
+  if (code?.language !== language) {
+    return [issue(path, `this check runs ${language} code, so the question needs some`)];
+  }
+  const issues: ValidationIssue[] = [];
+  if (language === 'sql' && !question.tables?.length) {
+    issues.push(issue(path, 'a SQL check needs tables to run against'));
+  }
+  const blanks = code.text.split(CODE_BLANK).length - 1;
+  if (fillsBlank && blanks !== 1) {
+    issues.push(issue(path, `the code needs exactly one ${CODE_BLANK} for the options to fill`));
+  }
+  if (!fillsBlank && blanks > 0) {
+    issues.push(issue(path, `the code has a ${CODE_BLANK} but the check does not fill it`));
+  }
+  return issues;
+}
+
+function validateCode(code: CodeSnippet, path: string): ValidationIssue[] {
+  if (!code.text.trim()) return [issue(path, 'is empty')];
+  const { codeLineChars } = CONTENT_LIMITS;
+  return code.text
+    .split('\n')
+    .flatMap((line, index) =>
+      line.length > codeLineChars
+        ? [
+            issue(
+              `${path}.text`,
+              `line ${index + 1} has ${line.length} characters; keep to ${codeLineChars}`,
+            ),
+          ]
+        : [],
+    );
+}
+
+/** Tables that SQL runs against: their captions and columns must be usable as names. */
+function validateSqlTables(tables: readonly DataTable[], path: string): ValidationIssue[] {
+  const issues: ValidationIssue[] = [];
+  const names = tables.map((table) => table.caption);
+  if (new Set(names).size !== names.length) issues.push(issue(path, 'table names must differ'));
+  tables.forEach((table, index) => {
+    const tablePath = `${path}[${index}]`;
+    issues.push(...validateTable(table, tablePath));
+    if (!SQL_NAME.test(table.caption)) {
+      issues.push(issue(tablePath, `"${table.caption}" is not a table name SQL can use`));
+    }
+    for (const column of table.columns) {
+      if (!SQL_NAME.test(column)) {
+        issues.push(issue(tablePath, `"${column}" is not a column name SQL can use`));
+      }
+    }
+  });
+  return issues;
+}
+
+function validateOrderSteps(question: OrderStepsQuestion, path: string): ValidationIssue[] {
+  const issues: ValidationIssue[] = [];
+  const { orderSteps, stepChars } = CONTENT_LIMITS;
+  const { steps } = question;
+  if (steps.length < orderSteps.min || steps.length > orderSteps.max) {
+    issues.push(issue(`${path}.steps`, `needs ${orderSteps.min}–${orderSteps.max} steps`));
+  }
+  steps.forEach((step, index) => {
+    if (!step.trim()) issues.push(issue(`${path}.steps[${index}]`, 'is empty'));
+    if (step.length > stepChars) {
+      issues.push(issue(`${path}.steps[${index}]`, `is longer than ${stepChars} characters`));
+    }
+  });
+  if (new Set(steps.map((step) => step.trim().toLowerCase())).size !== steps.length) {
+    issues.push(issue(`${path}.steps`, 'must all be different, or the order is ambiguous'));
+  }
+  if (question.tables || question.reference) {
+    if (question.language !== 'sql') {
+      issues.push(issue(path, 'tables and a reference query are for lines of SQL'));
+    }
+    if (!question.tables?.length || !question.reference?.trim()) {
+      issues.push(issue(path, 'a query to run needs both tables and a reference'));
+    }
+  }
+  if (question.tables) issues.push(...validateSqlTables(question.tables, `${path}.tables`));
+  return issues;
 }
 
 function validateMultipleChoice(question: MultipleChoiceQuestion, path: string): ValidationIssue[] {
@@ -436,6 +555,13 @@ function validateMultipleChoice(question: MultipleChoiceQuestion, path: string):
     issues.push(...validateDataset(dataset, `${path}.datasets[${index}]`)),
   );
   if (question.table) issues.push(...validateTable(question.table, `${path}.table`));
+  if (question.code) issues.push(...validateCode(question.code, `${path}.code`));
+  if (question.tables) {
+    if (question.code?.language !== 'sql') {
+      issues.push(issue(`${path}.tables`, 'are for SQL to run against, so add SQL code'));
+    }
+    issues.push(...validateSqlTables(question.tables, `${path}.tables`));
+  }
 
   if (isNumericOption(question.options[question.correctIndex]) && !question.check) {
     issues.push(issue(path, 'the correct option is a number, so add a check that recomputes it'));
@@ -593,6 +719,8 @@ export function validateQuestion(question: Question, path: string): ValidationIs
       return [...issues, ...validateBuildMetric(question, path)];
     case 'ab_verdict':
       return [...issues, ...validateAbVerdict(question, path)];
+    case 'order_steps':
+      return [...issues, ...validateOrderSteps(question, path)];
   }
 }
 
@@ -720,9 +848,22 @@ export function validateMission(mission: Mission): ValidationIssue[] {
       ),
     );
   }
-  if (!mission.dataset.fileName.trim() || !mission.dataset.url.trim()) {
-    issues.push(issue(`${path}.dataset`, 'needs a file name and a url'));
+  const files = [mission.dataset, ...(mission.extraData ?? [])];
+  files.forEach((file, index) => {
+    const filePath = index === 0 ? `${path}.dataset` : `${path}.extraData[${index - 1}]`;
+    if (!file.fileName.trim() || !file.url.trim()) {
+      issues.push(issue(filePath, 'needs a file name and a url'));
+    }
+    if (file.table !== undefined && !SQL_NAME.test(file.table)) {
+      issues.push(issue(filePath, `"${file.table}" is not a table name SQL can use`));
+    }
+  });
+  const fileNames = files.map((file) => file.fileName);
+  if (new Set(fileNames).size !== fileNames.length) {
+    issues.push(issue(path, 'uses the same file name twice'));
   }
+  const tables = files.flatMap((file) => (file.table ? [file.table] : []));
+  if (new Set(tables).size !== tables.length) issues.push(issue(path, 'uses a table name twice'));
   if (mission.tasks.length === 0) issues.push(issue(path, 'has no tasks'));
 
   const ids = mission.tasks.map((task) => task.id);
@@ -787,6 +928,14 @@ export function validateMission(mission: Mission): ValidationIssue[] {
       issues.push(...validateQuestion(task.question, `${taskPath}.question`));
     } else if (task.kind === 'code') {
       if (!task.starterCode.trim()) issues.push(issue(taskPath, 'starter code is empty'));
+      if (task.language === 'sql') {
+        if (tables.length === 0) {
+          issues.push(issue(taskPath, 'a SQL task needs tables: give the data files a table name'));
+        }
+        if (task.creates.length !== 1) {
+          issues.push(issue(taskPath, 'a SQL task saves its result as exactly one variable'));
+        }
+      }
       for (const name of task.creates) {
         if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(name)) {
           issues.push(issue(taskPath, `"${name}" is not a valid Python variable name`));

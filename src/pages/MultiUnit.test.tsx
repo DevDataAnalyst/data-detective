@@ -6,6 +6,7 @@ import { bossPath, checkpointPath, missionPath } from '../content/paths';
 import { unit1 } from '../content/unit1';
 import { unit2 } from '../content/unit2';
 import { unit3 } from '../content/unit3';
+import { unit4 } from '../content/unit4';
 import { updateMission } from '../game/missionProgress';
 import { finishCheckpoint } from '../game/rewards';
 import { createMemoryStore } from '../storage/keyValue';
@@ -153,6 +154,30 @@ describe('units in sequence', () => {
     expect(
       section(unit3.title).getByRole('button', {
         name: /lesson 1: what’s a hypothesis\?, ready to start/i,
+      }),
+    ).toBeVisible();
+  });
+
+  it('opens Unit 4 with the interviewer’s email once Unit 3 is tested out', async () => {
+    const { store } = unitOneDone();
+    for (const unit of [unit2, unit3]) {
+      const allRight = Object.fromEntries(
+        unit.checkpoint.items.map((item) => [item.question.id, true]),
+      );
+      store.update(
+        (state) =>
+          finishCheckpoint(state, { unit, correctByQuestion: allRight, now: new Date() }).state,
+      );
+    }
+    renderApp({ store });
+
+    const hook = screen.getByRole('region', { name: 'New message for unit 4' });
+    expect(within(hook).getByRole('article', { name: /email from kavya/i })).toHaveTextContent(
+      /Your technical round on Friday/,
+    );
+    expect(
+      section(unit4.title).getByRole('button', {
+        name: /lesson 1: think before you type, ready to start/i,
       }),
     ).toBeVisible();
   });

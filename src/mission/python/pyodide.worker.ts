@@ -3,7 +3,14 @@
  * Pyodide is fetched from the jsDelivr CDN the first time a mission opens.
  */
 import { CHECK_MODULES } from './checkModules';
-import type { CheckResult, DatasetSummary, FromWorker, RunResult, ToWorker } from './protocol';
+import type {
+  CheckResult,
+  DataFile,
+  DatasetSummary,
+  FromWorker,
+  RunResult,
+  ToWorker,
+} from './protocol';
 import runnerSource from './runner.py?raw';
 
 export const PYODIDE_VERSION = '314.0.7';
@@ -47,7 +54,7 @@ let queue: Promise<void> = Promise.resolve();
 
 const post = (message: FromWorker) => scope.postMessage(message);
 
-async function initialise(missionId: string, datasetUrl: string, datasetFileName: string) {
+async function initialise(missionId: string, files: readonly DataFile[]) {
   const checksSource = CHECK_MODULES[missionId];
   if (!checksSource) throw new Error(`No checks for the mission "${missionId}"`);
   const started = performance.now();
@@ -61,14 +68,28 @@ async function initialise(missionId: string, datasetUrl: string, datasetFileName
   await loaded.loadPackage(['pandas']);
 
   post({ type: 'progress', stage: 'data', message: 'Loading the data' });
-  const response = await fetch(datasetUrl);
-  if (!response.ok) throw new Error(`Could not download the dataset (${response.status})`);
-  loaded.FS.writeFile(`${HOME}/${datasetFileName}`, await response.text());
+  for (const file of files) {
+    const response = await fetch(file.url);
+    if (!response.ok) {
+      throw new Error(`Could not download ${file.fileName} (${response.status})`);
+    }
+    // A wrong address gets the app's own page back, which would only fail later as bad data.
+    if (response.headers.get('content-type')?.includes('text/html')) {
+      throw new Error(`Could not download ${file.fileName}: the server sent a web page instead`);
+    }
+    loaded.FS.writeFile(`${HOME}/${file.fileName}`, await response.text());
+  }
 
   loaded.runPython(runnerSource);
+  const tables = Object.fromEntries(
+    files.flatMap((file) => (file.table ? [[file.table, file.fileName]] : [])),
+  );
+  if (Object.keys(tables).length > 0) {
+    loaded.runPython(`load_tables(${JSON.stringify(tables)})`);
+  }
   loaded.runPython(checksSource);
   // Work out the right answers from the data itself, so a regenerated dataset still grades.
-  loaded.runPython(`compute_reference(${JSON.stringify(datasetFileName)})`);
+  loaded.runPython(`compute_reference(${JSON.stringify(files[0].fileName)})`);
   const summary = JSON.parse(loaded.runPython('reference_summary()') as string) as DatasetSummary;
   runCode = loaded.globals.get('run_code');
   newNamespace = loaded.globals.get('new_namespace');
@@ -116,7 +137,7 @@ scope.addEventListener('message', (event) => {
     switch (message.type) {
       case 'init':
         try {
-          await initialise(message.missionId, message.datasetUrl, message.datasetFileName);
+          await initialise(message.missionId, message.files);
         } catch (error) {
           post({ type: 'init-failed', message: (error as Error).message ?? String(error) });
         }

@@ -3,6 +3,7 @@ import type {
   BuildMetricQuestion,
   CourtroomQuestion,
   InboxTriageQuestion,
+  OrderStepsQuestion,
   Question,
   SpotTheLieQuestion,
 } from '../content/types';
@@ -388,10 +389,48 @@ const abVerdict: AbVerdictQuestion[] = [
   },
 ];
 
+const orderSteps: OrderStepsQuestion[] = [
+  {
+    id: 'preview-order-morning',
+    type: 'order_steps',
+    prompt: 'Put the steps of making chai in order.',
+    steps: ['Boil the water', 'Add the tea leaves', 'Add milk and sugar', 'Strain it into a cup'],
+    explanation:
+      'The tea brews in boiling water before the milk goes in. The common mistake is straining before the tea has brewed.',
+  },
+  {
+    id: 'preview-order-sql',
+    type: 'order_steps',
+    prompt: 'Put the lines in order to count delivered orders per city.',
+    language: 'sql',
+    steps: [
+      'SELECT city, COUNT(*) AS orders',
+      'FROM orders',
+      "WHERE status = 'delivered'",
+      'GROUP BY city;',
+    ],
+    tables: [
+      {
+        caption: 'orders',
+        columns: ['order_id', 'city', 'status'],
+        rows: [
+          [1, 'Pune', 'delivered'],
+          [2, 'Pune', 'cancelled'],
+          [3, 'Delhi', 'delivered'],
+        ],
+      },
+    ],
+    reference: "SELECT city, COUNT(order_id) FROM orders WHERE status = 'delivered' GROUP BY city",
+    explanation:
+      'A query is written SELECT, FROM, WHERE, GROUP BY. The common mistake is putting WHERE after GROUP BY: rows are filtered before they are grouped.',
+  },
+];
+
 export const PREVIEW_QUESTIONS: readonly Question[] = [
   ...inboxTriage,
   ...spotTheLie,
   ...courtroom,
   ...buildMetric,
   ...abVerdict,
+  ...orderSteps,
 ];

@@ -1,7 +1,7 @@
 import { act, fireEvent, screen } from '@testing-library/react';
 import type { UserEvent } from '@testing-library/user-event';
 import { expect } from 'vitest';
-import type { BuildMetricQuestion, Question } from '../content/types';
+import type { BuildMetricQuestion, OrderStepsQuestion, Question } from '../content/types';
 import { VERDICTS } from '../game/abTest';
 
 /** Places cards in the metric's top and bottom boxes: focus a card, press Space. */
@@ -14,6 +14,15 @@ async function placeMetricCards(
   for (const index of [top, bottom]) {
     const card = screen.getByRole('button', { name: question.cards[index].label });
     act(() => card.focus());
+    await user.keyboard(' ');
+  }
+}
+
+/** Places steps in the given order: focus each one still to place, press Space. */
+async function placeSteps(user: UserEvent, question: OrderStepsQuestion, order: readonly number[]) {
+  for (const index of order) {
+    const step = screen.getByRole('button', { name: question.steps[index] });
+    act(() => step.focus());
     await user.keyboard(' ');
   }
 }
@@ -61,6 +70,13 @@ export async function answerCorrectly(user: UserEvent, question: Question) {
       break;
     case 'ab_verdict':
       await user.keyboard(String(VERDICTS.indexOf(question.verdict) + 1));
+      break;
+    case 'order_steps':
+      await placeSteps(
+        user,
+        question,
+        question.steps.map((_, index) => index),
+      );
       break;
   }
 }
@@ -110,6 +126,14 @@ export async function answerIncorrectly(user: UserEvent, question: Question) {
       break;
     case 'ab_verdict':
       await user.keyboard(String(((VERDICTS.indexOf(question.verdict) + 1) % VERDICTS.length) + 1));
+      break;
+    case 'order_steps':
+      // Back to front, which can never be the right order.
+      await placeSteps(
+        user,
+        question,
+        question.steps.map((_, index) => question.steps.length - 1 - index),
+      );
       break;
   }
 }

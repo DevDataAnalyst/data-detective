@@ -42,6 +42,13 @@ export interface AbVerdictAnswer {
   selectedIndex: number;
 }
 
+/** Step indices in the order the learner placed them, and how many steps there are. */
+export interface OrderStepsAnswer {
+  type: 'order_steps';
+  order: number[];
+  total: number;
+}
+
 /** Card indices placed on top and bottom of the fraction. */
 export interface BuildMetricAnswer {
   type: 'build_metric';
@@ -58,7 +65,8 @@ export type Answer =
   | SpotTheLieAnswer
   | CourtroomAnswer
   | BuildMetricAnswer
-  | AbVerdictAnswer;
+  | AbVerdictAnswer
+  | OrderStepsAnswer;
 
 /** Guards against floating point noise when comparing with a tolerance. */
 const EPSILON = 1e-9;
@@ -84,6 +92,8 @@ export function isAnswerReady(answer: Answer | null): answer is Answer {
       return Number.isFinite(answer.value);
     case 'tap_outlier':
       return answer.selectedIndices.length > 0;
+    case 'order_steps':
+      return answer.total > 0 && answer.order.length === answer.total;
   }
 }
 
@@ -115,6 +125,12 @@ export function gradeAnswer(question: Question, answer: Answer): boolean {
   }
   if (question.type === 'ab_verdict' && answer.type === 'ab_verdict') {
     return VERDICTS[answer.selectedIndex] === question.verdict;
+  }
+  if (question.type === 'order_steps' && answer.type === 'order_steps') {
+    return (
+      answer.order.length === question.steps.length &&
+      answer.order.every((step, position) => step === position)
+    );
   }
   if (question.type === 'build_metric' && answer.type === 'build_metric') {
     return (

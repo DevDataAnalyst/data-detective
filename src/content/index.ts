@@ -2,9 +2,10 @@ import type { Lesson, Statistic, Unit } from './types';
 import { unit1 } from './unit1';
 import { unit2 } from './unit2';
 import { unit3 } from './unit3';
+import { unit4 } from './unit4';
 
 /** Units in course order. Each unit opens when the one before it is finished. */
-export const courseUnits: readonly Unit[] = [unit1, unit2, unit3];
+export const courseUnits: readonly Unit[] = [unit1, unit2, unit3, unit4];
 
 export function findUnit(unitId: string): Unit | null {
   return courseUnits.find((unit) => unit.id === unitId) ?? null;

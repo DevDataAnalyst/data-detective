@@ -40,7 +40,7 @@ test('the share card fits a phone and saves as a 1080 × 1350 image', async ({ b
   await page.getByRole('button', { name: 'Start the clock' }).click();
   await page.clock.runFor(8_000);
   await answerCorrectly(page, question);
-  await page.getByRole('button', { name: 'Check' }).click();
+  await page.getByRole('button', { name: 'Check', exact: true }).click();
 
   await expect(page.getByRole('heading', { name: 'Solved in 8 seconds' })).toBeVisible();
   const card = page.getByRole('img', { name: /^I spotted the lying chart in 8 seconds/ });

@@ -26,6 +26,7 @@ const QUESTION_TYPE_NAMES: Record<string, string> = {
   courtroom: 'Courtroom',
   build_metric: 'Build the metric',
   ab_verdict: 'A/B verdict',
+  order_steps: 'Order the steps',
 };
 
 const COURSE: readonly PlaytestUnit[] = courseUnits.map((unit) => ({

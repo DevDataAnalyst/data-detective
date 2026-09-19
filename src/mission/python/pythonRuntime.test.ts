@@ -49,8 +49,7 @@ function setup(replay: string[] = []) {
   const workers: FakeWorker[] = [];
   const runtime = new PythonRuntime({
     missionId: 'late-delivery-mystery',
-    datasetUrl: 'data/deliveries.csv',
-    datasetFileName: 'deliveries.csv',
+    files: [{ url: 'data/deliveries.csv', fileName: 'deliveries.csv' }],
     timeoutMs: 10_000,
     packageTimeoutMs: 180_000,
     replayCode: () => replay,
@@ -79,8 +78,7 @@ describe('PythonRuntime', () => {
     expect(workers[0].sent[0]).toEqual({
       type: 'init',
       missionId: 'late-delivery-mystery',
-      datasetUrl: 'data/deliveries.csv',
-      datasetFileName: 'deliveries.csv',
+      files: [{ url: 'data/deliveries.csv', fileName: 'deliveries.csv' }],
     });
 
     workers[0].emit({ type: 'progress', stage: 'packages', message: 'Loading pandas' });

@@ -20,6 +20,10 @@ base_rate = before["cancelled"].sum() / before["subscribers_start"].sum()`,
 df = pd.read_csv("checkout.csv")
 by_variant = df.groupby("variant")[["visitors", "orders"]].sum()
 conversion = by_variant["orders"] / by_variant["visitors"]`,
+  // SQL: typed into the editor as a query, run through the mission's SQLite tables.
+  'the-final-round': `SELECT COUNT(*) AS item_rows,
+  COUNT(DISTINCT order_id) AS orders
+FROM order_items;`,
 };
 
 /** Every unit tested out, so every mission is open. */
@@ -66,7 +70,7 @@ test('every mission loads its own data at its own address, and grades its first 
     for (const [index, task] of mission.tasks.slice(0, firstCode).entries()) {
       if (task.kind !== 'question') continue;
       await answerCorrectly(page, task.question);
-      await page.getByRole('button', { name: 'Check' }).click();
+      await page.getByRole('button', { name: 'Check', exact: true }).click();
       await expect(page.getByRole('group', { name: 'Task check' })).toContainText('Task passed');
       await page.getByRole('button', { name: `Next: ${mission.tasks[index + 1].title}` }).click();
     }

@@ -224,3 +224,89 @@ describe('option parsing', () => {
     expect(isNumericOption('Half the class scored above 62')).toBe(false);
   });
 });
+
+describe('code questions', () => {
+  const orders = {
+    caption: 'orders',
+    columns: ['order_id', 'city'],
+    rows: [
+      [1, 'Pune'],
+      [2, null],
+    ],
+  };
+  const sqlQuestion: MultipleChoiceQuestion = {
+    id: 'sql-count',
+    type: 'multiple_choice',
+    prompt: 'What does this return?',
+    code: { language: 'sql', text: 'SELECT COUNT(city) FROM orders;' },
+    tables: [orders],
+    options: ['1', '2'],
+    correctIndex: 0,
+    check: { kind: 'sql_value' },
+    explanation: 'COUNT(city) skips the NULL. The common mistake is counting rows instead.',
+  };
+
+  it('accepts a SQL question with code and tables to run against', () => {
+    expect(formatIssues(validateQuestion(sqlQuestion, 'q'))).toBe('');
+  });
+
+  it('needs the code and tables a SQL check runs', () => {
+    expect(formatIssues(validateQuestion({ ...sqlQuestion, code: undefined }, 'q'))).toContain(
+      'needs some',
+    );
+    expect(formatIssues(validateQuestion({ ...sqlQuestion, tables: undefined }, 'q'))).toContain(
+      'needs tables',
+    );
+  });
+
+  it('needs exactly one blank for options to fill, and none otherwise', () => {
+    const blank: MultipleChoiceQuestion = {
+      ...sqlQuestion,
+      options: ['COUNT(city)', 'COUNT(*)'],
+      check: { kind: 'sql_blank', reference: 'SELECT COUNT(city) FROM orders' },
+    };
+    expect(formatIssues(validateQuestion(blank, 'q'))).toContain('exactly one ____');
+    const filled = {
+      ...blank,
+      code: { language: 'sql' as const, text: 'SELECT ____ FROM orders;' },
+    };
+    expect(formatIssues(validateQuestion(filled, 'q'))).toBe('');
+    const stray = { ...sqlQuestion, code: { language: 'sql' as const, text: 'SELECT ____;' } };
+    expect(formatIssues(validateQuestion(stray, 'q'))).toContain('does not fill it');
+  });
+
+  it('keeps table and column names usable in SQL, and lines short enough for a phone', () => {
+    const badName = { ...sqlQuestion, tables: [{ ...orders, caption: 'my orders' }] };
+    expect(formatIssues(validateQuestion(badName, 'q'))).toContain('not a table name');
+    const long = {
+      ...sqlQuestion,
+      code: {
+        language: 'sql' as const,
+        text: `SELECT COUNT(city) FROM orders WHERE ${'x'.repeat(40)}`,
+      },
+    };
+    expect(formatIssues(validateQuestion(long, 'q'))).toContain(
+      `keep to ${CONTENT_LIMITS.codeLineChars}`,
+    );
+  });
+
+  it('checks the steps of an order question', () => {
+    const steps: Question = {
+      id: 'steps',
+      type: 'order_steps',
+      prompt: 'Order them.',
+      steps: ['One', 'Two', 'Three'],
+      explanation: 'One comes first. The common mistake is starting at two.',
+    };
+    expect(formatIssues(validateQuestion(steps, 'q'))).toBe('');
+    expect(formatIssues(validateQuestion({ ...steps, steps: ['One', 'Two'] }, 'q'))).toContain(
+      'needs 3–7 steps',
+    );
+    expect(
+      formatIssues(validateQuestion({ ...steps, steps: ['One', 'Two', 'one'] }, 'q')),
+    ).toContain('ambiguous');
+    expect(formatIssues(validateQuestion({ ...steps, reference: 'SELECT 1' }, 'q'))).toContain(
+      'lines of SQL',
+    );
+  });
+});

@@ -7,6 +7,7 @@ import { BoltIcon, CheckIcon, LockIcon, SearchIcon } from '../components/icons';
 import { RichText } from '../components/RichText';
 import { useRewards } from '../components/rewards/useRewards';
 import { MicroSurvey } from '../components/survey/MicroSurvey';
+import { missionDataFiles } from '../content/missions';
 import type { CodeTask, Mission, MissionTask, QuestionTask } from '../content/types';
 import {
   missionProgress,
@@ -37,6 +38,7 @@ import { RuntimeBanner } from './components/RuntimeBanner';
 import { TaskFeedbackPanel, type ShownFeedback } from './components/TaskFeedbackPanel';
 import { TaskList } from './components/TaskList';
 import { WrittenTaskPanel } from './components/WrittenTaskPanel';
+import type { ErrorHintContext } from './errorHints';
 import { feedbackForRun, type TaskFeedback } from './grading';
 import { describeOutcome, HINT_LEVELS, runSucceeded, taskLabel } from './missionHelpers';
 import type {
@@ -46,6 +48,7 @@ import type {
   RuntimePhase,
 } from './python/pythonRuntime';
 import { usePythonRuntime } from './python/usePythonRuntime';
+import { codeToRun } from './sqlTasks';
 
 interface MissionWorkspaceProps {
   mission: Mission;
@@ -83,14 +86,30 @@ export default function MissionWorkspace({
   const events = useEvents();
   const navigate = useNavigate();
   const saved = missionProgress(progress, mission.id);
-  const taskIds = mission.tasks.map((task) => task.id);
+  const dataFiles = missionDataFiles(mission);
+  const hintContext: ErrorHintContext = {
+    files: dataFiles.map((file) => file.fileName),
+    tables: dataFiles.flatMap((file) => (file.table ? [file.table] : [])),
+    variables: mission.tasks.flatMap((task) => (task.kind === 'code' ? task.creates : [])),
+  };
 
   const { runtime, state: runtimeState } = usePythonRuntime(
     {
       missionId: mission.id,
-      datasetUrl: absoluteUrl(mission.dataset.url),
-      datasetFileName: mission.dataset.fileName,
-      replayCode: () => replayCode(store.getSnapshot(), mission.id, taskIds),
+      files: dataFiles.map((file) => ({
+        url: absoluteUrl(file.url),
+        fileName: file.fileName,
+        table: file.table,
+      })),
+      // SQL tasks replay as the Python that runs them, so their results come back too.
+      replayCode: () => {
+        const state = store.getSnapshot();
+        return mission.tasks.flatMap((task) => {
+          if (task.kind !== 'code') return [];
+          const [code] = replayCode(state, mission.id, [task.id]);
+          return code ? [codeToRun(task, code)] : [];
+        });
+      },
     },
     createRuntime,
   );
@@ -166,7 +185,7 @@ export default function MissionWorkspace({
     store.update((state) =>
       selectTask(saveTaskCode(state, mission.id, task.id, code), mission.id, task.id),
     );
-    const outcome = await runtime.run(code, task.id);
+    const outcome = await runtime.run(codeToRun(task, code), task.id);
     setRunningTaskId(null);
     setOutcomes((previous) => ({ ...previous, [task.id]: outcome }));
 
@@ -364,19 +383,27 @@ export default function MissionWorkspace({
             <Mascot pose="notes" className="float-right mb-1 ml-3 h-24 w-auto sm:h-32" />
             <RichText text={mission.brief} className="space-y-2 leading-relaxed text-slate-700" />
           </div>
-          <details className="mt-3 rounded-xl bg-slate-50 p-3">
-            <summary className="min-h-11 cursor-pointer content-center font-semibold text-slate-800">
-              About the data: <code className="font-mono">{mission.dataset.fileName}</code>
-            </summary>
-            <dl className="mt-2 grid gap-x-4 gap-y-1 text-sm sm:grid-cols-[auto_1fr]">
-              {mission.dataset.columns.map((column) => (
-                <div key={column.name} className="contents">
-                  <dt className="font-mono font-semibold text-slate-900">{column.name}</dt>
-                  <dd className="mb-1 text-slate-600 sm:mb-0">{column.description}</dd>
-                </div>
-              ))}
-            </dl>
-          </details>
+          {dataFiles.map((file) => (
+            <details key={file.fileName} className="mt-3 rounded-xl bg-slate-50 p-3">
+              <summary className="min-h-11 cursor-pointer content-center font-semibold text-slate-800">
+                About the data: <code className="font-mono">{file.fileName}</code>
+                {file.table && (
+                  <>
+                    {' '}
+                    (table <code className="font-mono">{file.table}</code>)
+                  </>
+                )}
+              </summary>
+              <dl className="mt-2 grid gap-x-4 gap-y-1 text-sm sm:grid-cols-[auto_1fr]">
+                {file.columns.map((column) => (
+                  <div key={column.name} className="contents">
+                    <dt className="font-mono font-semibold text-slate-900">{column.name}</dt>
+                    <dd className="mb-1 text-slate-600 sm:mb-0">{column.description}</dd>
+                  </div>
+                ))}
+              </dl>
+            </details>
+          ))}
         </details>
 
         {Object.keys(saved.tasks).length === 0 && !completed && (
@@ -444,7 +471,7 @@ export default function MissionWorkspace({
               <>
                 {activeTask.creates.length > 0 && (
                   <p className="text-sm text-slate-600">
-                    Creates:{' '}
+                    {activeTask.language === 'sql' ? 'Saved as' : 'Creates'}:{' '}
                     {activeTask.creates.map((name, index) => (
                       <span key={name}>
                         {index > 0 && ', '}
@@ -477,6 +504,7 @@ export default function MissionWorkspace({
                   }
                   onRun={(code) => void runTask(activeTask, code)}
                   onResetEnvironment={() => void resetEnvironment()}
+                  hintContext={hintContext}
                 />
               </>
             ) : (

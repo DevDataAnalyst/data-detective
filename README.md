@@ -4,7 +4,7 @@ A prototype of a gamified web app for learning data skills. It tests one idea: t
 Duolingo-style lessons and a real hands-on mission belong together.
 Try it here : https://data-detective-omega.vercel.app/
 
-There are three units. Each one opens with a message from a manager or a client, teaches in
+There are four units. Each one opens with a message from a manager or a client, teaches in
 seven 3–5 minute lessons, and ends with a case on a real dataset where the obvious answer is
 wrong. In each mission the learner writes real Python (pandas) in the browser, then writes a
 recommendation for someone who is not technical.
@@ -15,15 +15,20 @@ recommendation for someone who is not technical.
    about record cancellations, but students leave before their summer break every April.
 3. **Ship It or Skip It** (hypothesis tests and A/B testing). _The Checkout Redesign_: a new
    checkout wins "significantly", but only because its visitors came at the weekend.
+4. **Crack the Interview** (SQL and pandas interview questions, and a six-step routine for any
+   data problem: clarify, inspect, plan, build, check, explain). _The Final Round_: a live
+   interview problem over three tables, where a dashboard's join counts each order once per item.
 
-- Lessons: nine question types, with instant feedback, XP, a daily goal and a streak. Five of
+- Lessons: ten question types, with instant feedback, XP, a daily goal and a streak. Six of
   them are built on real analyst work: triage a vague request, spot the lying chart, find the
-  lurking variable in a courtroom, build a metric, and call an A/B test (ship it, kill it, or
-  wait).
+  lurking variable in a courtroom, build a metric, call an A/B test (ship it, kill it, or wait),
+  and put the steps of a method or the lines of a query in order. SQL and pandas questions show
+  real code, and every answer is proven by running it in the tests.
 - Test out: a 10-question checkpoint in each unit, for people who already know the topic.
 - Boss battle: a 60-second round of questions the learner has already got right.
-- Mission: Python and pandas running in the browser through Pyodide, with hidden checks, three
-  levels of hints, and a portfolio summary at the end. Finishing a unit opens the next one.
+- Mission: Python and pandas running in the browser through Pyodide (and SQL on the same data
+  in Unit 4), with hidden checks, three levels of hints, and a portfolio summary at the end.
+  Finishing a unit opens the next one.
 - Daily challenge at `/daily`: one lying chart or courtroom case a day, the same for everyone,
   with no lessons or sign-up needed and a result card to share.
 - Light and dark mode: it follows the device by default, with a toggle in the top bar and a
@@ -59,7 +64,7 @@ jsDelivr CDN the first time it opens, so that part needs an internet connection.
 | grading tests    | `npm run test:python` (runs the mission's checks in real Pyodide) |
 | end-to-end       | `npm run test:e2e` (Playwright, builds and previews first)        |
 | lint and format  | `npm run lint`, `npm run format`                                  |
-| datasets         | `npm run generate:data` (the three missions' CSVs)                |
+| datasets         | `npm run generate:data` (every mission's CSV files)               |
 
 The end-to-end tests need browsers once: `npx playwright install chromium`. To use a Chrome that
 is already installed instead, run them as `PLAYWRIGHT_CHANNEL=chrome npm run test:e2e`. Each run starts
@@ -96,8 +101,10 @@ npx vercel deploy --prod
 
 The missions' datasets in `public/data/` are generated, not hand-written. Each generator plants
 the patterns its mission is about: missing values, outliers, a slow city and a dinner rush in
-`deliveries.csv`; a seasonal wave of student cancellations in `churn.csv`; and a weekday/weekend
-mix-up in `checkout.csv`. They are documented in [scripts/README.md](scripts/README.md).
+`deliveries.csv`; a seasonal wave of student cancellations in `churn.csv`; a weekday/weekend
+mix-up in `checkout.csv`; and, across `customers.csv`, `orders.csv` and `order_items.csv`, big
+combo orders that a careless join counts several times. They are documented in
+[scripts/README.md](scripts/README.md).
 
 ```bash
 npm run generate:data
@@ -127,6 +134,9 @@ Content is data. A unit is a typed object, and no component needs to change to a
 5. Each mission's grading is its own Python module, such as
    `src/mission/python/checks_checkout.py`, listed in `checkModules.ts`. Each task gets a check
    that inspects the learner's variables and returns a specific, non-revealing message.
+6. For SQL, give the mission's data files a `table` name and mark tasks `language: 'sql'`, as
+   `src/content/mission4.ts` does. A query's result is saved as the task's variable, so the checks
+   read it like any other.
 
 `CLAUDE.md` in this folder is the working brief: conventions, content rules and the decisions
 behind the game logic.

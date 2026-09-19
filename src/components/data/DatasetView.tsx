@@ -57,11 +57,29 @@ export function DatasetComparison({ datasets }: { datasets: readonly NumberDatas
   );
 }
 
-export function DataTableView({ table }: { table: DataTable }) {
+/**
+ * A small table. With `sqlNames`, the caption is a SQL table name and shows in the code font, and
+ * missing values show as NULL. Wide tables scroll sideways; the region is focusable so the
+ * keyboard can scroll it too.
+ */
+export function DataTableView({
+  table,
+  sqlNames = false,
+}: {
+  table: DataTable;
+  sqlNames?: boolean;
+}) {
   return (
-    <div className="overflow-x-auto rounded-2xl bg-surface ring-1 ring-slate-300">
+    <div
+      role="region"
+      aria-label={sqlNames ? `Table ${table.caption}` : table.caption}
+      tabIndex={0}
+      className="overflow-x-auto rounded-2xl bg-surface ring-1 ring-slate-300 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-current-600"
+    >
       <table className="min-w-full text-sm">
-        <caption className="px-3 pt-2.5 pb-1 text-left font-semibold text-slate-700">
+        <caption
+          className={`px-3 pt-2.5 pb-1 text-left font-semibold text-slate-700 ${sqlNames ? 'font-mono' : ''}`}
+        >
           {table.caption}
         </caption>
         <thead>
@@ -85,7 +103,7 @@ export function DataTableView({ table }: { table: DataTable }) {
                   key={cellIndex}
                   className={`px-3 py-2 font-mono whitespace-nowrap ${typeof cell === 'number' ? 'text-right tabular-nums' : ''}`}
                 >
-                  {cell}
+                  {cell === null ? <span className="text-slate-500 italic">NULL</span> : cell}
                 </td>
               ))}
             </tr>

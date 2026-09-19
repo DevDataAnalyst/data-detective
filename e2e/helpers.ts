@@ -64,6 +64,12 @@ export async function answerCorrectly(page: Page, question: Question) {
         await page.getByRole('button', { name: question.cards[index].label, exact: true }).click();
       }
       break;
+    case 'order_steps':
+      // Tapping a step adds it to the end of the order.
+      for (const step of question.steps) {
+        await page.getByRole('button', { name: step, exact: true }).click();
+      }
+      break;
   }
 }
 
@@ -71,7 +77,7 @@ export async function answerCorrectly(page: Page, question: Question) {
 export async function playLesson(page: Page, questions: readonly Question[]) {
   for (const question of questions) {
     await answerCorrectly(page, question);
-    await page.getByRole('button', { name: 'Check' }).click();
+    await page.getByRole('button', { name: 'Check', exact: true }).click();
     await page.getByRole('button', { name: /continue/i }).click();
   }
   await expect(page.getByRole('heading', { name: 'Lesson complete' })).toBeVisible();
