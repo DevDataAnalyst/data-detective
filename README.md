@@ -45,7 +45,7 @@ recommendation for someone who is not technical.
   service.
 
 Live prototype: https://data-detective-omega.vercel.app/
-<img width="665" height="923" alt="image" src="https://github.com/user-attachments/assets/dc3f9f60-34c5-4cdd-9a5d-a4577e014b8c" />
+<img width="941" height="1672" alt="image" src="https://github.com/user-attachments/assets/4856868c-a605-43ef-b6da-62cf0026d148" />
 
 ## Run it locally
 
